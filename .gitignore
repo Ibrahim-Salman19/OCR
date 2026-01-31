@@ -23,6 +23,10 @@ final_output/
 gui_output/
 blast_output.zip
 *.log
+blast_ocr.db
+cache/
+.pytest_cache/
+.env
 
 # PyCharm / IDE settings
 .idea/

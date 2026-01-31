@@ -1,9 +1,18 @@
-streamlit
+# Core
 easyocr
+pillow
+numpy
+# Architecture & Storage
+pydantic
+pydantic-settings
+sqlalchemy
+python-dotenv
+# Utils
+tqdm
+pytest
+streamlit
 python-pptx
 pdf2image
 opencv-python
-numpy
-pillow
 python-docx
 pytesseract
