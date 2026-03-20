@@ -22,6 +22,7 @@ debug_output/
 final_output/
 gui_output/
 blast_output.zip
+blast_output/
 *.log
 blast_ocr.db
 cache/
@@ -35,3 +36,12 @@ cache/
 # Excel / Word temporary files
 ~$*.xlsx
 ~$*.docx
+
+# Large local binaries (Windows-only, not needed on cloud)
+poppler-25.12.0/
+VC_redist.x64.exe
+
+# Test artifacts
+test_output.txt
+test_images/
+

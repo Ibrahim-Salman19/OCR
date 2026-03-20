@@ -20,8 +20,13 @@ class SelfHealingOCR:
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    # Don't retry if it's a critical logic error that won't fix itself?
-                    # For now, retry all exceptions as OCR engines can be flaky
+                    # Check for fatal errors (by name to avoid circular imports)
+                    # FIX(phase2): BUG-02 - Added 'OCREngineError' to prevent retries on memory errors
+                    error_type = type(e).__name__
+                    if error_type in ['ImageLoadError', 'PageExtractionError', 'FileNotFoundError', 'OCREngineError']:
+                        logger.error(f"Fatal error in {func.__name__}: {e}. Not retrying.")
+                        raise
+
                     wait_time = self.backoff_factor ** attempt
                     logger.warning(
                         f"Attempt {attempt + 1}/{self.max_retries} failed: {e}. "

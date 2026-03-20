@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 from pathlib import Path
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 def setup_logging(log_dir='logs', level=logging.INFO):
@@ -15,7 +15,7 @@ def setup_logging(log_dir='logs', level=logging.INFO):
     class JSONFormatter(logging.Formatter):
         def format(self, record):
             log_data = {
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'level': record.levelname,
                 'logger': record.name,
                 'message': record.getMessage(),

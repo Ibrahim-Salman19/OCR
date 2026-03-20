@@ -11,13 +11,18 @@ import sys
 import os
 import queue
 
-# Import core logic
+# FIX(phase2): CRITICAL-001 & CRITICAL-004 - Fixed import to use correct module path
+# The old code imported from 'blast_ocr.core.text_extractor' which doesn't exist.
+# The correct module is 'blast_ocr.core.extractor' and we need to use the proper
+# class-based API (RobustOCRExtractor) and BlastPipeline for PDF/image processing.
 try:
-    from blast_ocr.core.text_extractor import extract_from_pptx, extract_from_pdf, extract_from_image, save_output
+    from blast_ocr.core.extractor import RobustOCRExtractor, extract_from_pptx, save_output
+    from blast_ocr.main import BlastPipeline
 except ImportError:
     # Fallback for dev environment if run directly
-    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'core'))
-    from text_extractor import extract_from_pptx, extract_from_pdf, extract_from_image, save_output
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from blast_ocr.core.extractor import RobustOCRExtractor, extract_from_pptx, save_output
+    from blast_ocr.main import BlastPipeline
 
 class BlastApp:
     def __init__(self, root):
@@ -85,6 +90,10 @@ class BlastApp:
         
         success_count = 0
         
+        # FIX(phase2): CRITICAL-004 - Use BlastPipeline for PDF/image processing
+        # instead of non-existent extract_from_pdf/extract_from_image functions
+        pipeline = BlastPipeline()
+        
         for fpath in self.selected_files:
             try:
                 fname = os.path.basename(fpath)
@@ -94,24 +103,31 @@ class BlastApp:
                 ext = os.path.splitext(fname)[1].lower()
                 text = None
                 
-                # Dynamic Logic
+                # FIX(phase2): Use correct API for each file type
                 if ext == ".pptx":
-                    from blast_ocr.core.text_extractor import extract_from_pptx
-                    text = extract_from_pptx(fpath)
-                elif ext == ".pdf":
-                    from blast_ocr.core.text_extractor import extract_from_pdf
-                    text = extract_from_pdf(fpath)
-                else: 
-                    from blast_ocr.core.text_extractor import extract_from_image
-                    text = extract_from_image(fpath)
-                
-                if text:
-                    from blast_ocr.core.text_extractor import save_output
-                    save_output(text, base_name, output_dir)
-                    self.log(f"[+] Done: {base_name}")
-                    success_count += 1
+                    # PPTX uses the standalone function
+                    # FIX(phase2): extract_from_pptx now raises exceptions instead of 
+                    # returning error strings, so we need try/except here
+                    try:
+                        text = extract_from_pptx(fpath)
+                        if text:
+                            save_output(text, base_name, output_dir)
+                            self.log(f"[+] Done: {base_name}")
+                            success_count += 1
+                        else:
+                            self.log(f"[!] Warning: No text extracted from {fname}")
+                    except Exception as pptx_error:
+                        self.log(f"[!] PPTX extraction failed for {fname}: {pptx_error}")
+                elif ext == ".pdf" or ext in ['.png', '.jpg', '.jpeg', '.bmp', '.tiff']:
+                    # PDF and images use the pipeline
+                    result = pipeline.process_job(fpath, output_dir)
+                    if result.get('status') == 'success':
+                        self.log(f"[+] Done: {base_name} ({result.get('pages_processed', 0)} pages)")
+                        success_count += 1
+                    else:
+                        self.log(f"[!] Warning: {result.get('message', result.get('error', 'Unknown error'))}")
                 else:
-                    self.log(f"[!] Warning: No text extracted for {fname}")
+                    self.log(f"[!] Unsupported file type: {ext}")
                     
             except Exception as e:
                 self.log(f"[X] Error on {fpath}: {e}")
