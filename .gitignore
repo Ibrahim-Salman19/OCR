@@ -25,7 +25,7 @@ blast_output.zip
 blast_output/
 *.log
 blast_ocr.db
-cache/
+/cache/
 .pytest_cache/
 .env
 
