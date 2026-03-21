@@ -3,12 +3,22 @@ from pathlib import Path
 import logging
 import cv2
 import numpy as np
-import easyocr
-import re
 import os
+import sys
+import re
 import threading
 from pptx import Presentation
 from docx import Document
+
+# FIX(cloud): Redirect EasyOCR model cache to /tmp on Linux (Streamlit Cloud).
+# On cloud, the home dir (/home/appuser) may not have a writable .EasyOCR dir.
+# Setting this env var BEFORE importing easyocr tells it where to store models.
+if sys.platform != "win32":
+    _easyocr_model_dir = "/tmp/.EasyOCR/model"
+    os.makedirs(_easyocr_model_dir, exist_ok=True)
+    os.environ.setdefault("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
+
+import easyocr
 
 from blast_ocr.config import config
 from blast_ocr.core.exceptions import *

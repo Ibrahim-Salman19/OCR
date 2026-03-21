@@ -1,12 +1,19 @@
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Optional, Dict
 import logging
 import threading
 
 logger = logging.getLogger(__name__)
+
+def _default_cache_dir() -> str:
+    """Return a writable cache directory. Uses /tmp on Linux (Streamlit Cloud)."""
+    if sys.platform == "win32":
+        return "cache/ocr"
+    return "/tmp/cache/ocr"
 
 # PERF(phase3): Try to use orjson for faster JSON serialization (2-5x faster)
 # Falls back to stdlib json if orjson is not installed
@@ -24,7 +31,9 @@ class OCRCache:
     # PERF(phase3): Chunk size for partial hashing (64KB)
     HASH_CHUNK_SIZE = 64 * 1024  # 64KB
     
-    def __init__(self, cache_dir='cache/ocr'):
+    def __init__(self, cache_dir=None):
+        if cache_dir is None:
+            cache_dir = _default_cache_dir()
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()  # FIX(phase3): Prevent race conditions on file writes
@@ -63,8 +72,8 @@ class OCRCache:
             return sha256_hash.hexdigest()
         except Exception as e:
             logger.warning(f"Failed to hash file {filepath}: {e}")
-            # Fallback: hash the filename + size (less reliable but won't crash)
-            fallback_data = f"{filepath}:{os.path.getsize(filepath)}"
+            # Fallback: hash only the filepath string (safe - no filesystem access)
+            fallback_data = str(filepath)
             return hashlib.sha256(fallback_data.encode()).hexdigest()
     
     def get(self, cache_key: str) -> Optional[Dict]:
