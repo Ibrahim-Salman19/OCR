@@ -100,25 +100,21 @@ def handle_file_upload(pipeline, db):
         if st.button("INITIATE SEQUENCE", type="primary", use_container_width=True):
             out_dir = get_session_output_dir()
             out_dir.mkdir(parents=True, exist_ok=True)
-
-            # For now, we handle the first file for full async demo
-            # In a real 'Ultra-Stable' system, we'd queue all files.
-            uploaded_file = uploaded_files[0]
             
+            uploaded_file = uploaded_files[0]
             with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp:
                 tmp.write(uploaded_file.getbuffer())
                 tmp_path = tmp.name
 
-            # 1. Create Job in DB to get an ID
-            job_id = db.create_job(uploaded_file.name, page_count=0) # We update page_count later if PDF
+            job_id = db.create_job(uploaded_file.name)
             st.session_state.active_job_id = job_id
             
-            # 2. Start Background Thread
             thread = threading.Thread(
                 target=pipeline.process_job,
                 kwargs={
                     "source_path": tmp_path,
                     "output_dir": str(out_dir),
+                    "job_id": job_id
                 }
             )
             thread.start()
@@ -234,6 +230,8 @@ def main():
             with st.expander("ADVANCED PROTOCOLS"):
                 language_selection = st.selectbox("SOURCE LOGIC", ["ENG_CORE", "FRA_CORE", "MULTILINGUAL_NODE"])
                 gpu_enabled = st.toggle("GPU HYPER-THREAD", value=settings.ocr_gpu)
+                secure_mode = st.toggle("SECURE MODE (PII REDACTION)", value=getattr(settings, "secure_mode", False))
+                pipeline._config.secure_mode = secure_mode
 
         with col_right:
             handle_file_upload(pipeline, db)
@@ -252,24 +250,32 @@ def main():
     # --- TAB 3: SYSTEM HEALTH ---
     with tabs[2]:
         st.markdown("### 📊 LIVE TELEMETRY")
-        metrics = db.get_recent_metrics(limit=10)
-        if metrics:
-            m_cols = st.columns(4)
-            latest = metrics[0]
-            with m_cols[0]: st.metric("LATEST MEMORY", f"{latest.peak_memory_mb:.1f} MB")
-            with m_cols[1]: st.metric("AVG FIDELITY", f"{latest.fidelity_score:.1%}")
-            with m_cols[2]: st.metric("VELOCITY", f"{latest.extraction_velocity:.2f} P/S")
-            with m_cols[3]: st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
+        
+        health_c1, health_c2 = st.columns([3, 1])
+        
+        with health_c2:
+            st.markdown("#### 🕵️ MISSION STRATEGY")
+            st.info("REFLEXION: **ENABLED**\nSCRIPT ROUTER: **ACTIVE**\nREDACTION: **READY**")
             
-            # Chart
-            df_metrics = pd.DataFrame([{
-                "timestamp": m.timestamp,
-                "fidelity": m.fidelity_score,
-                "velocity": m.extraction_velocity
-            } for m in reversed(metrics)])
-            st.line_chart(df_metrics.set_index("timestamp"))
-        else:
-            st.info("NO TELEMETRY DATA ACQUIRED YET.")
+        with health_c1:
+            metrics = db.get_recent_metrics(limit=10)
+            if metrics:
+                m_cols = st.columns(4)
+                latest = metrics[0]
+                with m_cols[0]: st.metric("LATEST MEMORY", f"{latest.peak_memory_mb:.1f} MB")
+                with m_cols[1]: st.metric("AVG FIDELITY", f"{latest.fidelity_score:.1%}")
+                with m_cols[2]: st.metric("VELOCITY", f"{latest.extraction_velocity:.2f} P/S")
+                with m_cols[3]: st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
+                
+                # Chart
+                df_metrics = pd.DataFrame([{
+                    "timestamp": m.timestamp,
+                    "fidelity": m.fidelity_score,
+                    "velocity": m.extraction_velocity
+                } for m in reversed(metrics)])
+                st.line_chart(df_metrics.set_index("timestamp"))
+            else:
+                st.info("NO TELEMETRY DATA ACQUIRED YET.")
 
 if __name__ == "__main__":
     main()

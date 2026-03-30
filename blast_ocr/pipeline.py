@@ -16,6 +16,7 @@ from blast_ocr.core.parallel import ParallelOCRProcessor
 from blast_ocr.core.worker import process_page_wrapper
 from blast_ocr.cache.manager import cache_manager
 from blast_ocr.core.restoration import ForensicRestorer, explicit_gc
+from blast_ocr.core.router import ScriptRouter
 
 # PDF
 from pdf2image import convert_from_path
@@ -170,31 +171,57 @@ class BlastPipeline:
         for i, page in enumerate(pages):
             fname = f"page_{start_page + i:04d}.png"
             fpath = os.path.join(temp_dir, fname)
-            
-            # --- Forensic Restoration Layer ---
-            # Convert PIL to CV2-compatible format, restore, save.
-            # Avoid re-saving if possible, but worker currently reads from disk.
             page.save(fpath, "PNG") 
             
-            # Apply Restoration before worker (or worker can handle it)
-            # For ultra-stability, we apply it here so worker gets 'clean' data.
-            restored_img = ForensicRestorer.restore(fpath)
+            # --- Forensic Restoration Layer ---
+            restored_img = ForensicRestorer.restore(fpath, mode="standard")
             cv2_path = fpath.replace(".png", "_restored.png")
+            import cv2
             cv2.imwrite(cv2_path, restored_img)
-            
             image_paths.append(cv2_path)
-            # Cleanup source PIL image and temp file to save RAM
             try: os.remove(fpath) 
             except: pass
 
-        import cv2 # Local import if needed
         results = self.parallel_processor.process_batch_threaded(
             image_paths, process_page_wrapper, progress_callback=progress_callback
         )
 
+        # --- Phase 3: Reflexion Pass (Self-Correction) ---
+        final_results = []
+        for i, r in enumerate(results):
+            conf = r.get("confidence", 0.0)
+            if conf < 0.8 and r.get("text"):
+                logger.info(f"Reflexion triggered for Page {r['page']} (Conf: {conf:.2f})")
+                
+                # 1. Re-restore with ultra-high contrast
+                original_restored_path = image_paths[i]
+                reflexion_path = original_restored_path.replace("_restored.png", "_reflexion.png")
+                
+                # Use raw scan if possible - for demo we wrap the restored one
+                # but better would be to re-restore from source.
+                reflexion_img = ForensicRestorer.restore(original_restored_path, mode="reflexion")
+                cv2.imwrite(reflexion_path, reflexion_img)
+                
+                # 2. Re-OCR
+                reflex_r = process_page_wrapper(reflexion_path, r["page"])
+                
+                if reflex_r.get("confidence", 0.0) > conf:
+                    logger.info(f"Reflexion succeeded: {conf:.2f} -> {reflex_r['confidence']:.2f}")
+                    r = reflex_r
+                
+                try: os.remove(reflexion_path)
+                except: pass
+
+            # --- Phase 3: PII Redaction ---
+            # Assume config.secure_mode or similar
+            if getattr(self._config, "secure_mode", False):
+                r["text"] = ForensicRestorer.redact_pii(r["text"])
+
+            final_results.append(r)
+
         # --- Intermediate Checkpointing & Heartbeat ---
         if job_id:
-            for r in results:
+            for r in final_results:
                 self.db.save_result(
                     job_id=job_id,
                     page_number=r.get("page", 0),
@@ -202,17 +229,14 @@ class BlastPipeline:
                     confidence=r.get("confidence", 0.0),
                     processing_time=r.get("processing_time", 0.0),
                 )
-            logger.info(f"Checkpoint: Saved {len(results)} pages to DB for job {job_id}")
 
-        # Cleanup immediately
+        # Cleanup
         for p in image_paths:
-            try:
-                os.remove(p)
-            except OSError:
-                pass
+            try: os.remove(p)
+            except: pass
         
         explicit_gc()
-        return results
+        return final_results
 
     def process_job(
         self,

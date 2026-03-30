@@ -1,9 +1,6 @@
-import cv2
-import numpy as np
-import gc
-import logging
 from PIL import Image
-from typing import Union, Tuple
+import re
+from typing import Union, Tuple, List
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +9,22 @@ class ForensicRestorer:
     Advanced Image Restoration Layer for OCR.
     Uses Gaussian-Adaptive Denoising and CLAHE to maximize extraction accuracy.
     """
+
+    @staticmethod
+    def redact_pii(text: str) -> str:
+        """
+        Regex-based redaction for PII (Social Security, Credit Cards, etc).
+        Inspired by 'PSPDFKit-labs/nutrient-agent-skill'.
+        """
+        # Patterns for SSN and Credit Cards
+        ssn_pattern = r'\b\d{3}-\d{2}-\d{4}\b'
+        card_pattern = r'\b(?:\d[ -]*?){13,16}\b' # Basic CC pattern
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        
+        redacted = re.sub(ssn_pattern, "[REDACTED-SSN]", text)
+        redacted = re.sub(card_pattern, "[REDACTED-CARD]", redacted)
+        redacted = re.sub(email_pattern, "[REDACTED-EMAIL]", redacted)
+        return redacted
 
     @staticmethod
     def apply_denoising(image: np.ndarray) -> np.ndarray:
@@ -41,10 +54,10 @@ class ForensicRestorer:
             return image
 
     @classmethod
-    def restore(cls, image_path: str) -> np.ndarray:
+    def restore(cls, image_path: str, mode: str = "standard") -> np.ndarray:
         """
         Full restoration pipeline: Gray -> Denoise -> CLAHE -> Sharpen.
-        Returns a high-fidelity numpy array ready for EasyOCR.
+        'mode' can be 'standard' or 'reflexion' (ultra-high contrast).
         """
         # 1. Load as Grayscale for OCR performance
         img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -54,11 +67,16 @@ class ForensicRestorer:
         # 2. Denoise
         img = cls.apply_denoising(img)
 
-        # 3. Enhance Contrast
-        img = cls.apply_clahe(img)
+        # 3. Enhance Contrast (CLAHE logic)
+        clip_limit = 2.0 if mode == "standard" else 4.0 # High contrast for reflexion
+        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
+        img = clahe.apply(img)
 
-        # 4. Adaptive Thresholding (Optional - EasyOCR often prefers grayscale + CLAHE)
-        # However, for 'Ultra-Stable' reliability, we provide a cleaned version.
+        # 4. Adaptive Thresholding (Reflection Mode)
+        if mode == "reflexion":
+            # Extra sharpening kernel
+            kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+            img = cv2.filter2D(img, -1, kernel)
         
         # Explicitly trigger GC for large image arrays
         gc.collect()
