@@ -336,35 +336,27 @@ class BlastPipeline:
                 for f in sorted(os.listdir(source)):
                     if Path(f).suffix.lower() in image_exts:
                         image_paths.append(str(source / f))
-
+                
                 if job_id:
                     self.db.update_job_page_count(job_id, len(image_paths))
-
+                
                 if not image_paths:
-                    raise ValueError(
-                        f"No supported images found in directory: {source}"
-                    )
-
+                    raise ValueError(f"No supported images found in directory: {source}")
+                
                 results = self.parallel_processor.process_batch_threaded(
-                    image_paths,
-                    process_page_wrapper,
-                    progress_callback=progress_callback,
+                    image_paths, 
+                    process_page_wrapper, 
+                    progress_callback=progress_callback
                 )
-
+                
                 # Checkpoint & Post-process
                 processed_results = []
                 for r in results:
                     raw_text = r.get("text", "")
                     if isinstance(raw_text, list):
                         r["text"] = self._regroup_text_by_layout(raw_text)
-
-                    self.db.save_result(
-                        job_id,
-                        r.get("page", 0),
-                        r.get("text", ""),
-                        r.get("confidence", 0.0),
-                        r.get("processing_time", 0.0),
-                    )
+                    
+                    self.db.save_result(job_id, r.get("page", 0), r.get("text", ""), r.get("confidence", 0.0), r.get("processing_time", 0.0))
                     processed_results.append(r)
                 results = processed_results
 
@@ -372,26 +364,16 @@ class BlastPipeline:
                 results = self.process_pdf(str(source), job_id, progress_callback)
             elif ext == ".pptx":
                 text = extract_from_pptx(str(source))
-                results = [
-                    {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}
-                ]
+                results = [{"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}]
                 self.db.save_result(job_id, 1, text, 1.0, 0.0)
-                if progress_callback:
-                    progress_callback(1, 1)
+                if progress_callback: progress_callback(1, 1)
             elif ext in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
                 res = process_page_wrapper(str(source), 1)
                 if isinstance(res.get("text"), list):
                     res["text"] = self._regroup_text_by_layout(res["text"])
                 results = [res]
-                self.db.save_result(
-                    job_id,
-                    1,
-                    res.get("text", ""),
-                    res.get("confidence", 0.0),
-                    res.get("processing_time", 0.0),
-                )
-                if progress_callback:
-                    progress_callback(1, 1)
+                self.db.save_result(job_id, 1, res.get("text", ""), res.get("confidence", 0.0), res.get("processing_time", 0.0))
+                if progress_callback: progress_callback(1, 1)
             else:
                 raise ValueError(f"Unsupported file type: {ext}")
 
