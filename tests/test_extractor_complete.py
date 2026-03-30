@@ -3,21 +3,24 @@ Sprint 1: core/extractor.py — Complete branch coverage.
 All tests use mocked easyocr.Reader for speed (no GPU/model needed).
 BUG-PREVENTION: Each comment explains the specific crash that was found.
 """
-import gc
+
 import os
 import tempfile
 import pytest
 import numpy as np
 import cv2
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 from blast_ocr.core.exceptions import (
-    ImageLoadError, OCREngineError, PageExtractionError
+    ImageLoadError,
+    OCREngineError,
+    PageExtractionError,
 )
 
 
 # ─── Shared fixtures ──────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def extractor():
@@ -26,14 +29,16 @@ def extractor():
     EasyOCR model (~1GB RAM, ~8s). Unit tests must never touch GPU/network.
     """
     from blast_ocr.core.extractor import RobustOCRExtractor
+
     with patch.object(RobustOCRExtractor, "_init_engine"):
         e = RobustOCRExtractor.__new__(RobustOCRExtractor)
         from blast_ocr.core.extractor import _ocr_global_lock
+
         e.lock = _ocr_global_lock
         e.reader = MagicMock()
         # Default: return one good OCR result so most tests just work
         e.reader.readtext.return_value = [
-            ([[0,0],[10,0],[10,10],[0,10]], "Hello World", 0.95)
+            ([[0, 0], [10, 0], [10, 10], [0, 10]], "Hello World", 0.95)
         ]
     return e
 
@@ -59,8 +64,8 @@ def write_image(img, suffix=".png"):
 # TASK 1.1 — Image Loading & Preprocessing
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class TestLoadImage:
 
+class TestLoadImage:
     def test_missing_file_raises_image_load_error(self, extractor):
         """
         BUG-PREVENTION: Without the exists() check, cv2.imdecode returns None
@@ -90,7 +95,8 @@ class TestLoadImage:
             with pytest.raises(ImageLoadError, match="too small"):
                 extractor.load_image(path)
         finally:
-            if os.path.exists(path): os.remove(path)
+            if os.path.exists(path):
+                os.remove(path)
 
     def test_valid_image_returns_ndarray(self, extractor):
         """Happy path: valid PNG returns a 3D numpy array."""
@@ -118,11 +124,11 @@ class TestLoadImage:
         except ImageLoadError:
             pass  # Some temp dirs block Unicode — acceptable
         finally:
-            if os.path.exists(path): os.remove(path)
+            if os.path.exists(path):
+                os.remove(path)
 
 
 class TestPreprocessImage:
-
     def test_string_path_branch_loads_and_processes(self, extractor, tmp_path):
         """
         BUG-PREVENTION: The string-path branch (line ~92) was a different code
@@ -204,14 +210,16 @@ class TestPreprocessImage:
         # Mock side_effect to fail the main block (e.g. in resize or denoise)
         with patch("cv2.fastNlMeansDenoising", side_effect=RuntimeError("cv2 fail")):
             with patch("blast_ocr.core.extractor.config") as mock_cfg:
-                mock_cfg.denoise_level = 5 # Trigger denoise to cause failure
+                mock_cfg.denoise_level = 5  # Trigger denoise to cause failure
                 result = extractor.preprocess_image(img)
                 assert isinstance(result, np.ndarray)
-                assert result.ndim == 2 # Falls back to the 'gray' we made at start or newly in except
+                assert (
+                    result.ndim == 2
+                )  # Falls back to the 'gray' we made at start or newly in except
 
     def test_ultimate_fallback_returns_original_as_is(self, extractor):
         """
-        BUG-PREVENTION: If even grayscale conversion in fallback fails, 
+        BUG-PREVENTION: If even grayscale conversion in fallback fails,
         return the original image to prevent caller crash.
         """
         img = make_bgr_image(100, 100)
@@ -239,8 +247,8 @@ class TestPreprocessImage:
 # TASK 1.2 — OCR Processing (process_page)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class TestProcessPage:
 
+class TestProcessPage:
     def test_large_image_downscaled_before_ocr(self, extractor, tmp_path):
         """
         BUG-PREVENTION: Images > 1800px caused 1.3GB RAM allocations per page,
@@ -262,8 +270,9 @@ class TestProcessPage:
             extractor.process_page(path, 1)
 
         # At least one resize must have been called (the downscale)
-        assert any(max(s) <= 1800 for s in resize_called), \
+        assert any(max(s) <= 1800 for s in resize_called), (
             "BUG: Large image was NOT downscaled — OOM risk"
+        )
 
     def test_no_text_detected_returns_warning_dict(self, extractor, tmp_path):
         """
@@ -294,7 +303,7 @@ class TestProcessPage:
 
         # Return very low confidence result
         extractor.reader.readtext.return_value = [
-            ([[0,0],[10,0],[10,10],[0,10]], "bad text", 0.1)
+            ([[0, 0], [10, 0], [10, 10], [0, 10]], "bad text", 0.1)
         ]
         with patch("blast_ocr.core.extractor.config") as mock_cfg:
             mock_cfg.min_confidence = 0.6
@@ -345,7 +354,9 @@ class TestProcessPage:
         path = str(tmp_path / "no_torch.png")
         cv2.imwrite(path, img)
 
-        with patch("builtins.__import__", side_effect=ImportError("No module named torch")):
+        with patch(
+            "builtins.__import__", side_effect=ImportError("No module named torch")
+        ):
             # Should not raise — torch import failure is silently swallowed
             try:
                 result = extractor.process_page(path, 1)
@@ -382,11 +393,14 @@ class TestProcessPage:
 
         # Simulate a tensor-like object (has __float__)
         class FakeTensor:
-            def __float__(self): return 0.88
-            def __index__(self): return 0
+            def __float__(self):
+                return 0.88
+
+            def __index__(self):
+                return 0
 
         extractor.reader.readtext.return_value = [
-            ([[0,0],[10,0],[10,10],[0,10]], "text", FakeTensor())
+            ([[0, 0], [10, 0], [10, 10], [0, 10]], "text", FakeTensor())
         ]
         result = extractor.process_page(path, 1)
         assert isinstance(result["confidence"], float)
@@ -397,8 +411,8 @@ class TestProcessPage:
 # TASK 1.3 — Document Output Generators
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class TestExtractFromPptx:
 
+class TestExtractFromPptx:
     def test_basic_text_shapes_extracted(self):
         """Happy path: text shapes produce slide headers + body text."""
         from blast_ocr.core.extractor import extract_from_pptx
@@ -490,7 +504,7 @@ class TestExtractFromPptx:
         """
         from blast_ocr.core.extractor import extract_from_pptx
 
-        mock_shape = MagicMock(spec=[])      # No 'text' attribute at all
+        mock_shape = MagicMock(spec=[])  # No 'text' attribute at all
         mock_shape.has_table = False
 
         mock_slide = MagicMock()
@@ -512,19 +526,21 @@ class TestExtractFromPptx:
         """
         from blast_ocr.core.extractor import extract_from_pptx
 
-        with patch("blast_ocr.core.extractor.Presentation",
-                   side_effect=Exception("not a pptx")):
+        with patch(
+            "blast_ocr.core.extractor.Presentation", side_effect=Exception("not a pptx")
+        ):
             with pytest.raises(OCREngineError, match="PPTX extraction failed"):
                 extract_from_pptx("corrupt.pptx")
 
 
 class TestSaveOutput:
-
     def test_creates_both_md_and_docx(self, tmp_path):
         """Both .md and .docx files must be created for standard content."""
         from blast_ocr.core.extractor import save_output
 
-        md_path, docx_path = save_output("# Title\nBody text", "doc_name", str(tmp_path))
+        md_path, docx_path = save_output(
+            "# Title\nBody text", "doc_name", str(tmp_path)
+        )
 
         assert os.path.exists(md_path), f"MD missing: {md_path}"
         assert md_path.endswith(".md")
@@ -546,9 +562,13 @@ class TestSaveOutput:
         """
         from blast_ocr.core.extractor import save_output
 
-        with patch("blast_ocr.core.extractor.Document", side_effect=RuntimeError("docx fail")):
+        with patch(
+            "blast_ocr.core.extractor.Document", side_effect=RuntimeError("docx fail")
+        ):
             md_path, docx_path = save_output("text", "name", str(tmp_path))
-            assert os.path.exists(md_path), "MD must still be created even if DOCX fails"
+            assert os.path.exists(md_path), (
+                "MD must still be created even if DOCX fails"
+            )
             assert docx_path is None
 
     def test_output_dir_created_if_missing(self, tmp_path):
@@ -573,19 +593,21 @@ class TestSaveOutput:
 
 
 class TestSanitizeForXml:
-
     def test_null_byte_removed(self):
         from blast_ocr.core.extractor import sanitize_for_xml
+
         assert "\x00" not in sanitize_for_xml("hello\x00world")
 
     def test_control_chars_removed(self):
         from blast_ocr.core.extractor import sanitize_for_xml
+
         for char in ["\x01", "\x08", "\x0b", "\x0c", "\x0e", "\x1f"]:
             assert char not in sanitize_for_xml(f"text{char}more")
 
     def test_valid_chars_preserved(self):
         """Normal printable ASCII, tabs, newlines, carriage returns must survive."""
         from blast_ocr.core.extractor import sanitize_for_xml
+
         text = "Hello\tWorld\nLine2\r\nEnd"
         result = sanitize_for_xml(text)
         assert "Hello" in result
@@ -594,6 +616,7 @@ class TestSanitizeForXml:
 
     def test_empty_string_returns_empty(self):
         from blast_ocr.core.extractor import sanitize_for_xml
+
         assert sanitize_for_xml("") == ""
 
     def test_none_returns_empty(self):
@@ -602,4 +625,5 @@ class TestSanitizeForXml:
         Must return "" not raise TypeError from re.sub(None).
         """
         from blast_ocr.core.extractor import sanitize_for_xml
+
         assert sanitize_for_xml(None) == ""

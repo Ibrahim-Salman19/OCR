@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import os
 import logging
 
 # Add project root
@@ -10,11 +9,13 @@ from blast_ocr.config import config
 from blast_ocr.storage.database import OCRDatabase
 from blast_ocr.main import process_pdf, get_components
 
+
 def test_config():
     print("[-] Testing Config...")
-    assert hasattr(config, 'poppler_path'), "Config missing poppler_path"
+    assert hasattr(config, "poppler_path"), "Config missing poppler_path"
     print(f"    Poppler Path: {config.poppler_path}")
     print("[+] Config OK")
+
 
 def test_database():
     print("[-] Testing Database...")
@@ -28,15 +29,17 @@ def test_database():
         print(f"[!] Database Failed: {e}")
         raise
 
+
 def test_process_logic():
     print("[-] Testing Process Logic (Dry Run)...")
     logger, _, _, _ = get_components()
-    logger.setLevel(logging.CRITICAL) # Silence logs for test
-    
+    logger.setLevel(logging.CRITICAL)  # Silence logs for test
+
     # Test with non-existent PDF to trigger error handling
     res = process_pdf("non_existent_file.pdf", "output")
     assert res == [], "Should return empty list on failure"
     print("[+] Error Handling OK")
+
 
 if __name__ == "__main__":
     try:

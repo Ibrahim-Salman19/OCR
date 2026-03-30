@@ -1,9 +1,11 @@
 """
 PHASE 3: Streamlit multi-user session isolation and state pollution.
 """
+
 import pytest
 import re
 from pathlib import Path
+
 
 # ── Test 3.1: Codebase does NOT contain st.session_state = {} ─────────────
 def test_no_global_session_state_overwrite():
@@ -19,9 +21,7 @@ def test_no_global_session_state_overwrite():
     source = web_app.read_text(encoding="utf-8")
 
     # Pattern: st.session_state followed by = and { or dict()
-    dangerous_pattern = re.compile(
-        r'st\.session_state\s*=\s*(\{|dict\()', re.MULTILINE
-    )
+    dangerous_pattern = re.compile(r"st\.session_state\s*=\s*(\{|dict\()", re.MULTILINE)
     matches = dangerous_pattern.findall(source)
 
     if matches:
@@ -31,6 +31,7 @@ def test_no_global_session_state_overwrite():
             f"This replaces SessionStateProxy with a global dict, causing ALL users to share state.\n"
             f"Fix: Replace st.session_state = {{}} with st.session_state.clear() everywhere."
         )
+
 
 # ── Test 3.2: Output directory is per-user (UUID-based), not shared ────────
 def test_output_dir_is_user_unique():
@@ -46,14 +47,20 @@ def test_output_dir_is_user_unique():
     source = web_app.read_text(encoding="utf-8")
 
     # Check if session_id or uuid is used in output directory construction
-    uses_session_isolation = any(pattern in source for pattern in [
-        "session_id", "uuid", "uuid4", "st.session_state",
-        "unique", "tempfile.mkdtemp"
-    ])
+    uses_session_isolation = any(
+        pattern in source
+        for pattern in [
+            "session_id",
+            "uuid",
+            "uuid4",
+            "st.session_state",
+            "unique",
+            "tempfile.mkdtemp",
+        ]
+    )
 
     has_fixed_output_dir = "blast_output" in source and (
-        "blast_output" + '"' in source or
-        'blast_output' + "'" in source
+        "blast_output" + '"' in source or "blast_output" + "'" in source
     )
 
     if has_fixed_output_dir and not uses_session_isolation:
@@ -65,6 +72,7 @@ def test_output_dir_is_user_unique():
             "  session_dir = Path('/tmp/blast_output') / str(uuid.uuid4())\n"
             "  session_dir.mkdir(parents=True, exist_ok=True)"
         )
+
 
 # ── Test 3.3: AppTest simulation — two sessions do not share state ─────────
 def test_two_apptest_sessions_isolated():
@@ -91,20 +99,25 @@ def test_two_apptest_sessions_isolated():
         at2.run(timeout=10)
 
         # Check that session state objects are independent
-        assert at1.session_state is not at2.session_state, \
+        assert at1.session_state is not at2.session_state, (
             "BUG-STREAMLIT-SHARE-01: Two AppTest sessions share the same session_state object"
+        )
 
         # If User A's state contains "processing_history" (from web_app init),
         # User B must have an independent copy
-        if "processing_history" in at1.session_state and \
-           "processing_history" in at2.session_state:
+        if (
+            "processing_history" in at1.session_state
+            and "processing_history" in at2.session_state
+        ):
             at1.session_state["processing_history"] = ["user_a_document.pdf"]
-            assert at2.session_state["processing_history"] != ["user_a_document.pdf"], \
+            assert at2.session_state["processing_history"] != ["user_a_document.pdf"], (
                 "BUG-STREAMLIT-SHARE-02: CRITICAL data bleed — User A's history visible in User B's session"
+            )
     except Exception as e:
         if "data bleed" in str(e) or "share" in str(e).lower():
             raise
         pytest.skip(f"AppTest execution error (non-isolation bug): {e}")
+
 
 # ── Test 3.4: session_state.clear() usage in codebase ────────────────────
 def test_session_clear_uses_correct_method():
@@ -120,7 +133,7 @@ def test_session_clear_uses_correct_method():
         pass  # Good pattern found
 
     # Any direct assignment is dangerous
-    assignment = re.compile(r'session_state\s*=\s*[{\[]')
+    assignment = re.compile(r"session_state\s*=\s*[{\[]")
     if assignment.search(source):
         pytest.fail(
             "BUG-STREAMLIT-CLEAR-01 | HIGH | security\n"

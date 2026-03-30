@@ -10,19 +10,21 @@ try:
     from blast_ocr.logging_config import setup_logging
     from blast_ocr.storage.database import OCRDatabase
     from blast_ocr.core.extractor import RobustOCRExtractor
+
     print("[OK] Imports successful")
 except Exception as e:
     print(f"[FAIL] Imports failed: {e}")
     sys.exit(1)
 
+
 def main():
     # 1. Test Config
     print(f"[-] Config loaded. Langs: {config.ocr_languages}, GPU: {config.ocr_gpu}")
-    
+
     # 2. Test Logging
     logger = setup_logging()
     logger.info("Test log message")
-    if Path('logs/blast_ocr.log').exists():
+    if Path("logs/blast_ocr.log").exists():
         print("[OK] Log file created")
     else:
         print("[FAIL] Log file not found")
@@ -41,6 +43,7 @@ def main():
         print("[OK] Extractor initialized (EasyOCR loaded)")
     except Exception as e:
         print(f"[FAIL] Extractor init failed: {e}")
+
 
 if __name__ == "__main__":
     main()

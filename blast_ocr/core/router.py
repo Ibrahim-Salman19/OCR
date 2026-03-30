@@ -1,9 +1,9 @@
 import langdetect
 import logging
-import pytesseract
-from typing import List, Optional
+from typing import List
 
 logger = logging.getLogger(__name__)
+
 
 class ScriptRouter:
     """
@@ -18,7 +18,7 @@ class ScriptRouter:
         "es": "spanish",
         "pt": "portuguese",
         "zh": "chinese_sim",
-        "ar": "arabic"
+        "ar": "arabic",
     }
 
     @staticmethod
@@ -33,7 +33,7 @@ class ScriptRouter:
             return lang
         except Exception as e:
             logger.warning(f"Script detection failed: {e}")
-            return "en" # Fallback to core logic
+            return "en"  # Fallback to core logic
 
     @classmethod
     def get_ocr_engine_params(cls, lang: str) -> List[str]:
@@ -45,9 +45,10 @@ class ScriptRouter:
             "en": ["en"],
             "fr": ["en", "fr"],
             "de": ["en", "de"],
-            "ar": ["en", "ar"]
+            "ar": ["en", "ar"],
         }
         return script_groups.get(lang, ["en"])
+
 
 def apply_auto_routing(pipeline_instance, sample_text: str):
     """
@@ -55,7 +56,7 @@ def apply_auto_routing(pipeline_instance, sample_text: str):
     """
     lang = ScriptRouter.detect_script(sample_text)
     engine_langs = ScriptRouter.get_ocr_engine_params(lang)
-    
+
     # We update the internal config if needed - however, EasyOCR initialization is expensive.
     # We typically signal the pipeline to use these for the next job or re-initialize.
     logger.info(f"Routing to engine profile: {engine_langs}")

@@ -3,18 +3,22 @@ Sprint 2: core/healing.py — Retry logic, async retry, fallback chain.
 BUG-PREVENTION: The async retry path was 0% covered — any change to it
 could silently break async OCR pipelines without any test catching it.
 """
+
 import asyncio
 import logging
 import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 from blast_ocr.core.exceptions import (
-    ImageLoadError, OCREngineError, PageExtractionError
+    ImageLoadError,
+    OCREngineError,
+    PageExtractionError,
 )
 from blast_ocr.core.healing import SelfHealingOCR
 
 
 # ─── Fixture: fresh healer with predictable settings ─────────────────────────
+
 
 @pytest.fixture
 def healer():
@@ -29,10 +33,11 @@ def healer():
 # SYNC RETRY — Correctness
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class TestRetryWithBackoff:
 
+class TestRetryWithBackoff:
     def test_succeeds_on_first_attempt(self, healer):
         """Zero retries needed — decorator must be transparent."""
+
         @healer.retry_with_backoff
         def immediate_success():
             return 42
@@ -65,6 +70,7 @@ class TestRetryWithBackoff:
         BUG-PREVENTION: Must re-raise the ORIGINAL exception type, not wrap it.
         Callers catch specific types (ConnectionError, ValueError) — wrapping breaks this.
         """
+
         @healer.retry_with_backoff
         def always_fails():
             raise ValueError("permanent failure")
@@ -154,15 +160,22 @@ class TestRetryWithBackoff:
                 always_fails()
 
         # max_retries=3 → attempt 0 (sleep 1), attempt 1 (sleep 2), attempt 2 (raise)
-        assert len(sleep_calls) == 2, f"Expected 2 sleeps, got {len(sleep_calls)}: {sleep_calls}"
-        assert sleep_calls[0] == 1,  f"First sleep should be 2^0=1s, got {sleep_calls[0]}"
-        assert sleep_calls[1] == 2,  f"Second sleep should be 2^1=2s, got {sleep_calls[1]}"
+        assert len(sleep_calls) == 2, (
+            f"Expected 2 sleeps, got {len(sleep_calls)}: {sleep_calls}"
+        )
+        assert sleep_calls[0] == 1, (
+            f"First sleep should be 2^0=1s, got {sleep_calls[0]}"
+        )
+        assert sleep_calls[1] == 2, (
+            f"Second sleep should be 2^1=2s, got {sleep_calls[1]}"
+        )
 
     def test_warning_logged_on_each_retry(self, healer, caplog):
         """
         BUG-PREVENTION: Operators need to see retry attempts in logs to distinguish
         transient failures from hard errors. Silent retries hide incidents.
         """
+
         @healer.retry_with_backoff
         def flaky():
             raise RuntimeError("oh no")
@@ -172,15 +185,19 @@ class TestRetryWithBackoff:
                 with caplog.at_level(logging.WARNING, logger="blast_ocr.core.healing"):
                     flaky()
 
-        warning_msgs = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-        assert len(warning_msgs) >= 2, \
+        warning_msgs = [
+            r.message for r in caplog.records if r.levelno == logging.WARNING
+        ]
+        assert len(warning_msgs) >= 2, (
             "Expected warning log per retry attempt — silent retries hide incidents"
+        )
 
     def test_error_logged_on_final_exhaustion(self, healer, caplog):
         """
         BUG-PREVENTION: After max retries, an ERROR must be logged so
         monitoring systems (Datadog, Sentry) trigger an alert.
         """
+
         @healer.retry_with_backoff
         def always_fails():
             raise RuntimeError("die")
@@ -195,6 +212,7 @@ class TestRetryWithBackoff:
 
     def test_return_value_passes_through(self, healer):
         """Decorator must be fully transparent — return value must survive wrapping."""
+
         @healer.retry_with_backoff
         def returns_dict():
             return {"page": 1, "text": "hello", "confidence": 0.99}
@@ -204,6 +222,7 @@ class TestRetryWithBackoff:
 
     def test_args_and_kwargs_forwarded(self, healer):
         """Decorator must forward positional and keyword args correctly."""
+
         @healer.retry_with_backoff
         def add(a, b, *, multiplier=1):
             return (a + b) * multiplier
@@ -215,6 +234,7 @@ class TestRetryWithBackoff:
 # ═══════════════════════════════════════════════════════════════════════════════
 # ASYNC RETRY — Previously 0% covered
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestAsyncRetryWithBackoff:
     """
@@ -264,6 +284,7 @@ class TestAsyncRetryWithBackoff:
 
     def test_async_retry_exhausted_raises(self, healer):
         """Async max retries exhausted must re-raise the original exception."""
+
         async def always_fails_async():
             raise ValueError("async permanent")
 
@@ -280,8 +301,8 @@ class TestAsyncRetryWithBackoff:
 # FALLBACK CHAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class TestFallbackChain:
 
+class TestFallbackChain:
     def test_primary_called_first_and_args_forwarded(self, healer):
         """Primary function must receive the same args as the executor call."""
         primary = MagicMock(return_value="primary_ok")
@@ -309,9 +330,18 @@ class TestFallbackChain:
         might be skipped in favour of an expensive one, wasting resources.
         """
         order = []
-        def fb1(): order.append("fb1"); raise RuntimeError("fb1 dead")
-        def fb2(): order.append("fb2"); return "fb2_ok"
-        def fb3(): order.append("fb3"); return "fb3_ok"
+
+        def fb1():
+            order.append("fb1")
+            raise RuntimeError("fb1 dead")
+
+        def fb2():
+            order.append("fb2")
+            return "fb2_ok"
+
+        def fb3():
+            order.append("fb3")
+            return "fb3_ok"
 
         primary = MagicMock(side_effect=RuntimeError("primary dead"))
         executor = healer.fallback_chain(primary, [fb1, fb2, fb3])
@@ -344,5 +374,6 @@ class TestFallbackChain:
         with caplog.at_level(logging.WARNING, logger="blast_ocr.core.healing"):
             executor()
 
-        assert any("Primary method failed" in r.message for r in caplog.records), \
+        assert any("Primary method failed" in r.message for r in caplog.records), (
             "Primary failure must be logged so operators can investigate"
+        )

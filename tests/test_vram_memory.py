@@ -1,14 +1,15 @@
 """
 PHASE 2: PyTorch VRAM management, autograd graph leaks, and fragmentation.
 """
-import gc
+
 import pytest
 import numpy as np
 import tempfile
 import os
 import cv2
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import threading
+
 
 # ── Test 2.1: Autograd graph not attached to stored confidence scores ──────
 def test_no_autograd_graph_in_stored_results():
@@ -28,7 +29,7 @@ def test_no_autograd_graph_in_stored_results():
     # Create a fake EasyOCR result with a gradient-tracked tensor
     mock_tensor_conf = torch.tensor(0.95, requires_grad=True)
     mock_readtext_output = [
-        ([[0,0],[100,0],[100,50],[0,50]], "TEST TEXT", mock_tensor_conf)
+        ([[0, 0], [100, 0], [100, 50], [0, 50]], "TEST TEXT", mock_tensor_conf)
     ]
 
     extractor = RobustOCRExtractor()
@@ -38,7 +39,9 @@ def test_no_autograd_graph_in_stored_results():
         img_path = f.name
 
     try:
-        with patch.object(extractor.reader, 'readtext', return_value=mock_readtext_output):
+        with patch.object(
+            extractor.reader, "readtext", return_value=mock_readtext_output
+        ):
             with extractor.lock:
                 pass  # Lock is held by patch context
             result = extractor.process_page(img_path, 1)
@@ -46,7 +49,7 @@ def test_no_autograd_graph_in_stored_results():
         confidence = result.get("confidence", 0)
 
         # If confidence is a tensor with grad, the graph is leaking
-        if hasattr(confidence, 'requires_grad') and confidence.requires_grad:
+        if hasattr(confidence, "requires_grad") and confidence.requires_grad:
             pytest.fail(
                 "BUG-VRAM-AUTOGRAD-01 | HIGH | leak\n"
                 "Confidence score stored with autograd graph attached.\n"
@@ -54,7 +57,7 @@ def test_no_autograd_graph_in_stored_results():
                 "Fix: Apply .item() to all tensor outputs before storing in result dict."
             )
 
-        if hasattr(confidence, 'grad_fn') and confidence.grad_fn is not None:
+        if hasattr(confidence, "grad_fn") and confidence.grad_fn is not None:
             pytest.fail(
                 "BUG-VRAM-AUTOGRAD-02 | HIGH | leak\n"
                 "Tensor with grad_fn stored in result — computational graph not severed.\n"
@@ -62,6 +65,7 @@ def test_no_autograd_graph_in_stored_results():
             )
     finally:
         os.unlink(img_path)
+
 
 # ── Test 2.2: VRAM fragmentation over variable-size image batches ──────────
 def test_vram_fragmentation_variable_sizes():
@@ -72,12 +76,14 @@ def test_vram_fragmentation_variable_sizes():
     """
     try:
         import torch
+
         if not torch.cuda.is_available():
             pytest.skip("CUDA not available — fragmentation test requires GPU")
     except ImportError:
         pytest.skip("PyTorch not available")
 
     from blast_ocr.core.extractor import RobustOCRExtractor
+
     extractor = RobustOCRExtractor()
 
     # Variable dimensions that cause fragmentation
@@ -106,11 +112,12 @@ def test_vram_fragmentation_variable_sizes():
             pytest.fail(
                 f"BUG-VRAM-FRAG-01 | MEDIUM | leak\n"
                 f"VRAM fragmentation ratio reached {max_frag:.1%}.\n"
-                f"reserved={torch.cuda.memory_reserved()//1024//1024}MB "
-                f"allocated={torch.cuda.memory_allocated()//1024//1024}MB\n"
+                f"reserved={torch.cuda.memory_reserved() // 1024 // 1024}MB "
+                f"allocated={torch.cuda.memory_allocated() // 1024 // 1024}MB\n"
                 f"Fix: Call torch.cuda.empty_cache() after every batch or every N pages "
                 f"to release fragmented blocks back to OS."
             )
+
 
 # ── Test 2.3: del processed_img actually executes (not in dead code path) ─
 def test_explicit_del_in_process_page():
@@ -120,16 +127,20 @@ def test_explicit_del_in_process_page():
     """
     import inspect
     from blast_ocr.core.extractor import RobustOCRExtractor
+
     source = inspect.getsource(RobustOCRExtractor.process_page)
 
-    assert "del processed_img" in source, \
-        "BUG-MEM-DEL-01 | MEDIUM | leak\n" \
-        "del processed_img not found in process_page source.\n" \
+    assert "del processed_img" in source, (
+        "BUG-MEM-DEL-01 | MEDIUM | leak\n"
+        "del processed_img not found in process_page source.\n"
         "Large numpy arrays (~20MB each) will accumulate across all pages."
+    )
 
-    assert "gc.collect()" in source, \
-        "BUG-MEM-GC-01 | LOW | leak\n" \
+    assert "gc.collect()" in source, (
+        "BUG-MEM-GC-01 | LOW | leak\n"
         "gc.collect() not called after del — Python GC may defer cleanup."
+    )
+
 
 # ── Test 2.4: Thread-local inference state does not bleed across threads ──
 def test_inference_thread_local_state_no_bleed():
@@ -138,7 +149,6 @@ def test_inference_thread_local_state_no_bleed():
     retain memory allocations in thread-local storage even after thread
     execution completes. tracemalloc detects this.
     """
-    import tracemalloc
     from blast_ocr.core.extractor import RobustOCRExtractor
 
     extractor = RobustOCRExtractor()
@@ -147,6 +157,7 @@ def test_inference_thread_local_state_no_bleed():
 
     def run_inference(tid):
         import tracemalloc as tm
+
         tm.start()
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
             cv2.imwrite(f.name, np.full((100, 100, 3), 200, dtype=np.uint8))
@@ -155,14 +166,17 @@ def test_inference_thread_local_state_no_bleed():
             except Exception:
                 pass
         snap = tm.take_snapshot()
-        total = sum(s.size for s in snap.statistics('lineno'))
-        with lock: thread_memory[tid] = total
+        total = sum(s.size for s in snap.statistics("lineno"))
+        with lock:
+            thread_memory[tid] = total
         tm.stop()
         os.unlink(f.name)
 
     threads = [threading.Thread(target=run_inference, args=(i,)) for i in range(3)]
-    for t in threads: t.start()
-    for t in threads: t.join()
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
     # Memory per thread should be roughly equal — large divergence = leak
     if len(thread_memory) > 1:

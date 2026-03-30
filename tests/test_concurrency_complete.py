@@ -3,6 +3,7 @@ Sprint 3: core/parallel.py + core/worker.py — Thread safety & lock correctness
 BUG-PREVENTION: Race conditions are silent and non-deterministic. These tests
 verify the mutex logic and worker singleton under true concurrency.
 """
+
 import threading
 import time
 import pytest
@@ -13,20 +14,22 @@ from unittest.mock import patch, MagicMock
 # ParallelOCRProcessor — Config & Workers
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class TestParallelOCRProcessorConfig:
 
+class TestParallelOCRProcessorConfig:
     def test_max_workers_capped_at_2_regardless_of_input(self):
         """
         BUG-PREVENTION: EasyOCR uses ~1GB RAM per page. 8 workers = 8GB RAM → OOM.
         The cap at 2 prevents OOM while still allowing preprocessing parallelism.
         """
         from blast_ocr.core.parallel import ParallelOCRProcessor
+
         p = ParallelOCRProcessor(max_workers=8)
         assert p.max_workers <= 2, "BUG: max_workers > 2 causes OOM on large PDFs"
 
     def test_max_workers_1_not_inflated(self):
         """Workers below cap must stay as-is — don't auto-inflate to 2."""
         from blast_ocr.core.parallel import ParallelOCRProcessor
+
         p = ParallelOCRProcessor(max_workers=1)
         assert p.max_workers == 1
 
@@ -36,6 +39,7 @@ class TestParallelOCRProcessorConfig:
         must be capped — the global OCR lock serializes anyway.
         """
         from blast_ocr.core.parallel import ParallelOCRProcessor
+
         with patch("blast_ocr.core.parallel.config") as mock_cfg:
             mock_cfg.max_workers = 16
             p = ParallelOCRProcessor(max_workers=None)
@@ -43,7 +47,6 @@ class TestParallelOCRProcessorConfig:
 
 
 class TestBatchThreadedBehavior:
-
     def test_results_sorted_by_page_number(self):
         """
         BUG-PREVENTION: as_completed() returns futures in random completion order.
@@ -60,8 +63,9 @@ class TestBatchThreadedBehavior:
         results = processor.process_batch_threaded(paths, process_func)
 
         page_nums = [r["page"] for r in results]
-        assert page_nums == sorted(page_nums), \
+        assert page_nums == sorted(page_nums), (
             f"BUG: Results not sorted → doc text out of order: {page_nums}"
+        )
 
     def test_failed_page_returns_error_dict_not_exception(self):
         """
@@ -122,16 +126,21 @@ class TestBatchThreadedBehavior:
 
         processor = ParallelOCRProcessor(max_workers=1)
         paths = [f"/fake/page_{i}.png" for i in range(1, 4)]
-        processor.process_batch_threaded(paths, good_func, progress_callback=tracking_callback)
+        processor.process_batch_threaded(
+            paths, good_func, progress_callback=tracking_callback
+        )
 
         assert len(records) == 3
         for current, total in records:
-            assert current <= total, f"BUG: progress callback got current={current} > total={total}"
+            assert current <= total, (
+                f"BUG: progress callback got current={current} > total={total}"
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 50-Thread Global Lock Stress Test
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def test_50_threads_lock_no_interleaving():
     """
@@ -160,8 +169,9 @@ def test_50_threads_lock_no_interleaving():
 
     for i in range(0, len(execution_log) - 1, 2):
         tid = execution_log[i].split("-")[1]
-        assert execution_log[i+1] == f"EXIT-{tid}", \
-            f"BUG: Concurrent OCR access detected: {execution_log[i:i+2]}"
+        assert execution_log[i + 1] == f"EXIT-{tid}", (
+            f"BUG: Concurrent OCR access detected: {execution_log[i : i + 2]}"
+        )
 
 
 def test_lock_no_deadlock_under_50_threads():
@@ -188,8 +198,9 @@ def test_lock_no_deadlock_under_50_threads():
     for t in threads:
         t.join(timeout=15)
 
-    assert results.count("timeout") == 0, \
+    assert results.count("timeout") == 0, (
         f"BUG: {results.count('timeout')}/50 threads timed out — possible deadlock"
+    )
 
 
 def test_global_lock_same_across_extractor_instances():
@@ -200,19 +211,22 @@ def test_global_lock_same_across_extractor_instances():
     Fix: all instances set self.lock = _ocr_global_lock (the module singleton).
     """
     from blast_ocr.core.extractor import RobustOCRExtractor, _ocr_global_lock
+
     with patch.object(RobustOCRExtractor, "_init_engine"):
         e1 = RobustOCRExtractor.__new__(RobustOCRExtractor)
         e1.lock = _ocr_global_lock
         e2 = RobustOCRExtractor.__new__(RobustOCRExtractor)
         e2.lock = _ocr_global_lock
 
-    assert e1.lock is e2.lock is _ocr_global_lock, \
+    assert e1.lock is e2.lock is _ocr_global_lock, (
         "BUG-HIGH-001: Per-instance lock allows simultaneous readtext() calls"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Worker Singleton Thread Safety
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def test_worker_singleton_created_once_under_50_threads():
     """
@@ -229,10 +243,12 @@ def test_worker_singleton_created_once_under_50_threads():
     count_lock = threading.Lock()
 
     with patch("blast_ocr.core.worker.RobustOCRExtractor") as MockCls:
+
         def count_and_return():
             with count_lock:
                 instantiation_count[0] += 1
             return MagicMock()
+
         MockCls.side_effect = count_and_return
 
         threads = [
@@ -255,6 +271,7 @@ def test_worker_singleton_created_once_under_50_threads():
 # ═══════════════════════════════════════════════════════════════════════════════
 # Worker Cache Integration
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def test_cache_hit_skips_extractor_call():
     """
@@ -307,7 +324,11 @@ def test_processing_time_included_in_worker_result():
         mock_cache.get_cached_result.return_value = None
         with patch("blast_ocr.core.worker.get_worker_extractor") as mock_get:
             mock_ext = MagicMock()
-            mock_ext.process_page.return_value = {"page": 1, "text": "t", "confidence": 0.9}
+            mock_ext.process_page.return_value = {
+                "page": 1,
+                "text": "t",
+                "confidence": 0.9,
+            }
             mock_get.return_value = mock_ext
             result = process_page_wrapper("/fake/page.png", 1)
 

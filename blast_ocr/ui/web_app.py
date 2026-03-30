@@ -2,27 +2,25 @@ import streamlit as st
 import time
 import pandas as pd
 from pathlib import Path
-from PIL import Image
 import tempfile
-import shutil
-import os
 import sys
 import threading
-import queue
 import uuid
 
 # Project root for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from blast_ocr.pipeline import BlastPipeline
-from blast_ocr.config import config, get_settings
+from blast_ocr.config import get_settings
 from blast_ocr.storage.database import OCRDatabase
+from blast_ocr.core.cleanup_manager import CleanupManager
 
 # --- SVG Icons (Lucide) for Exaggerated Minimalism UI ---
 # UI UX Pro Max Guideline: No emojis as icons.
 ICON_ROCKET = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 3.82-13.04.28.28 0 0 1 .39-.06 22 22 0 0 1 13.04 3.82.28.28 0 0 1-.06.39A22 22 0 0 1 15 12z"/><path d="m9 15 2 2"/><path d="m15 9 2 2"/></svg>'
 ICON_UPLOAD = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>'
 ICON_SETTINGS = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
+
 
 def load_css():
     """Load external CSS file. Includes UI UX Pro Max styling."""
@@ -34,6 +32,7 @@ def load_css():
         )
     else:
         st.error("Styles file not found!")
+
 
 def inject_seo_metadata():
     """
@@ -48,6 +47,7 @@ def inject_seo_metadata():
     </div>
     """
     st.markdown(seo_content, unsafe_allow_html=True)
+
 
 def init_session_state():
     """Initialize Streamlit session state securely."""
@@ -68,12 +68,18 @@ def init_session_state():
     if "job_thread" not in st.session_state:
         st.session_state.job_thread = None
 
+
 def get_session_output_dir():
     """Retrieve or create a secure per-session output directory."""
     if st.session_state.output_dir is None:
-        base_dir = Path("blast_output") if sys.platform == "win32" else Path("/tmp/blast_output")
+        base_dir = (
+            Path("blast_output")
+            if sys.platform == "win32"
+            else Path("/tmp/blast_output")
+        )
         st.session_state.output_dir = str(base_dir / st.session_state.session_id)
     return Path(st.session_state.output_dir)
+
 
 def run_background_job(pipeline, source_path, output_dir, job_id_callback):
     """Worker function for the background thread."""
@@ -85,37 +91,47 @@ def run_background_job(pipeline, source_path, output_dir, job_id_callback):
         logger.error(f"Background Job Error: {e}")
         return {"status": "failed", "error": str(e)}
 
+
 def handle_file_upload(pipeline, db):
     """
     Refactored for Asynchronous 'Mission Control' processing.
     """
-    st.markdown(f'<div class="minimal-panel"><h3>{ICON_UPLOAD} UPLOAD PAYLOAD</h3></div>', unsafe_allow_html=True)
-    
+    st.markdown(
+        f'<div class="minimal-panel"><h3>{ICON_UPLOAD} UPLOAD PAYLOAD</h3></div>',
+        unsafe_allow_html=True,
+    )
+
     ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".pptx"]
-    uploaded_files = st.file_uploader("DROP MISSION FILES", accept_multiple_files=True, type=["pdf", "png", "jpg", "jpeg", "pptx"])
+    uploaded_files = st.file_uploader(
+        "DROP MISSION FILES",
+        accept_multiple_files=True,
+        type=["pdf", "png", "jpg", "jpeg", "pptx"],
+    )
 
     if uploaded_files and not st.session_state.active_job_id:
         st.success(f"VALID: {len(uploaded_files)} PAYLOADS VERIFIED.")
-        
+
         if st.button("INITIATE SEQUENCE", type="primary", use_container_width=True):
             out_dir = get_session_output_dir()
             out_dir.mkdir(parents=True, exist_ok=True)
-            
+
             uploaded_file = uploaded_files[0]
-            with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp:
+            with tempfile.NamedTemporaryFile(
+                delete=False, suffix=Path(uploaded_file.name).suffix
+            ) as tmp:
                 tmp.write(uploaded_file.getbuffer())
                 tmp_path = tmp.name
 
             job_id = db.create_job(uploaded_file.name)
             st.session_state.active_job_id = job_id
-            
+
             thread = threading.Thread(
                 target=pipeline.process_job,
                 kwargs={
                     "source_path": tmp_path,
                     "output_dir": str(out_dir),
-                    "job_id": job_id
-                }
+                    "job_id": job_id,
+                },
             )
             thread.start()
             st.rerun()
@@ -123,6 +139,7 @@ def handle_file_upload(pipeline, db):
     # --- Live Mission Control Dashboard ---
     if st.session_state.active_job_id:
         render_mission_control(db, st.session_state.active_job_id)
+
 
 def render_mission_control(db, job_id):
     """Displays real-time progress by polling the database."""
@@ -133,17 +150,25 @@ def render_mission_control(db, job_id):
         return
 
     st.markdown(f"### MISSION CONTROL [ID: {job_id}]")
-    
+
     # Status Mapping
-    status_colors = {"processing": "orange", "completed": "green", "failed": "red", "pending": "gray"}
+    status_colors = {
+        "processing": "orange",
+        "completed": "green",
+        "failed": "red",
+        "pending": "gray",
+    }
     status_color = status_colors.get(job.status, "white")
-    st.markdown(f"STATUS: <span style='color:{status_color}; font-family:monospace;'>{job.status.upper()}</span>", unsafe_allow_html=True)
+    st.markdown(
+        f"STATUS: <span style='color:{status_color}; font-family:monospace;'>{job.status.upper()}</span>",
+        unsafe_allow_html=True,
+    )
 
     results = db.get_results(job_id)
     processed_count = len(results)
-    
+
     # Progress Calculation
-    total_pages = job.page_count or 1 # Fallback to 1 if not set yet
+    total_pages = job.page_count or 1  # Fallback to 1 if not set yet
     progress = min(processed_count / total_pages, 1.0) if total_pages > 0 else 0
     st.progress(progress)
     st.caption(f"DECODED {processed_count} OF {total_pages} PAGES")
@@ -151,9 +176,15 @@ def render_mission_control(db, job_id):
     # Live Feed of Results
     if results:
         with st.expander("LIVE INTELLIGENCE STREAM", expanded=True):
-            for r in results[-3:]: # Show last 3 pages
-                st.markdown(f"**PAGE {r.page_number}** (Confidence: {r.confidence_score:.2f})")
-                st.text(r.extracted_text[:200] + "..." if len(r.extracted_text) > 200 else r.extracted_text)
+            for r in results[-3:]:  # Show last 3 pages
+                st.markdown(
+                    f"**PAGE {r.page_number}** (Confidence: {r.confidence_score:.2f})"
+                )
+                st.text(
+                    r.extracted_text[:200] + "..."
+                    if len(r.extracted_text) > 200
+                    else r.extracted_text
+                )
 
     if job.status in ["completed", "failed"]:
         if job.status == "completed":
@@ -161,7 +192,7 @@ def render_mission_control(db, job_id):
             # Logic to show download buttons for results...
         else:
             st.error(f"MISSION FAILED: {job.error_message}")
-        
+
         if st.button("RETURN TO BASE"):
             st.session_state.active_job_id = None
             st.rerun()
@@ -170,12 +201,13 @@ def render_mission_control(db, job_id):
         time.sleep(2)
         st.rerun()
 
+
 def main():
-    # SEO & UI UX: Set the page title clearly for browsers/indexers. 
+    # SEO & UI UX: Set the page title clearly for browsers/indexers.
     # Removed emoji from page_icon per Pro Max 'minimalism' recommendation.
     st.set_page_config(
         page_title="B.L.A.S.T. OCR Engine - Document Scanner",
-        page_icon="■", 
+        page_icon="■",
         layout="wide",
         initial_sidebar_state="expanded",
     )
@@ -203,13 +235,20 @@ def main():
     # --- METRICS SECTION ---
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.metric(label="TOTAL MISSIONS", value=st.session_state.total_scans, delta="+12")
+        st.metric(
+            label="TOTAL MISSIONS", value=st.session_state.total_scans, delta="+12"
+        )
     with m2:
-        st.metric(label="PAGES DECODED", value=st.session_state.pages_decoded, delta="+45")
+        st.metric(
+            label="PAGES DECODED", value=st.session_state.pages_decoded, delta="+45"
+        )
     with m3:
         st.metric(label="SYSTEM ACCURACY", value="99.8%", delta="OK")
 
-    st.markdown("<hr style='border-color: #334155; margin: 3rem 0; border-width: 2px;'>", unsafe_allow_html=True)
+    st.markdown(
+        "<hr style='border-color: #334155; margin: 3rem 0; border-width: 2px;'>",
+        unsafe_allow_html=True,
+    )
 
     # --- MAIN APP LAYOUT ---
     tabs = st.tabs(["NEW DEPLOYMENT", "SYSTEM LOGS", "SYSTEM HEALTH"])
@@ -219,18 +258,36 @@ def main():
         col_left, col_right = st.columns([1, 2])
 
         with col_left:
-            st.markdown(f'<div class="minimal-panel"><h3>{ICON_SETTINGS} CONFIGURATION</h3></div>', unsafe_allow_html=True)
-            preset = st.radio("PROCESSING PRESET", ["STANDARD DOC", "RECEIPT DECODE", "HANDWRITING ANALYSIS", "RAW OVERRIDE"])
-            
+            st.markdown(
+                f'<div class="minimal-panel"><h3>{ICON_SETTINGS} CONFIGURATION</h3></div>',
+                unsafe_allow_html=True,
+            )
+            preset = st.radio(
+                "PROCESSING PRESET",
+                [
+                    "STANDARD DOC",
+                    "RECEIPT DECODE",
+                    "HANDWRITING ANALYSIS",
+                    "RAW OVERRIDE",
+                ],
+            )
+
             # Logic flow parameters
             denoise, contrast, deskew = 5, 1.2, True
-            if preset == "RECEIPT DECODE": denoise, contrast = 12, 1.8
-            elif preset == "HANDWRITING ANALYSIS": denoise, contrast, deskew = 3, 1.1, False
-            
+            if preset == "RECEIPT DECODE":
+                denoise, contrast = 12, 1.8
+            elif preset == "HANDWRITING ANALYSIS":
+                denoise, contrast, deskew = 3, 1.1, False
+
             with st.expander("ADVANCED PROTOCOLS"):
-                language_selection = st.selectbox("SOURCE LOGIC", ["ENG_CORE", "FRA_CORE", "MULTILINGUAL_NODE"])
+                language_selection = st.selectbox(
+                    "SOURCE LOGIC", ["ENG_CORE", "FRA_CORE", "MULTILINGUAL_NODE"]
+                )
                 gpu_enabled = st.toggle("GPU HYPER-THREAD", value=settings.ocr_gpu)
-                secure_mode = st.toggle("SECURE MODE (PII REDACTION)", value=getattr(settings, "secure_mode", False))
+                secure_mode = st.toggle(
+                    "SECURE MODE (PII REDACTION)",
+                    value=getattr(settings, "secure_mode", False),
+                )
                 pipeline._config.secure_mode = secure_mode
 
         with col_right:
@@ -250,32 +307,69 @@ def main():
     # --- TAB 3: SYSTEM HEALTH ---
     with tabs[2]:
         st.markdown("### 📊 LIVE TELEMETRY")
-        
+
         health_c1, health_c2 = st.columns([3, 1])
-        
+
         with health_c2:
             st.markdown("#### 🕵️ MISSION STRATEGY")
-            st.info("REFLEXION: **ENABLED**\nSCRIPT ROUTER: **ACTIVE**\nREDACTION: **READY**")
-            
+            st.info(
+                "REFLEXION: **ENABLED**\nSCRIPT ROUTER: **ACTIVE**\nREDACTION: **READY**"
+            )
+
         with health_c1:
             metrics = db.get_recent_metrics(limit=10)
             if metrics:
                 m_cols = st.columns(4)
                 latest = metrics[0]
-                with m_cols[0]: st.metric("LATEST MEMORY", f"{latest.peak_memory_mb:.1f} MB")
-                with m_cols[1]: st.metric("AVG FIDELITY", f"{latest.fidelity_score:.1%}")
-                with m_cols[2]: st.metric("VELOCITY", f"{latest.extraction_velocity:.2f} P/S")
-                with m_cols[3]: st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
-                
+                with m_cols[0]:
+                    st.metric("LATEST MEMORY", f"{latest.peak_memory_mb:.1f} MB")
+                with m_cols[1]:
+                    st.metric("AVG FIDELITY", f"{latest.fidelity_score:.1%}")
+                with m_cols[2]:
+                    st.metric("VELOCITY", f"{latest.extraction_velocity:.2f} P/S")
+                with m_cols[3]:
+                    st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
+
                 # Chart
-                df_metrics = pd.DataFrame([{
-                    "timestamp": m.timestamp,
-                    "fidelity": m.fidelity_score,
-                    "velocity": m.extraction_velocity
-                } for m in reversed(metrics)])
+                df_metrics = pd.DataFrame(
+                    [
+                        {
+                            "timestamp": m.timestamp,
+                            "fidelity": m.fidelity_score,
+                            "velocity": m.extraction_velocity,
+                        }
+                        for m in reversed(metrics)
+                    ]
+                )
                 st.line_chart(df_metrics.set_index("timestamp"))
             else:
                 st.info("NO TELEMETRY DATA ACQUIRED YET.")
+
+        st.markdown(
+            "<hr style='border-color: #334155; margin: 2rem 0; border-style: dashed;'>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("### 🛠️ SYSTEM MAINTENANCE")
+
+        maint_c1, maint_c2 = st.columns([2, 2])
+        out_dir = get_session_output_dir().parent  # Get the base blast_output
+        stats = CleanupManager.get_system_disk_stats(str(out_dir))
+
+        with maint_c1:
+            st.metric("DISK ASSETS", f"{stats['total_size_mb']:.2f} MB")
+            st.caption(f"ACTIVE SESSIONS: {stats['session_count']}")
+
+        with maint_c2:
+            if st.button("PURGE STALE ASSETS", use_container_width=True):
+                saved = CleanupManager.cleanup_stale_sessions(
+                    str(out_dir), max_age_hours=0
+                )
+                db.purge_old_data(days=0)
+                st.success(
+                    f"MAINTENANCE COMPLETE: Freed {saved / (1024 * 1024):.2f} MB"
+                )
+                st.rerun()
+
 
 if __name__ == "__main__":
     main()

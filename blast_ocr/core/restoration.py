@@ -1,8 +1,7 @@
-from PIL import Image
 import re
-from typing import Union, Tuple, List
 
 logger = logging.getLogger(__name__)
+
 
 class ForensicRestorer:
     """
@@ -17,10 +16,10 @@ class ForensicRestorer:
         Inspired by 'PSPDFKit-labs/nutrient-agent-skill'.
         """
         # Patterns for SSN and Credit Cards
-        ssn_pattern = r'\b\d{3}-\d{2}-\d{4}\b'
-        card_pattern = r'\b(?:\d[ -]*?){13,16}\b' # Basic CC pattern
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-        
+        ssn_pattern = r"\b\d{3}-\d{2}-\d{4}\b"
+        card_pattern = r"\b(?:\d[ -]*?){13,16}\b"  # Basic CC pattern
+        email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+
         redacted = re.sub(ssn_pattern, "[REDACTED-SSN]", text)
         redacted = re.sub(card_pattern, "[REDACTED-CARD]", redacted)
         redacted = re.sub(email_pattern, "[REDACTED-EMAIL]", redacted)
@@ -34,7 +33,9 @@ class ForensicRestorer:
         """
         try:
             # fastNlMeansDenoising is excellent for flat paper backgrounds
-            return cv2.fastNlMeansDenoising(image, None, h=10, templateWindowSize=7, searchWindowSize=21)
+            return cv2.fastNlMeansDenoising(
+                image, None, h=10, templateWindowSize=7, searchWindowSize=21
+            )
         except Exception as e:
             logger.warning(f"Denoising failed, falling back to original: {e}")
             return image
@@ -68,20 +69,21 @@ class ForensicRestorer:
         img = cls.apply_denoising(img)
 
         # 3. Enhance Contrast (CLAHE logic)
-        clip_limit = 2.0 if mode == "standard" else 4.0 # High contrast for reflexion
+        clip_limit = 2.0 if mode == "standard" else 4.0  # High contrast for reflexion
         clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
         img = clahe.apply(img)
 
         # 4. Adaptive Thresholding (Reflection Mode)
         if mode == "reflexion":
             # Extra sharpening kernel
-            kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+            kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
             img = cv2.filter2D(img, -1, kernel)
-        
+
         # Explicitly trigger GC for large image arrays
         gc.collect()
-        
+
         return img
+
 
 def explicit_gc():
     """Aggressive garbage collection for long-running batch jobs."""

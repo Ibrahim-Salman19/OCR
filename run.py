@@ -1,6 +1,7 @@
 """
 Root Entry Point
 """
+
 import sys
 import os
 
@@ -15,5 +16,5 @@ if __name__ == "__main__":
     parser.add_argument("source", help="Source file or folder")
     parser.add_argument("--out", help="Output directory", default=None)
     args = parser.parse_args()
-    
+
     main(args.source, args.out)

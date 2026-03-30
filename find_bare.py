@@ -1,6 +1,6 @@
 import ast
 import os
-from pathlib import Path
+
 
 def find_bare_excepts(directory):
     for root, dirs, files in os.walk(directory):
@@ -16,6 +16,7 @@ def find_bare_excepts(directory):
                                 print(f"BARE EXCEPT: {path} at line {node.lineno}")
                 except Exception as e:
                     print(f"Error parsing {path}: {e}")
+
 
 if __name__ == "__main__":
     find_bare_excepts("blast_ocr")

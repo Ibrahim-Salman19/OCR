@@ -9,7 +9,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
-from sqlalchemy import event # Added for FK enforcement
+from sqlalchemy import event  # Added for FK enforcement
 import datetime
 import threading
 from blast_ocr.config import config
@@ -52,9 +52,11 @@ class OCRMetric(Base):
     job_id = Column(Integer, ForeignKey("ocr_jobs.id"))
     peak_memory_mb = Column(Float)
     avg_page_time = Column(Float)
-    fidelity_score = Column(Float) # Based on confidence
-    extraction_velocity = Column(Float) # Pages/sec
-    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    fidelity_score = Column(Float)  # Based on confidence
+    extraction_velocity = Column(Float)  # Pages/sec
+    timestamp = Column(
+        DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
 
 
 # Database manager
@@ -67,13 +69,13 @@ class OCRDatabase:
         # FIX #4: Add connection pool settings for thread safety
         # BUG-DB-ISOLATION-01 Fix: Add IMMEDIATE isolation level to prevent SQLite WAL deadlocks
         self.engine = create_engine(
-            self.db_url, 
-            pool_size=5, 
-            max_overflow=10, 
+            self.db_url,
+            pool_size=5,
+            max_overflow=10,
             pool_pre_ping=True,
-            connect_args={'isolation_level': 'IMMEDIATE', 'timeout': 15}
+            connect_args={"isolation_level": "IMMEDIATE", "timeout": 15},
         )
-        
+
         # FIX: Ensure SQLite enforces Foreign Key constraints
         @event.listens_for(self.engine, "connect")
         def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -107,7 +109,9 @@ class OCRDatabase:
         # BUG-DB-VALIDATION-01 Fix: Explicit status validation
         allowed_statuses = ["pending", "processing", "completed", "failed"]
         if status not in allowed_statuses:
-            raise ValueError(f"Invalid status: {status}. Must be one of {allowed_statuses}")
+            raise ValueError(
+                f"Invalid status: {status}. Must be one of {allowed_statuses}"
+            )
 
         session = self.session
         try:
@@ -115,14 +119,14 @@ class OCRDatabase:
             if not job:
                 # BUG-DB-NOTFOUND-01 Fix: Raise error if job doesn't exist
                 raise ValueError(f"Job ID {job_id} not found")
-                
+
             job.status = status
             if status == "completed":
                 job.completed_at = datetime.datetime.now(datetime.timezone.utc)
             else:
                 # BUG-DB-DATE-01 Fix: Ensure completed_at is NULL if not completed
                 job.completed_at = None
-                
+
             if error_message:
                 job.error_message = error_message
             session.commit()
@@ -138,7 +142,7 @@ class OCRDatabase:
             extracted_text=text,
             confidence_score=confidence,
             processing_time=processing_time,
-            created_at=datetime.datetime.now(datetime.timezone.utc)
+            created_at=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(result)
         try:
@@ -165,7 +169,7 @@ class OCRDatabase:
             peak_memory_mb=peak_mem,
             avg_page_time=avg_time,
             fidelity_score=fidelity,
-            extraction_velocity=velocity
+            extraction_velocity=velocity,
         )
         session.add(metric)
         try:
@@ -173,6 +177,35 @@ class OCRDatabase:
         except Exception as e:
             session.rollback()
             raise e
+
+    def purge_old_data(self, days=7):
+        """
+        Lifecycle management: Prune metrics and job results older than X days.
+        Inspired by 'deanpeters/business-health-diagnostic'.
+        """
+        session = self.session
+        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+            days=days
+        )
+        try:
+            # 1. Prune metrics
+            session.query(OCRMetric).filter(OCRMetric.timestamp < cutoff).delete()
+            # 2. Prune old job results (keep the job entry itself for history)
+            # Find jobs completed before cutoff
+            old_jobs = (
+                session.query(OCRJob.id).filter(OCRJob.completed_at < cutoff).all()
+            )
+            old_job_ids = [j[0] for j in old_jobs]
+            if old_job_ids:
+                session.query(OCRJobResult).filter(
+                    OCRJobResult.job_id.in_(old_job_ids)
+                ).delete()
+
+            session.commit()
+            logger.info(f"Purged data older than {days} days.")
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to purge old data: {e}")
 
     def get_recent_metrics(self, limit=10):
         session = self.session
@@ -203,7 +236,6 @@ class OCRDatabase:
             self.Session.remove()
         if hasattr(self, "engine"):
             self.engine.dispose()
-
 
     def __del__(self):
         """Cleanup on garbage collection."""
