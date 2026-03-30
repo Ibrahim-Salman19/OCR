@@ -1,0 +1,4 @@
+# file: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\logging_config.py
+# hypothesis_version: 6.151.9
+
+[1024, 'blast_ocr', 'blast_ocr.log', 'confidence', 'errors.log', 'exception', 'function', 'level', 'line', 'logger', 'logs', 'message', 'module', 'page_number', 'timestamp']

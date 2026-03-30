@@ -1,0 +1,153 @@
+C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.2) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collected 18 items
+
+tests\test_database_complete.py .F.F......F.                             [ 66%]
+tests\test_concurrency.py ...F..                                         [100%]
+
+================================== FAILURES ===================================
+_____________ test_update_job_status_invalid_status_not_validated _____________
+
+fresh_db = <blast_ocr.storage.database.OCRDatabase object at 0x0000014BA9BBBF50>
+
+    def test_update_job_status_invalid_status_not_validated(fresh_db):
+        """BUG HYPOTHESIS: No enum validation ù 'BANANA' is accepted as status."""
+        job_id = fresh_db.create_job("test.pdf", 5)
+        # This should either raise ValueError or silently corrupt data
+        fresh_db.update_job_status(job_id, "BANANA_STATUS")
+        job = fresh_db.get_job(job_id)
+        if job.status == "BANANA_STATUS":
+>           pytest.fail(
+                "BUG: update_job_status accepts arbitrary strings with no validation. "
+                "Status field should be constrained to: pending/processing/completed/failed. "
+                "Fix: add validation before committing."
+            )
+E           Failed: BUG: update_job_status accepts arbitrary strings with no validation. Status field should be constrained to: pending/processing/completed/failed. Fix: add validation before committing.
+
+tests\test_database_complete.py:35: Failed
+_____________________ test_save_result_invalid_fk_job_id ______________________
+
+fresh_db = <blast_ocr.storage.database.OCRDatabase object at 0x0000014BA9C0B200>
+
+    def test_save_result_invalid_fk_job_id(fresh_db):
+        """BUG HYPOTHESIS: FK constraint not enforced ù orphaned OCRResult created."""
+        try:
+            fresh_db.save_result(
+                job_id=99999,  # Non-existent job
+                page_number=1, text="orphaned", confidence=0.9, processing_time=1.0
+            )
+            # If we get here without error, FK constraints are not enforced
+>           pytest.fail(
+                "BUG: save_result accepts non-existent job_id without FK violation. "
+                "SQLite FK enforcement may not be enabled (PRAGMA foreign_keys=ON). "
+                "This creates orphaned OCRResult records that are unqueryable."
+            )
+E           Failed: BUG: save_result accepts non-existent job_id without FK violation. SQLite FK enforcement may not be enabled (PRAGMA foreign_keys=ON). This creates orphaned OCRResult records that are unqueryable.
+
+tests\test_database_complete.py:57: Failed
+____________________ test_two_database_instances_same_file ____________________
+
+    def test_two_database_instances_same_file():
+        """BUG HYPOTHESIS: Two pipelines targeting same DB file cause SQLITE_BUSY."""
+        db_file = tempfile.mktemp(suffix=".db")
+        from blast_ocr.storage.database import OCRDatabase
+    
+        try:
+            db1 = OCRDatabase(f"sqlite:///{db_file}")
+            db2 = OCRDatabase(f"sqlite:///{db_file}")
+    
+            errors = []
+            def write_to_db(db, prefix, n=10):
+                for i in range(n):
+                    try:
+                        db.create_job(f"{prefix}_file_{i}.pdf", i)
+                    except Exception as e:
+                        errors.append(str(e))
+    
+            t1 = threading.Thread(target=write_to_db, args=(db1, "db1"))
+            t2 = threading.Thread(target=write_to_db, args=(db2, "db2"))
+            t1.start(); t2.start()
+            t1.join(); t2.join()
+    
+            if errors:
+                pytest.fail(f"Two OCRDatabase instances on same file caused errors: {errors[:3]}")
+        finally:
+            try:
+                db1.close(); db2.close()
+            except: pass
+>           if os.path.exists(db_file): os.unlink(db_file)
+                                        ^^^^^^^^^^^^^^^^^^
+E           PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\hafiz\\AppData\\Local\\Temp\\tmpsunwj37v.db'
+
+tests\test_database_complete.py:141: PermissionError
+___________________ test_concurrent_db_writes_no_corruption ___________________
+
+    def test_concurrent_db_writes_no_corruption():
+        """BUG HYPOTHESIS: ThreadPoolExecutor + shared DB = corrupted job records."""
+        import tempfile
+        from blast_ocr.storage.database import OCRDatabase
+    
+        db_file = tempfile.mktemp(suffix=".db")
+        db = OCRDatabase(f"sqlite:///{db_file}")
+        created_ids = []
+        errors = []
+        lock = threading.Lock()
+    
+        def create_job(i):
+            try:
+                job_id = db.create_job(f"file_{i}.pdf", page_count=i)
+                with lock:
+                    created_ids.append(job_id)
+            except Exception as e:
+                with lock:
+                    errors.append(str(e))
+    
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            futures = [ex.submit(create_job, i) for i in range(20)]
+            for f in as_completed(futures): f.result()
+    
+        assert len(errors) == 0, f"Concurrent write errors: {errors}"
+        assert len(created_ids) == 20, f"Expected 20 jobs, got {len(created_ids)}"
+        assert len(set(created_ids)) == 20, "Duplicate job IDs detected ù race condition"
+    
+        db.close()
+>       os.unlink(db_file)
+E       PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\hafiz\\AppData\\Local\\Temp\\tmpy242sfpv.db'
+
+tests\test_concurrency.py:112: PermissionError
+============================== warnings summary ===============================
+tests/test_database_complete.py::test_create_job_unique_ids
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+    from . import cElementTree
+
+tests/test_database_complete.py::test_create_job_unique_ids
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:66: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('max_workers', 'timeout_per_page')
+
+tests/test_database_complete.py::test_create_job_unique_ids
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:71: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('min_confidence')
+
+tests/test_database_complete.py::test_create_job_unique_ids
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:76: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('contrast_boost')
+
+tests/test_database_complete.py::test_create_job_unique_ids
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:81: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('ocr_languages')
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+    import pynvml  # type: ignore[import]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_database_complete.py::test_update_job_status_invalid_status_not_validated
+FAILED tests/test_database_complete.py::test_save_result_invalid_fk_job_id - ...
+FAILED tests/test_database_complete.py::test_two_database_instances_same_file
+FAILED tests/test_concurrency.py::test_concurrent_db_writes_no_corruption - P...
+================== 4 failed, 14 passed, 6 warnings in 47.00s ==================

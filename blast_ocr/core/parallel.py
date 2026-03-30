@@ -49,7 +49,8 @@ class ParallelOCRProcessor:
                 for future in as_completed(future_to_page):
                     path, page_num = future_to_page[future]
                     try:
-                        result = future.result(timeout=config.timeout_per_page)
+                        # BUG-THREAD-LEAK-01 Fix: Remove timeout from future.result() to prevent thread pool leaks
+                        result = future.result()
                         results.append(result)
                     except Exception as e:
                         logger.error(f"Page {page_num} ({path}) failed: {e}")

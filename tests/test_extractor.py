@@ -38,4 +38,4 @@ def test_image_load_error(tmp_path):
     extractor = RobustOCRExtractor()
     with pytest.raises(PageExtractionError) as excinfo:
         extractor.process_page(str(bad_file), 1)
-    assert "Failed to load image" in str(excinfo.value) or "Cannot load" in str(excinfo.value)
+    assert "extraction failed" in str(excinfo.value) or "cv2.imdecode" in str(excinfo.value)

@@ -1,0 +1,17 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collected 206 items
+
+tests\test_cache_complete.py ..........                                  [  4%]
+tests\test_callback.py .                                                 [  5%]
+tests\test_concurrency.py ......                                         [  8%]
+tests\test_concurrency_advanced.py ......                                [ 11%]
+tests\test_concurrency_complete.py ...............                       [ 18%]
+tests\test_config_edge_cases.py ........                                 [ 22%]
+tests\test_coverage_gaps.py .                                            [ 22%]
+tests\test_critical_paths.py ...                                         [ 24%]
+tests\test_database_complete.py ............                             [ 30%]
+tests\test_extractor.py ....                                             [ 32%]
+tests\test_extractor_complete.py ......................................  [ 50%]

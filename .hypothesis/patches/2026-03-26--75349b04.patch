@@ -1,0 +1,18 @@
+From HEAD Mon Sep 17 00:00:00 2001
+From: Hypothesis 6.151.9 <no-reply@hypothesis.works>
+Date: Wed, 25 Mar 2026 21:24:26
+Subject: [PATCH] Hypothesis: add explicit examples
+
+---
+--- ./tests\test_property_based.py
++++ ./tests\test_property_based.py
+@@ -22,6 +22,9 @@
+ # ── Property 2: sanitize_for_xml output contains no null bytes ────────────
+ @given(st.text())
+ @settings(max_examples=1000)
++@example(
++    text='',
++).via('discovered failure')
+ def test_sanitize_removes_null_bytes(text):
+     from blast_ocr.core.extractor import sanitize_for_xml
+     result = sanitize_for_xml(text)

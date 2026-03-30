@@ -1,0 +1,54 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\hafiz\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collecting ... collected 6 items
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances PASSED [ 16%]
+tests/test_concurrency.py::test_ocr_lock_serializes_concurrent_calls PASSED [ 33%]
+tests/test_concurrency.py::test_scoped_session_is_thread_local FAILED    [ 50%]
+tests/test_concurrency.py::test_concurrent_db_writes_no_corruption FAILED [ 66%]
+tests/test_concurrency.py::test_cache_concurrent_write_no_corruption PASSED [ 83%]
+tests/test_concurrency.py::test_worker_extractor_singleton_thread_safety PASSED [100%]
+
+================================== FAILURES ===================================
+_____________________ test_scoped_session_is_thread_local _____________________
+tests\test_concurrency.py:80: in test_scoped_session_is_thread_local
+    os.unlink(db_file)
+E   PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\hafiz\\AppData\\Local\\Temp\\tmpupl2cwh7.db'
+___________________ test_concurrent_db_writes_no_corruption ___________________
+tests\test_concurrency.py:112: in test_concurrent_db_writes_no_corruption
+    os.unlink(db_file)
+E   PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\hafiz\\AppData\\Local\\Temp\\tmpzxe63x79.db'
+============================== warnings summary ===============================
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+    import pynvml  # type: ignore[import]
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+    from . import cElementTree
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:66: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('max_workers', 'timeout_per_page')
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:71: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('min_confidence')
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:76: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('contrast_boost')
+
+tests/test_concurrency.py::test_global_lock_is_singleton_across_instances
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:81: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('ocr_languages')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_concurrency.py::test_scoped_session_is_thread_local - Permi...
+FAILED tests/test_concurrency.py::test_concurrent_db_writes_no_corruption - P...
+================== 2 failed, 4 passed, 6 warnings in 14.84s ===================

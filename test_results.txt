@@ -1,0 +1,49 @@
+C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.2) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collected 3 items
+
+tests\test_xxe_security.py .sF                                           [100%]
+
+================================== FAILURES ===================================
+______________________ test_xml_parser_uses_safe_library ______________________
+
+    def test_xml_parser_uses_safe_library():
+        """Check that the codebase uses defusedxml or explicit entity blocking."""
+        from pathlib import Path
+        import ast
+    
+        sources_to_check = [
+            "blast_ocr/core/extractor.py",
+            "blast_ocr/pipeline.py",
+        ]
+    
+        safe_patterns = ["defusedxml", "forbid_entities", "disallow-doctype-decl",
+                         "feature_external_ges", "resolve_entities"]
+    
+        for src_path in sources_to_check:
+            p = Path(src_path)
+            if not p.exists(): continue
+            source = p.read_text()
+            if not any(pattern in source for pattern in safe_patterns):
+                # Check if the file does any XML parsing
+                if any(xml_lib in source for xml_lib in ["etree", "lxml", "pptx", "docx", "xml"]):
+>                   pytest.fail(
+                        f"BUG-XXE-PROTECTION-01 | CRITICAL | security\n"
+                        f"{src_path} uses XML parsing without defusedxml protection.\n"
+                        f"python-pptx uses lxml internally ù vulnerable to XXE by default.\n"
+                        f"Fix: Add 'import defusedxml; defusedxml.defuse_stdlib()' "
+                        f"at the top of {src_path} or in blast_ocr/__init__.py."
+                    )
+E                   Failed: BUG-XXE-PROTECTION-01 | CRITICAL | security
+E                   blast_ocr/pipeline.py uses XML parsing without defusedxml protection.
+E                   python-pptx uses lxml internally ù vulnerable to XXE by default.
+E                   Fix: Add 'import defusedxml; defusedxml.defuse_stdlib()' at the top of blast_ocr/pipeline.py or in blast_ocr/__init__.py.
+
+tests\test_xxe_security.py:159: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_xxe_security.py::test_xml_parser_uses_safe_library - Failed...
+=================== 1 failed, 1 passed, 1 skipped in 1.78s ====================

@@ -1,0 +1,12 @@
+
+Processing pages:   0%|          | 0/2 [00:00<?, ?it/s]2026-03-30 13:07:52,219 - blast_ocr.core.extractor - INFO - Initializing EasyOCR (GPU=False, Langs=['en'])
+2026-03-30 13:07:59,140 - blast_ocr.core.extractor - INFO - Downscaling large image (3876x3004) to max 1800px for stability
+2026-03-30 13:07:59,149 - blast_ocr.core.extractor - INFO - Downscaling large image (3888x3112) to max 1800px for stability
+C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\utils\data\dataloader.py:775: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  super().__init__(loader)
+2026-03-30 13:08:57,339 - blast_ocr.core.extractor - WARNING - Page 1 low confidence: 0.40
+
+Processing pages:  50%|#####     | 1/2 [01:05<01:05, 65.19s/it]2026-03-30 13:09:57,261 - blast_ocr.core.extractor - WARNING - Page 2 low confidence: 0.41
+
+Processing pages: 100%|##########| 2/2 [02:05<00:00, 62.07s/it]
+Processing pages: 100%|##########| 2/2 [02:05<00:00, 62.54s/it]

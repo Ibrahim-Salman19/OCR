@@ -1,0 +1,492 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collected 168 items
+
+tests\test_foundation_coverage.py .....F...                              [  5%]
+tests\test_cache_coverage.py ..........                                  [ 11%]
+tests\test_pipeline_coverage.py ..F.....                                 [ 16%]
+tests\test_extractor_coverage.py ......                                  [ 19%]
+tests\test_ui_coverage.py .....F.FF                                      [ 25%]
+tests\test_extractor_complete.py ......................................  [ 47%]
+tests\test_healing_logic.py .....................                        [ 60%]
+tests\test_concurrency_complete.py ...............                       [ 69%]
+tests\test_pipeline_e2e.py ..............                                [ 77%]
+tests\test_cache_complete.py ..........                                  [ 83%]
+tests\test_database_complete.py ............FF                           [ 91%]
+tests\test_config_edge_cases.py ........                                 [ 96%]
+tests\test_xxe_security.py .s.                                           [ 98%]
+tests\test_ui_mock.py ...                                                [100%]
+
+================================== FAILURES ===================================
+________ TestConfigCoverage.test_settings_config_dict_import_fallback _________
+
+self = <test_foundation_coverage.TestConfigCoverage object at 0x0000016F7F342240>
+
+    def test_settings_config_dict_import_fallback(self):
+        """Covers lines 3-5 and 97-99 where pydantic_settings fails to import."""
+        # Save original sys.modules
+        orig_pydantic_settings = sys.modules.pop('pydantic_settings', None)
+        orig_config_module = sys.modules.pop('blast_ocr.config', None)
+    
+        try:
+            # Force ImportError for pydantic_settings
+            sys.modules['pydantic_settings'] = None
+    
+>           with pytest.raises(ImportError) as exc_info:
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'ImportError'>
+
+tests\test_foundation_coverage.py:76: Failed
+____________________ test_process_pdf_info_fails_fallback _____________________
+
+pipeline = <blast_ocr.pipeline.BlastPipeline object at 0x0000016F0A1837A0>
+
+    def test_process_pdf_info_fails_fallback(pipeline):
+        """Covers line 77-78 and 126-128 (fallback when total_pages is None)."""
+        with patch("blast_ocr.pipeline.pdfinfo_from_path", side_effect=Exception("No poppler")):
+            with patch("blast_ocr.pipeline.convert_from_path", return_value=[MagicMock(), MagicMock()]):
+                with patch.object(pipeline.parallel_processor, "process_batch_threaded", return_value=[{"page": 1}, {"page": 2}]):
+                    res = pipeline.process_pdf("dummy.pdf")
+>                   assert len(res) == 2
+E                   assert 0 == 2
+E                    +  where 0 = len([])
+
+tests\test_pipeline_coverage.py:46: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-03-30 00:44:38,194 - blast_ocr.pipeline - INFO - Processing PDF: dummy.pdf
+2026-03-30 00:44:38,196 - blast_ocr.pipeline - WARNING - Unknown page count, rendering all pages...
+------------------------------ Captured log call ------------------------------
+INFO     blast_ocr.pipeline:pipeline.py:66 Processing PDF: dummy.pdf
+WARNING  blast_ocr.pipeline:pipeline.py:127 Unknown page count, rendering all pages...
+___________________ test_handle_file_upload_success_outputs ___________________
+
+    def test_handle_file_upload_success_outputs():
+        """Covers pipeline success output packaging (lines 122-132)."""
+        mock_file = MagicMock()
+        mock_file.name = "test.pdf"
+        mock_file.getbuffer.return_value = b"test"
+    
+        mock_pipeline = MagicMock()
+        mock_pipeline.process_job.return_value = {"status": "success", "pages_processed": 1}
+    
+        mock_state = MockSessionState({"session_id": "test-uuid", "output_dir": "test_out", "current_results": None})
+    
+        with patch('streamlit.file_uploader', return_value=[mock_file]):
+            with patch('streamlit.button', return_value=True):
+                with patch('streamlit.session_state', mock_state):
+                    with patch('blast_ocr.ui.web_app.Path.exists', return_value=True):
+                        # We have to mock out_dir interactions inside the tempfile context
+>                       web_app.handle_file_upload(mock_pipeline, MagicMock())
+
+tests\test_ui_coverage.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+pipeline = <MagicMock id='1576423033744'>, db = <MagicMock id='1576422349072'>
+
+    def handle_file_upload(pipeline, db):
+        """
+        Encapsulates secure file upload and processing logic.
+        SECURITY: Enforces file extension checks and uses temporary contexts for intermediate steps.
+        """
+        st.markdown(f'<div class="minimal-panel"><h3>{ICON_UPLOAD} UPLOAD PAYLOAD</h3></div>', unsafe_allow_html=True)
+    
+        ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".pptx"]
+    
+        uploaded_files = st.file_uploader("DROP MISSION FILES", accept_multiple_files=True, type=["pdf", "png", "jpg", "jpeg", "pptx"])
+    
+        if uploaded_files:
+            st.success(f"VALID: {len(uploaded_files)} PAYLOADS VERIFIED.")
+    
+            if st.button("INITIATE SEQUENCE", type="primary", use_container_width=True):
+                progress_bar = st.progress(0)
+                status_box = st.empty()
+    
+                st.session_state.current_results = None
+                out_dir = get_session_output_dir()
+                out_dir.mkdir(parents=True, exist_ok=True)
+    
+                results_summary = []
+                output_files = []
+    
+                # SECURITY: tempfile.TemporaryDirectory securely creates and wipes temporary files across OS's
+                with tempfile.TemporaryDirectory() as temp_in_dir:
+                    for i, uploaded_file in enumerate(uploaded_files):
+                        status_box.info(f"PROCESSING NODE: [{uploaded_file.name}]...")
+    
+                        try:
+                            # SECURITY: Additional validation against malicious hidden extensions
+                            ext = Path(uploaded_file.name).suffix.lower()
+                            if ext not in ALLOWED_EXTENSIONS:
+                                raise ValueError(f"UNAUTHORIZED EXTENSION: {ext}")
+    
+                            file_path = Path(temp_in_dir) / uploaded_file.name
+                            with open(file_path, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+    
+                            # Execute OCR Process
+                            # FIX: pipeline.process_job returns {status, pages_processed, output_files}
+                            # NOT {metadata: {page_count}}. Match the actual schema.
+                            res = pipeline.process_job(source_path=str(file_path), output_dir=str(out_dir))
+    
+                            # Check pipeline-level failure before accessing keys
+                            if res.get("status") == "failed":
+                                raise RuntimeError(res.get("error", "Unknown pipeline error"))
+    
+                            results_summary.append({
+                                "FILE": uploaded_file.name,
+                                "STATUS": "SUCCESS",
+                                "PAGES": res.get("pages_processed", "N/A")
+                            })
+    
+                            base_name = Path(uploaded_file.name).stem
+                            for out_ext in ["md", "docx"]:
+                                f_path = out_dir / f"{base_name}.{out_ext}"
+                                if f_path.exists():
+                                    output_files.append((out_ext, f_path))
+    
+                        except Exception as e:
+                            # SECURITY: Standardize error outputs so we do not leak excessive internal stacktraces to UI
+                            safe_msg = str(e).splitlines()[0] if str(e) else "Processing error"
+                            results_summary.append({"FILE": uploaded_file.name, "STATUS": "FAILED", "ERROR": safe_msg})
+    
+                        progress_bar.progress((i + 1) / len(uploaded_files))
+    
+                st.session_state.current_results = {"summary": results_summary, "output_files": output_files, "output_dir": str(out_dir)}
+                status_box.success("SEQUENCE COMPLETE")
+    
+        # Display Results securely
+        if st.session_state.current_results:
+            res = st.session_state.current_results
+            st.dataframe(pd.DataFrame(res["summary"]))
+            if res["output_files"]:
+                st.markdown("### DATA EXTRACTED")
+                for file_type, file_path in res["output_files"]:
+>                   with open(file_path, "rb") as f:
+                         ^^^^^^^^^^^^^^^^^^^^^
+E                   FileNotFoundError: [Errno 2] No such file or directory: 'test_out\\test.md'
+
+blast_ocr\ui\web_app.py:150: FileNotFoundError
+---------------------------- Captured stderr call -----------------------------
+2026-03-30 00:44:39.911 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.911 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.911 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.911 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.911 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.913 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.913 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.913 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.913 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.913 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.913 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.914 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.915 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.915 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.915 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.918 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.919 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.919 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.920 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.921 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.921 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.928 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.928 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.928 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.929 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.929 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:39.929 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+______________________________ test_main_ui_flow ______________________________
+
+    def test_main_ui_flow():
+        """Covers main UI rendering branches (lines 155-227) including tabs and presets."""
+        mock_state = MockSessionState({
+            "total_scans": 142,
+            "pages_decoded": 890,
+            "processing_history": [{"log": "entry"}],
+            "session_id": "uuid",
+            "output_dir": None,
+            "current_results": None
+        })
+    
+        class MockTabs:
+            def __init__(self):
+                self.tabs = [MagicMock(), MagicMock()]
+            def __getitem__(self, idx):
+                return self.tabs[idx]
+    
+        mock_tabs = MockTabs()
+    
+        with patch('streamlit.session_state', mock_state):
+            with patch('streamlit.set_page_config'), patch('streamlit.markdown'), patch('streamlit.metric'), \
+                 patch('streamlit.columns', return_value=(MagicMock(), MagicMock(), MagicMock())), \
+                 patch('streamlit.tabs', return_value=mock_tabs.tabs), \
+                 patch('streamlit.container'):
+    
+                 # Test branch: Handrwiting analysis preset
+                 with patch('streamlit.radio', return_value="HANDWRITING ANALYSIS"):
+                     with patch('streamlit.button', return_value=True): # Purge logs button is True
+                         # Prevent rerunning which raises RerunException
+                         with patch('streamlit.rerun'):
+>                            web_app.main()
+
+tests\test_ui_coverage.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def main():
+        # SEO & UI UX: Set the page title clearly for browsers/indexers.
+        # Removed emoji from page_icon per Pro Max 'minimalism' recommendation.
+        st.set_page_config(
+            page_title="B.L.A.S.T. OCR Engine - Document Scanner",
+            page_icon="\u25a0",
+            layout="wide",
+            initial_sidebar_state="expanded",
+        )
+    
+        load_css()
+        inject_seo_metadata()
+        init_session_state()
+        settings = get_settings()
+        db = OCRDatabase()
+        pipeline = BlastPipeline()
+    
+        # --- HEADER SECTION (Exaggerated Minimalism) ---
+        # SEO ENHANCEMENT: Changed .blast-title from a div to an h1 so screen-readers and crawlers capture the main page topic.
+        st.markdown(
+            """
+        <div class="blast-header">
+            <h1 class="blast-title">B.L.A.S.T.</h1>
+            <div class="blast-subtitle">BATCH LARGE-SCALE AUTOMATED SCANNED TEXT</div>
+            <div class="blast-tagline fira-code">SYSTEM V2.1 // REAL-TIME OPS</div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+    
+        # --- METRICS SECTION ---
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric(label="TOTAL MISSIONS", value=st.session_state.total_scans, delta="+12")
+        with m2:
+            st.metric(label="PAGES DECODED", value=st.session_state.pages_decoded, delta="+45")
+        with m3:
+            st.metric(label="SYSTEM ACCURACY", value="99.8%", delta="OK")
+    
+        st.markdown("<hr style='border-color: #334155; margin: 3rem 0; border-width: 2px;'>", unsafe_allow_html=True)
+    
+        # --- MAIN APP LAYOUT ---
+        tabs = st.tabs(["NEW DEPLOYMENT", "SYSTEM LOGS"])
+    
+        # --- TAB 1: NEW SCAN ---
+        with tabs[0]:
+>           col_left, col_right = st.columns([1, 2])
+            ^^^^^^^^^^^^^^^^^^^
+E           ValueError: too many values to unpack (expected 2)
+
+blast_ocr\ui\web_app.py:200: ValueError
+___________________________ test_main_cli_execution ___________________________
+
+self = <MagicMock name='main' id='1576424225728'>
+
+    def assert_called_once(self):
+        """assert that the mock was called only once.
+        """
+        if not self.call_count == 1:
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'main' to have been called once. Called 0 times.
+
+C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:928: AssertionError
+
+During handling of the above exception, another exception occurred:
+
+    def test_main_cli_execution():
+        """Covers line 230 block (__name__ == '__main__')"""
+        with patch('blast_ocr.ui.web_app.main') as m:
+            with patch('blast_ocr.ui.web_app.__name__', '__main__'):
+                # Must runpy or importlib reload to trigger
+                import runpy
+                runpy.run_module('blast_ocr.ui.web_app', run_name='__main__')
+>               m.assert_called_once()
+E               AssertionError: Expected 'main' to have been called once. Called 0 times.
+
+tests\test_ui_coverage.py:166: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2026-03-30 00:44:42.619 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.619 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.619 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.619 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Session state does not function when running a script without `streamlit run`
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.624 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.626 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.628 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.628 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.640 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.643 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.643 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.643 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.644 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.644 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.644 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.644 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.645 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.645 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.645 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.645 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.647 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.648 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.648 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.648 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.649 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.649 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.649 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.651 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.651 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.652 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.654 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.654 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.654 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.654 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.655 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.661 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.661 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.661 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-03-30 00:44:42.661 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+__________________ test_database_exceptions_trigger_rollback __________________
+
+fresh_db = <blast_ocr.storage.database.OCRDatabase object at 0x0000016F0A21B3B0>
+
+    def test_database_exceptions_trigger_rollback(fresh_db):
+        """Covers lines 90-92, 117-119, 134-136 in database.py"""
+        job_id = fresh_db.create_job("test_rb.pdf", 1)
+    
+>       with patch.object(fresh_db.session, "commit", side_effect=Exception("Mock Commit Error")):
+             ^^^^^
+E       NameError: name 'patch' is not defined
+
+tests\test_database_complete.py:168: NameError
+_____________________ test_database_del_exception_handled _____________________
+
+    def test_database_del_exception_handled():
+        """Covers lines 164-165 in database.py (Exception catch in __del__)"""
+        db_file = tempfile.mktemp(suffix=".db")
+        from blast_ocr.storage.database import OCRDatabase
+        db = OCRDatabase(f"sqlite:///{db_file}")
+    
+>       with patch.object(db, "close", side_effect=Exception("Close Error")):
+             ^^^^^
+E       NameError: name 'patch' is not defined
+
+tests\test_database_complete.py:192: NameError
+============================== warnings summary ===============================
+..\..\..\..\..\..\..\AppData\Local\Programs\Python\Python312\Lib\site-packages\defusedxml\__init__.py:30
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+    from . import cElementTree
+
+tests/test_foundation_coverage.py::TestMainCoverage::test_main_cli_entrypoint
+  <frozen runpy>:128: RuntimeWarning: 'blast_ocr.main' found in sys.modules after import of package 'blast_ocr', but prior to execution of 'blast_ocr.main'; this may result in unpredictable behaviour
+
+tests/test_ui_coverage.py::test_main_cli_execution
+  <frozen runpy>:128: RuntimeWarning: 'blast_ocr.ui.web_app' found in sys.modules after import of package 'blast_ocr.ui', but prior to execution of 'blast_ocr.ui.web_app'; this may result in unpredictable behaviour
+
+tests/test_healing_logic.py::TestAsyncRetryWithBackoff::test_async_retry_succeeds_after_failure
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\tests\test_healing_logic.py:242: DeprecationWarning: There is no current event loop
+    result = asyncio.get_event_loop().run_until_complete(run())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                            Stmts   Miss  Cover   Missing
+-------------------------------------------------------------
+blast_ocr\__init__.py               8      0   100%
+blast_ocr\cache\__init__.py         0      0   100%
+blast_ocr\cache\manager.py        114      7    94%   23-25, 134-137
+blast_ocr\config.py                65      6    91%   3-5, 97-99
+blast_ocr\core\__init__.py          0      0   100%
+blast_ocr\core\exceptions.py       18      0   100%
+blast_ocr\core\extractor.py       192      7    96%   158, 215, 265-267, 332, 334
+blast_ocr\core\healing.py          62      0   100%
+blast_ocr\core\parallel.py         36      0   100%
+blast_ocr\core\worker.py           41      3    93%   57-59
+blast_ocr\logging_config.py        33      0   100%
+blast_ocr\main.py                  15      0   100%
+blast_ocr\pipeline.py             135      8    94%   24-25, 189, 202, 205-209, 213
+blast_ocr\storage\__init__.py       0      0   100%
+blast_ocr\storage\database.py      95      5    95%   90-92, 164-165
+blast_ocr\ui\__init__.py            0      0   100%
+blast_ocr\ui\web_app.py           131      3    98%   222-223, 225
+-------------------------------------------------------------
+TOTAL                             945     39    96%
+=========================== short test summary info ===========================
+FAILED tests/test_foundation_coverage.py::TestConfigCoverage::test_settings_config_dict_import_fallback
+FAILED tests/test_pipeline_coverage.py::test_process_pdf_info_fails_fallback
+FAILED tests/test_ui_coverage.py::test_handle_file_upload_success_outputs - F...
+FAILED tests/test_ui_coverage.py::test_main_ui_flow - ValueError: too many va...
+FAILED tests/test_ui_coverage.py::test_main_cli_execution - AssertionError: E...
+FAILED tests/test_database_complete.py::test_database_exceptions_trigger_rollback
+FAILED tests/test_database_complete.py::test_database_del_exception_handled
+============ 7 failed, 160 passed, 1 skipped, 4 warnings in 54.04s ============

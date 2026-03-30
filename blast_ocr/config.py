@@ -1,14 +1,14 @@
 try:
     from pydantic_settings import BaseSettings, SettingsConfigDict
 except ImportError:
-    # Fallback for Pydantic V1 or V2 without pydantic-settings
     from pydantic import BaseSettings
     SettingsConfigDict = None
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from typing import List, Optional
 import os
 import sys
+import tempfile
 
 def _detect_poppler_path() -> Optional[str]:
     """
@@ -37,13 +37,13 @@ class OCRConfig(BaseSettings):
     timeout_per_page: int = Field(default=60, description="Seconds before timeout")
     
     # Storage
-    database_url: str = Field(default='sqlite:////tmp/blast_ocr.db')
+    database_url: str = Field(default_factory=lambda: f"sqlite:///{os.path.join(tempfile.gettempdir(), 'blast_ocr.db')}")
     output_format: str = Field(default='txt', description="Output format: txt, json, pptx")
     
     # Paths
     data_dir: str = Field(default='data/pages')
-    output_dir: str = Field(default='/tmp/blast_output')
-    log_dir: str = Field(default='/tmp/logs')
+    output_dir: str = Field(default_factory=lambda: os.path.join(tempfile.gettempdir(), 'blast_output'))
+    log_dir: str = Field(default_factory=lambda: os.path.join(tempfile.gettempdir(), 'logs'))
     poppler_path: Optional[str] = Field(
         default_factory=_detect_poppler_path,
         description="Path to poppler bin folder (auto-detected)"
@@ -62,6 +62,31 @@ class OCRConfig(BaseSettings):
     denoise_level: int = Field(default=0, description="Denoising strength (0-20)")
     contrast_boost: float = Field(default=1.0, description="Contrast multiplier (1.0-3.0)")
     auto_deskew: bool = Field(default=True, description="Enable auto-deskewing")
+    
+    @field_validator('max_workers', 'timeout_per_page')
+    @classmethod
+    def check_positive(cls, v):
+        if v <= 0: raise ValueError('Must be > 0')
+        return v
+
+    @field_validator('min_confidence')
+    @classmethod
+    def check_conf(cls, v):
+        if not (0.0 <= v <= 1.0): raise ValueError('Must be 0-1')
+        return v
+
+    @field_validator('contrast_boost')
+    @classmethod
+    def check_contrast(cls, v):
+        if not (1.0 <= v <= 3.0): raise ValueError('Must be 1-3')
+        return v
+
+    @field_validator('ocr_languages')
+    @classmethod
+    def check_langs(cls, v):
+        if not v: raise ValueError('Cannot be empty')
+        return v
+    
     
     if SettingsConfigDict:
         model_config = SettingsConfigDict(

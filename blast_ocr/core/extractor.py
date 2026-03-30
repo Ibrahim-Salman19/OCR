@@ -19,6 +19,8 @@ if sys.platform != "win32":
     os.environ.setdefault("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
 
 import easyocr
+import defusedxml
+defusedxml.defuse_stdlib()
 
 from blast_ocr.config import config
 from blast_ocr.core.exceptions import *
@@ -69,6 +71,12 @@ class RobustOCRExtractor:
             img = cv2.imdecode(np.fromfile(image_path, dtype=np.uint8), cv2.IMREAD_COLOR)
             if img is None:
                 raise ImageLoadError("cv2.imdecode returned None")
+            
+            # CRITICAL FIX: Validate dimensions to prevent C-level access violations
+            # EasyOCR/OpenCV can crash on 0x0 or extremely small images on Windows
+            if img.shape[0] < 2 or img.shape[1] < 2:
+                raise ImageLoadError(f"Image too small for OCR ({img.shape[1]}x{img.shape[0]})")
+            
             return img
         except Exception as e:
             if isinstance(e, ImageLoadError):
@@ -80,14 +88,11 @@ class RobustOCRExtractor:
         Apply adaptive preprocessing to improve OCR accuracy.
         Accepts file path or numpy array. Returns numpy array.
         """
+        image = None
         try:
             if isinstance(image_source, str):
-                # Use imdecode for robust loading from path, similar to load_image
-                if not Path(image_source).exists():
-                    raise ImageLoadError(f"File not found: {image_source}")
-                image = cv2.imdecode(np.fromfile(image_source, dtype=np.uint8), cv2.IMREAD_COLOR)
-                if image is None:
-                    raise ImageLoadError(f"Cannot load image from path: {image_source}")
+                # Use load_image for robust loading from path
+                image = self.load_image(image_source)
             else:
                 image = image_source
                 
@@ -115,18 +120,21 @@ class RobustOCRExtractor:
                     
                     # Modern OpenCV minAreaRect returns angle in range [-90, 0) in some versions,
                     # or [0, 90) in others. The logic needs to be robust.
-                    # Assuming standard range used in recent OpenCV versions:
                     if angle < -45:
                         angle = -(90 + angle)
                     else:
                         angle = -angle
                     
-                    # Only rotate if significant skew
-                    if abs(angle) > 0.5:
+                    # Only rotate if significant skew and within a sane range (e.g., < 10 degrees)
+                    # Catastrophic failure occurs when minAreaRect returns ~90 for clean pages
+                    if 0.5 < abs(angle) < 10.0:
+                        logger.info(f"Correcting deskew: {angle:.2f} degrees")
                         (h, w) = gray.shape
                         center = (w // 2, h // 2)
                         M = cv2.getRotationMatrix2D(center, angle, 1.0)
                         gray = cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+                    elif abs(angle) >= 10.0:
+                        logger.warning(f"Extreme skew detected ({angle:.2f}°), ignoring to prevent gibberish.")
 
             # 4. Resize
             h, w = gray.shape
@@ -134,18 +142,7 @@ class RobustOCRExtractor:
                 scale = target_width / float(w)
                 gray = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_CUBIC)
 
-            # 5. Adaptive Threshold - ONLY if requested or strictly needed.
-            # EasyOCR handles grayscale well. Binarization can remove details.
-            # Returning grayscale is often safer for general OCR.
-            # return gray 
-            
-            # If binarization is desired by user/config (keeping it for now as per legacy behavior 
-            # but noting it might be better removed)
-            # bin_img = cv2.adaptiveThreshold(
-            #     gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            #     cv2.THRESH_BINARY, 21, 10
-            # )
-            # FIX(phase4): Apply Contrast Boost
+            # 5. Adaptive Threshold / Contrast Boost
             if config.contrast_boost != 1.0:
                  # alpha = contrast (1.0-3.0), beta = brightness (0)
                  gray = cv2.convertScaleAbs(gray, alpha=config.contrast_boost, beta=0)
@@ -153,23 +150,20 @@ class RobustOCRExtractor:
             return gray
 
         except Exception as e:
-            # FIX(phase2): CRITICAL-002 - Fixed undefined 'img' variable.
-            # The original code referenced 'img' but the correct variable is 'image_source'.
-            # We also handle the case where image_source is a string path vs numpy array.
-            logger.warning(f"Preprocessing failed: {e}. Using original image.")
-            if isinstance(image_source, str):
-                # Reload the image if we only had a path
-                fallback = cv2.imdecode(np.fromfile(image_source, dtype=np.uint8), cv2.IMREAD_COLOR)
-                if fallback is None:
-                    raise ImageLoadError(f"Cannot load fallback image: {image_source}")
-                if len(fallback.shape) == 3:
-                    return cv2.cvtColor(fallback, cv2.COLOR_BGR2GRAY)
-                return fallback
-            else:
-                # image_source is already a numpy array
-                if len(image_source.shape) == 3:
-                    return cv2.cvtColor(image_source, cv2.COLOR_BGR2GRAY)
-                return image_source
+            # BUG-FIX-01: Correctly use image_source/image and avoid re-loading failure
+            # If load_image failed (image is None), then we must raise.
+            if image is None:
+                raise
+                
+            logger.warning(f"Preprocessing failed: {e}. Falling back to grayscale.")
+            try:
+                if len(image.shape) == 3:
+                    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                return image.copy()
+            except Exception as inner_e:
+                logger.error(f"Fallback preprocessing failed: {inner_e}")
+                # Ultimate fallback - return as-is
+                return image
 
     @healer.retry_with_backoff
     def process_page(self, page_path: str, page_number: int) -> Dict:
@@ -241,14 +235,15 @@ class RobustOCRExtractor:
                 }
 
             text_parts = [item[1] for item in raw_results]
-            confidences = [item[2] for item in raw_results]
+            # BUG-VRAM-AUTOGRAD-01 Fix: Explicit cast to float detaches gradient graph in VRAM
+            confidences = [float(item[2]) for item in raw_results]
             
             extracted_text = " ".join(text_parts)
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
             
             # Format details for UI: [{'text': t, 'conf': c, 'bbox': b}, ...]
             formatted_details = [
-                {'text': item[1], 'conf': item[2], 'bbox': [int(c) for point in item[0] for c in point]} 
+                {'text': item[1], 'conf': float(item[2]), 'bbox': [int(c) for point in item[0] for c in point]} 
                 for item in raw_results
             ]
             

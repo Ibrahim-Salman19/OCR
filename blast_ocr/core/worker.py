@@ -10,10 +10,16 @@ from blast_ocr.cache.manager import cache_manager
 # though in threaded mode memory is shared.
 _worker_extractor: Optional[RobustOCRExtractor] = None
 
+import threading
+_worker_init_lock = threading.Lock()
+
 def get_worker_extractor() -> RobustOCRExtractor:
     global _worker_extractor
     if _worker_extractor is None:
-        _worker_extractor = RobustOCRExtractor()
+        # BUG-WORKER-RACE-01 Fix: Thread-safe singleton
+        with _worker_init_lock:
+            if _worker_extractor is None:
+                _worker_extractor = RobustOCRExtractor()
     return _worker_extractor
 
 def process_page_wrapper(image_path: str, page_num: int) -> Dict:
@@ -24,32 +30,19 @@ def process_page_wrapper(image_path: str, page_num: int) -> Dict:
     logger = logging.getLogger(__name__)
     
     # 1. Check Cache
-    # We use the cache manager directly
+    file_hash = None
     try:
+        # get_cached_result hashes internally and returns result or None
+        cached = cache_manager.get_cached_result(image_path)
+        if cached:
+            logger.info(f"Page {page_num}: Cache hit")
+            cached['page'] = page_num
+            return cached
+            
+        # miss: we need the hash for saving later
         file_hash = cache_manager.get_file_hash(image_path)
-        if file_hash:
-            cached = cache_manager.get_cached_result(file_hash) # Using public API
-            # Or if main used .get(key), we use .get here. 
-            # manager.py has 'get_cached_result(filepath)' which hashes internally, 
-            # and 'set(key, val)'. 
-            # Let's use the efficient get_file_hash + direct key lookup if possible, 
-            # but manager.py's get_cached_result does both.
-            
-            # Re-reading manager.py: 
-            # get_cached_result(filepath) -> returns dict or None.
-            # It handles hashing internally.
-            cached = cache_manager.get_cached_result(image_path)
-            if cached:
-                logger.info(f"Page {page_num}: Cache hit")
-                cached['page'] = page_num
-                return cached
-            
-            # If not in cache, we need the hash for saving later
-            # (get_cached_result calculates it but doesn't return it if miss)
-            # So let's calculate it once.
-            file_hash = cache_manager.get_file_hash(image_path)
     except Exception as e:
-        logger.warning(f"Cache check failed: {e}")
+        logger.warning(f"Cache check failed for {image_path}: {e}")
         file_hash = None
 
     # 2. Extract

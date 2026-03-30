@@ -30,6 +30,8 @@ class OCRCache:
     
     # PERF(phase3): Chunk size for partial hashing (64KB)
     HASH_CHUNK_SIZE = 64 * 1024  # 64KB
+    # FIX: Use full hash for files up to 10MB for safety (typical book page size)
+    FULL_HASH_THRESHOLD = 10 * 1024 * 1024 
     
     def __init__(self, cache_dir=None):
         if cache_dir is None:
@@ -43,19 +45,19 @@ class OCRCache:
         Generate hash of file using partial content for performance.
         
         PERF(phase3): HIGH-003 - For large files, reading the entire content
-        for hashing is slow (2-5 seconds per 100MB). Instead, we hash:
-        - First 64KB + file size + last 64KB
-        This is practically unique and 100x faster for large files.
+        for hashing is slow. We hash:
+        - Whole file if < 10MB (Safe Threshold)
+        - Else: First 64KB + file size + last 64KB
         """
         try:
             file_size = os.path.getsize(filepath)
             
-            # For small files (< 128KB), just hash the whole thing
-            if file_size <= self.HASH_CHUNK_SIZE * 2:
+            # Use full hash for images under 10MB (most book pages)
+            if file_size <= self.FULL_HASH_THRESHOLD:
                 with open(filepath, 'rb') as f:
                     return hashlib.sha256(f.read()).hexdigest()
             
-            # For large files, hash first + size + last chunks
+            # For very large files, hash first + size + last chunks
             sha256_hash = hashlib.sha256()
             
             with open(filepath, 'rb') as f:
@@ -93,17 +95,47 @@ class OCRCache:
         return None
 
     def set(self, cache_key: str, result: Dict):
-        """Save result by direct key (hash)"""
+        """Save result by direct key (hash) securely via atomic rewrite"""
+        import tempfile
         with self._lock:  # FIX(phase3): Thread-safe write
             try:
                 cache_file = self.cache_dir / f"{cache_key}.json"
-                # PERF(phase3): Use orjson if available
-                if USE_ORJSON:
-                    with open(cache_file, 'wb') as f:
-                        f.write(orjson.dumps(result, option=orjson.OPT_INDENT_2))
-                else:
-                    with open(cache_file, 'w', encoding='utf-8') as f:
-                        json.dump(result, f, ensure_ascii=False, indent=2)
+                fd, temp_path = tempfile.mkstemp(dir=str(self.cache_dir), prefix=".tmp_")
+                
+                try:
+                    # BUG-CACHE-CORRUPTION-01 Fix: Atomic file write
+                    if USE_ORJSON:
+                        with os.fdopen(fd, 'wb') as f:
+                            f.write(orjson.dumps(result, option=orjson.OPT_INDENT_2))
+                            f.flush()
+                            os.fsync(f.fileno())
+                    else:
+                        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                            json.dump(result, f, ensure_ascii=False, indent=2)
+                            f.flush()
+                            os.fsync(f.fileno())
+                            
+                    # Atomically rename to target
+                    # BUG-CACHE-WIN-01 Fix: Handle PermissionError on Windows os.replace
+                    max_retries = 3
+                    for i in range(max_retries):
+                        try:
+                            os.replace(temp_path, str(cache_file))
+                            break
+                        except PermissionError:
+                            if i < max_retries - 1:
+                                import time
+                                time.sleep(0.1)
+                            else:
+                                raise
+                except Exception as e:
+                    if 'fd' in locals():
+                        os.close(fd)
+                    if os.path.exists(temp_path):
+                        try: os.remove(temp_path)
+                        except OSError: pass
+                    raise e
+
             except Exception as e:
                 logger.warning(f"Cache write failed for key {cache_key}: {e}")
 

@@ -1,0 +1,28 @@
+From HEAD Mon Sep 17 00:00:00 2001
+From: Hypothesis 6.151.9 <no-reply@hypothesis.works>
+Date: Thu, 26 Mar 2026 12:58:39
+Subject: [PATCH] Hypothesis: add explicit examples
+
+---
+--- ./tests\test_property_based.py
++++ ./tests\test_property_based.py
+@@ -106,13 +106,17 @@
+     w=st.integers(min_value=10, max_value=500)
+ )
+ @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
++@example(
++    h=10,
++    w=10,
++).via('discovered failure')
+ def test_preprocess_always_returns_2d_array(h, w):
+     from blast_ocr.core.extractor import RobustOCRExtractor
+     extractor = RobustOCRExtractor()
+-    
++
+     # BGR image
+     img = np.full((h, w, 3), 200, dtype=np.uint8)
+-    
++
+     try:
+         result = extractor.preprocess_image(img)
+         assert isinstance(result, np.ndarray), \

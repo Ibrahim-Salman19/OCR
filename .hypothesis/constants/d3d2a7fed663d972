@@ -1,0 +1,4 @@
+# file: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\pipeline.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 300, '\n\n---\n\n', '.', '.bmp', '.jpeg', '.jpg', '.pdf', '.png', '.pptx', '.tiff', 'PNG', 'Pages', 'completed', 'confidence', 'db', 'docx', 'dpi', 'error', 'failed', 'job_id', 'md', 'message', 'output_files', 'page', 'pages_processed', 'poppler_path', 'processing', 'processing_time', 'status', 'success', 'text', 'thread_count', 'use_pdftocairo']

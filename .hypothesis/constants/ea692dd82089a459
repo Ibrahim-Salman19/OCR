@@ -1,0 +1,4 @@
+# file: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.6, 1.0, 3.0, '..', '.env', '/tmp/blast_output', '/tmp/logs', 'BLAST_OCR_', 'Cannot be empty', 'Languages to detect', 'Library', 'Must be 0-1', 'Must be 1-3', 'Must be > 0', 'Thread pool size', 'Use GPU acceleration', 'bin', 'contrast_boost', 'data/pages', 'en', 'max_workers', 'min_confidence', 'ocr_languages', 'poppler-25.12.0', 'timeout_per_page', 'txt', 'win32']

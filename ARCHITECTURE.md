@@ -19,7 +19,9 @@ The system is built upon the **3-Layer A.N.T.** (Architect, Navigator, Tool) des
 ### Layer 3: Tool (The "How")
 - **Responsibility**: Execution of specific, atomic tasks.
 - **Location**: `blast_ocr/core/`.
-- **Role**: Pure functions and classes that do one thing well (e.g., `RobustOCRExtractor`, `SelfHealingOCR`). They are stateless where possible and highly testable.
+- **Role**: Pure functions and classes that do one thing well (e.g., `RobustOCRExtractor`, `SelfHealingOCR`). 
+- **Thread Safety**: Uses a module-level global lock (`_ocr_global_lock`) to serialize thread-unsafe OCR engine calls while allowing concurrent preprocessing.
+- **Session Isolation**: Utilizes `scoped_session` with `threading.get_ident` to ensure database transaction isolation across parallel workers.
 
 ---
 

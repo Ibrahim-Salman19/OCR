@@ -1,0 +1,61 @@
+C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.2) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\hafiz\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collecting ... collected 1 item
+
+tests/test_property_based.py::test_sanitize_removes_null_bytes FAILED    [100%]
+
+================================== FAILURES ===================================
+______________________ test_sanitize_removes_null_bytes _______________________
+  + Exception Group Traceback (most recent call last):
+  |   File "C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\tests\test_property_based.py", line 24, in test_sanitize_removes_null_bytes
+  |     @settings(max_examples=1000)
+  |                    ^^^
+  |   File "C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\hypothesis\core.py", line 2246, in wrapped_test
+  |     raise the_error_hypothesis_found
+  | hypothesis.errors.FlakyFailure: Hypothesis test_sanitize_removes_null_bytes(text='') produces unreliable results: Falsified on the first call but did not on a subsequent one (1 sub-exception)
+  | Falsifying example: test_sanitize_removes_null_bytes(
+  |     text='',
+  | )
+  | Unreliable test timings! On an initial run, this test took 17934.14ms, which exceeded the deadline of 200.00ms, but on a subsequent run it took 0.01 ms, which did not. If you expect this sort of variability in your test timings, consider turning deadlines off for this test by setting deadline=None.
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\hypothesis\core.py", line 1211, in _execute_once_for_engine
+    |     result = self.execute_once(data)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\hypothesis\core.py", line 1150, in execute_once
+    |     result = self.test_runner(data, run)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\hypothesis\core.py", line 824, in default_executor
+    |     return function(data)
+    |            ^^^^^^^^^^^^^^
+    |   File "C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\hypothesis\core.py", line 1107, in run
+    |     return test(*args, **kwargs)
+    |            ^^^^^^^^^^^^^^^^^^^^^
+    |   File "C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\tests\test_property_based.py", line 24, in test_sanitize_removes_null_bytes
+    |     @settings(max_examples=1000)
+    |                    ^^^^^^^
+    |   File "C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\hypothesis\core.py", line 1041, in test
+    |     raise DeadlineExceeded(
+    | hypothesis.errors.DeadlineExceeded: Test took 17934.14ms, which exceeds the deadline of 200.00ms. If you expect test cases to take this long, you can use @settings(deadline=...) to either set a higher deadline, or to disable it with deadline=None.
+    +------------------------------------
+============================== warnings summary ===============================
+tests/test_property_based.py::test_sanitize_removes_null_bytes
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+    from . import cElementTree
+
+tests/test_property_based.py::test_sanitize_removes_null_bytes
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+    import pynvml  # type: ignore[import]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================= Hypothesis ==================================
+`git apply .hypothesis\patches\2026-03-26--75349b04.patch` to add failing examples to your code.
+=========================== short test summary info ===========================
+FAILED tests/test_property_based.py::test_sanitize_removes_null_bytes - DeadlineExceeded('Test took 17934.14ms, which exceeds the deadline of 200.00ms. If you expect test cases to take this long, you can use @settings(deadline=...) to either set a higher deadline, or to disable it with deadline=None.') [single exception in FlakyFailure]
+======================= 1 failed, 2 warnings in 23.99s ========================

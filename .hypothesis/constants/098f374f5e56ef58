@@ -1,0 +1,4 @@
+# file: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\core\extractor.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.5, 1.0, 255, 1800, 2000, '\n\n---\n\n', ' | ', '## ', '---', '/tmp/.EasyOCR', '/tmp/.EasyOCR/model', 'EASYOCR_MODULE_PATH', 'bbox', 'bbox_count', 'conf', 'confidence', 'details', 'image', 'low_confidence', 'no_text_detected', 'page', 'text', 'utf-8', 'w', 'warning', 'win32']

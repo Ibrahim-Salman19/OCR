@@ -47,6 +47,12 @@ class SelfHealingOCR:
                 try:
                     return await func(*args, **kwargs)
                 except Exception as e:
+                    # BUG-HEALING-ASYNC-01 Fix: Prevent infinite async loops on fatal/unrecoverable errors
+                    error_type = type(e).__name__
+                    if error_type in ['ImageLoadError', 'PageExtractionError', 'FileNotFoundError', 'OCREngineError']:
+                        logger.error(f"Fatal error in {func.__name__}: {e}. Not retrying.")
+                        raise
+
                     wait_time = self.backoff_factor ** attempt
                     logger.warning(
                         f"Attempt {attempt + 1}/{self.max_retries} failed: {e}. "

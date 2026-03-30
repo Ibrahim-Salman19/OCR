@@ -1,290 +1,211 @@
 /**
- * B.L.A.S.T. OCR - Custom Stylesheet
- * Version: 2.1 (Critical Visibility Fixes)
- * Description: High-contrast Dark Glassmorphism
- * Last Updated: February 2026
+ * B.L.A.S.T. OCR - UI UX Pro Max
+ * Pattern: Real-Time / Operations Landing
+ * Style: Exaggerated Minimalism
+ * 
+ * Future notes: Keep complex shadows out. Stick to flat borders, massive typography, 
+ * and strict white space. We use Fira fonts for a data-dense, technical look.
  */
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ==========================================================================
    Base Scope & Typography
    ========================================================================== */
 
 /* 
-   CRITICAL: Scope global text overrides to the main content container only.
-   This prevents breaking Streamlit's internal widgets (dropdowns, modals, toasts).
+   SECURITY/UI UX NOTE: Streamlit widgets rely on global classes. 
+   We scope overrides carefully to prevent breaking internal DOM structures.
 */
-[data-testid="stMainBlockContainer"] .stMarkdown p,
-[data-testid="stMainBlockContainer"] .stMarkdown span,
-[data-testid="stMainBlockContainer"] .stMarkdown li,
-[data-testid="stMainBlockContainer"] label,
-[data-testid="stMainBlockContainer"] h1,
-[data-testid="stMainBlockContainer"] h2,
-[data-testid="stMainBlockContainer"] h3 {
-    color: #f1f5f9 !important;
-    /* Slate-100 for max readability */
+
+[data-testid="stMainBlockContainer"] * {
+    font-family: 'Fira Sans', sans-serif !important;
 }
 
-/* Secondary/Muted text should still be highly legible */
-.caption-text {
-    color: #e2e8f0 !important;
-    /* Slate-200 */
+[data-testid="stMainBlockContainer"] h1,
+[data-testid="stMainBlockContainer"] h2,
+[data-testid="stMainBlockContainer"] h3,
+.fira-code {
+    font-family: 'Fira Code', monospace !important;
 }
 
 /* ==========================================================================
-   Header & Branding
+   SEO hidden meta
+   ========================================================================== */
+.seo-metadata {
+    display: none !important;
+    visibility: hidden;
+}
+
+/* ==========================================================================
+   Header & Branding (Exaggerated Minimalism)
    ========================================================================== */
 
 .blast-header {
-    text-align: center;
-    padding: 2rem 0 1rem 0;
-    margin-bottom: 3rem;
+    text-align: left; /* Shifted to left for raw minimalist layout */
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 4px solid #1e293b; /* Thick minimalist border */
 }
 
+/* Clamp scaling for massive hero effect */
 .blast-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 4.5rem;
+    font-family: 'Fira Code', monospace !important;
+    font-size: clamp(3rem, 6vw, 6rem);
     font-weight: 900;
-    background: linear-gradient(135deg, #fb923c 20%, #ea580c 80%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: 0.2rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 0 40px rgba(251, 146, 60, 0.2);
-}
-
-.blast-subtitle {
-    font-size: 1.1rem;
-    color: #e0e7ff;
-    /* High contrast indigo */
-    letter-spacing: 0.3rem;
-    font-weight: 500;
+    color: #f8fafc;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    margin-bottom: 1rem;
     text-transform: uppercase;
 }
 
-.blast-tagline {
-    font-size: 1rem;
-    color: #c7d2fe;
-    margin-top: 0.5rem;
+.blast-subtitle {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    color: #94a3b8;
+    letter-spacing: 0.1rem;
     font-weight: 400;
 }
 
 /* ==========================================================================
-   Glass Cards (Fixed Visibility)
+   Minimal Panels (Replacing Glassmorphism)
    ========================================================================== */
 
-.glass-card {
-    background: rgba(255, 255, 255, 0.12);
-    /* Increased from 0.08 */
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    /* Stronger border */
-    padding: 2rem;
+.minimal-panel {
+    background: transparent;
+    border: 2px solid #334155;
+    border-radius: 0; /* Flat, raw brutalist/minimalist edges */
+    padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    /* Top highlight */
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color 0.2s ease-in-out;
+    overflow: hidden; /* FIX: Prevent text overflow in narrow columns */
+    word-wrap: break-word;
 }
 
-.glass-card:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(251, 146, 60, 0.4);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+.minimal-panel:hover {
+    border-color: #2563eb; /* Pro Max Primary Blue hover */
+}
+
+.minimal-panel h3 {
+    margin-top: 0;
+    color: #e2e8f0 !important;
+    font-size: 1.1rem;  /* Slightly smaller to fit narrow panels */
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Streamlit expander fix: prevent clipping in narrow columns */
+[data-testid="stExpander"] {
+    overflow: visible !important;
+}
+[data-testid="stExpander"] summary {
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    cursor: pointer;
 }
 
 /* ==========================================================================
    Input Widgets & Controls
    ========================================================================== */
 
-/* Sliders */
-[data-testid="stSlider"] label {
-    color: #f1f5f9 !important;
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: 0.02rem;
-}
-
-/* Dropdowns - Restore native readability */
-[data-testid="stSelectbox"] [data-baseweb="select"] span {
-    color: inherit !important;
-    /* Respect Streamlit's dark theme text */
-}
-
-/* File Uploader */
+/* File Uploader styling */
 [data-testid="stFileUploader"] {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 1rem;
-    padding: 1rem;
-    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: transparent;
+    border: 2px dashed #475569;
+    border-radius: 0; /* Flat edge */
+    padding: 2rem;
+    cursor: pointer;
+}
+[data-testid="stFileUploader"]:hover {
+    border-color: #f97316; /* Focus outline */
 }
 
-/* Buttons */
-.stButton>button {
+/* Buttons - Flat, high contrast */
+.stButton > button {
     width: 100%;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    color: white !important;
-    /* Force white text */
+    background: #f97316 !important; /* Flat CTA */
+    color: #ffffff !important;
     border: none;
-    padding: 0.75rem 0;
+    padding: 1rem 0;
     font-weight: 700;
     letter-spacing: 0.05rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 0; /* No radius */
+    text-transform: uppercase;
     transition: all 0.2s ease;
+    cursor: pointer; /* Pro Max Checklist: cursor-pointer on all clickable elements */
 }
 
-.stButton>button:hover {
-    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
-    box-shadow: 0 6px 12px rgba(249, 115, 22, 0.4);
-    transform: translateY(-1px);
+.stButton > button:hover {
+    background: #c2410c !important;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 0 #9a3412; /* Flat block shadow instead of blur */
 }
 
-/* Secondary/Ghost Buttons (if used) */
-.stButton>button[kind="secondary"] {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+/* Secondary Button Support if needed */
+.stButton > button[kind="secondary"] {
+    background: #1e293b !important;
+    color: #f8fafc !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background: #334155 !important;
+    box-shadow: 0 10px 0 #0f172a;
 }
 
 /* ==========================================================================
-   Native Metrics (st.metric) Styling
+   Native Metrics
    ========================================================================== */
 
 [data-testid="stMetric"] {
-    background: rgba(255, 255, 255, 0.14);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 1rem;
+    background: #0f172a;
+    border: 2px solid #1e293b;
+    border-left: 6px solid #2563eb; /* Technical stripe */
+    border-radius: 0;
     padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-[data-testid="stMetricLabel"] {
-    justify-content: center;
-    /* Center label */
 }
 
 [data-testid="stMetricLabel"] p {
-    color: #e8ecfc !important;
+    color: #94a3b8 !important;
     font-size: 0.85rem !important;
     text-transform: uppercase;
     letter-spacing: 0.1rem;
-    font-weight: 700 !important;
+    font-family: 'Fira Code', monospace !important;
 }
 
 [data-testid="stMetricValue"] {
-    color: #ffffff !important;
-    font-size: 2.25rem !important;
-    font-weight: 800 !important;
-}
-
-[data-testid="stMetricDelta"] {
-    color: #34d399 !important;
-    /* Emerald green */
-    font-weight: 600;
+    color: #f8fafc !important;
+    font-size: 3rem !important;
+    font-weight: 900 !important;
+    line-height: 1.2;
 }
 
 /* ==========================================================================
-   Sidebar Styling
+   Utilities & Alerts (Status indicators)
    ========================================================================== */
 
-[data-testid="stSidebar"] {
-    background-color: #111827 !important;
-    /* Very dark gray/blue */
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-[data-testid="stSidebar"] .glass-card {
-    background: rgba(255, 255, 255, 0.08);
-    /* Slightly clearer in sidebar */
-    padding: 1rem;
-    border-radius: 0.75rem;
-}
-
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    color: #fb923c !important;
-    /* Orange accents for headers */
-}
-
-/* ==========================================================================
-   Tabs Styling
-   ========================================================================== */
-
-[data-testid="stTabs"] [data-baseweb="tab-list"] {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 0.75rem;
-    padding: 0.35rem;
-    gap: 0.5rem;
-}
-
-[data-testid="stTabs"] [data-baseweb="tab"] {
-    color: #cbd5e1 !important;
-    font-weight: 600;
-    border-radius: 0.5rem;
-    padding: 0.5rem 1.5rem;
-    transition: all 0.2s ease;
-}
-
-[data-testid="stTabs"] [aria-selected="true"] {
-    background: rgba(249, 115, 22, 0.2) !important;
-    color: #fb923c !important;
-    border: 1px solid rgba(249, 115, 22, 0.3);
-}
-
-[data-testid="stTabs"] [data-baseweb="tab"]:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-/* ==========================================================================
-   Utilities & Alerts
-   ========================================================================== */
-
-/* Info/Success/Warning Boxes */
-div[data-testid="stMarkdownContainer"]>div.info-box {
-    background: rgba(59, 130, 246, 0.15);
+div[data-testid="stMarkdownContainer"] > div.info-box {
+    background: #1e3a8a;
     border-left: 4px solid #3b82f6;
     color: #dbeafe !important;
-    padding: 1rem;
-    border-radius: 0.5rem;
+    padding: 1.2rem;
+    border-radius: 0;
+    font-family: 'Fira Code', monospace;
 }
 
-div[data-testid="stMarkdownContainer"]>div.success-box {
-    background: rgba(34, 197, 94, 0.15);
+div[data-testid="stMarkdownContainer"] > div.success-box {
+    background: #14532d;
     border-left: 4px solid #22c55e;
     color: #dcfce7 !important;
-    padding: 1rem;
-    border-radius: 0.5rem;
+    padding: 1.2rem;
+    border-radius: 0;
+    font-family: 'Fira Code', monospace;
 }
 
-/* Preview Thumbnail Container */
-.preview-card {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    text-align: center;
-    transition: all 0.2s;
-}
-
-.preview-card:hover {
-    border-color: #fb923c;
-}
-
-.preset-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05rem;
-    background: rgba(251, 146, 60, 0.15);
-    color: #fb923c;
-    border: 1px solid rgba(251, 146, 60, 0.3);
+svg.lucide {
+    vertical-align: text-bottom;
+    margin-right: 8px;
 }

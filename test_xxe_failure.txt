@@ -1,0 +1,49 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\hafiz\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
+plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
+collecting ... collected 3 items
+
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure PASSED   [ 33%]
+tests/test_xxe_security.py::test_pptx_xxe_billion_laughs_dos SKIPPED     [ 66%]
+tests/test_xxe_security.py::test_xml_parser_uses_safe_library FAILED     [100%]
+
+================================== FAILURES ===================================
+______________________ test_xml_parser_uses_safe_library ______________________
+tests\test_xxe_security.py:159: in test_xml_parser_uses_safe_library
+    pytest.fail(
+E   Failed: BUG-XXE-PROTECTION-01 | CRITICAL | security
+E   blast_ocr/pipeline.py uses XML parsing without defusedxml protection.
+E   python-pptx uses lxml internally — vulnerable to XXE by default.
+E   Fix: Add 'import defusedxml; defusedxml.defuse_stdlib()' at the top of blast_ocr/pipeline.py or in blast_ocr/__init__.py.
+============================== warnings summary ===============================
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\cuda\__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+    import pynvml  # type: ignore[import]
+
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure
+  C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+    from . import cElementTree
+
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:66: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('max_workers', 'timeout_per_page')
+
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:71: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('min_confidence')
+
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:76: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('contrast_boost')
+
+tests/test_xxe_security.py::test_pptx_xxe_local_file_disclosure
+  C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book\blast_ocr\config.py:81: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    @validator('ocr_languages')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_xxe_security.py::test_xml_parser_uses_safe_library - Failed...
+============= 1 failed, 1 passed, 1 skipped, 6 warnings in 14.58s =============
