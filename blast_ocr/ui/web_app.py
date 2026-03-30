@@ -1,12 +1,11 @@
-import os # Ensure os is imported
+import os
 import streamlit as st
 
 # MUST BE FIRST Streamlit command
 st.set_page_config(
-    page_title="B.L.A.S.T. OCR Engine - Document Scanner",
+    page_title="B.L.A.S.T. OCR Engine",
     page_icon="■",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
 # Set writable cache for cloud environments
@@ -217,7 +216,6 @@ def render_mission_control(db, job_id):
 
 def main():
     # SEO & UI UX: Initial configuration moved to top of file for Streamlit Cloud stability.
-
     load_css()
     inject_seo_metadata()
     init_session_state()
