@@ -1,22 +1,24 @@
---find-links https://download.pytorch.org/whl/torch_stable.html
-torch==2.1.2+cpu
-torchvision==0.16.2+cpu
+# --- CRITICAL STABILITY CORE ---
+streamlit==1.32.0
+defusedxml==0.7.1
+pandas==2.2.1
+pydantic==2.6.3
+numpy<2.0.0
+
+# --- OCR ENGINE ---
 easyocr
 pytesseract
 pillow
-numpy<2.0.0
 opencv-python-headless
 pdf2image
-streamlit
-pandas
-pydantic
-sqlalchemy
+langdetect
+lxml
+
+# --- UTILITIES ---
 pydantic-settings
 python-dotenv
-defusedxml
-langdetect
 psutil
-lxml
 python-pptx
 python-docx
 tqdm
+sqlalchemy

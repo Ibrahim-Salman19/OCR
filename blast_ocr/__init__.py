@@ -1,17 +1,16 @@
 # B.L.A.S.T. OCR Package
-import defusedxml
+import sys
+import logging
 
-defusedxml.defuse_stdlib()
+logger = logging.getLogger(__name__)
 
-# Global security for potentially vulnerable libraries
+# --- Sovereign Forensic Safety Wrapper ---
 try:
-    from lxml import etree
+    import defusedxml
+    defusedxml.defuse_stdlib()
+    logger.info("Forensic XML Security: ACTIVE")
+except ImportError:
+    logger.warning("Forensic XML Security: MISSING (defusedxml not found)")
+    # We do not crash here, we allow the UI to report the error in detail
 
-    # Create a safe parser that forbids DTDs and entities
-    _safe_parser = etree.XMLParser(
-        resolve_entities=False, dtd_validation=False, load_dtd=False, no_network=True
-    )
-    # Note: python-pptx/docx don't always use the default parser, but this helps catch some leaks
-    etree.set_default_parser(_safe_parser)
-except (ImportError, AttributeError):
-    pass
+__version__ = "1.0.0-SOVEREIGN"
