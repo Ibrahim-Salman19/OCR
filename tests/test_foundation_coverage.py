@@ -10,6 +10,7 @@ import logging
 import json
 from unittest.mock import patch
 from importlib import reload
+from logging.handlers import RotatingFileHandler
 
 from blast_ocr.core.exceptions import LowConfidenceError
 import blast_ocr.logging_config as logging_config
@@ -36,10 +37,10 @@ class TestLoggingConfigCoverage:
         json_handler = next(
             h
             for h in logger.handlers
-            if isinstance(h, logging.handlers.RotatingFileHandler)
-            and h.level != logging.ERROR
+            if isinstance(h, RotatingFileHandler) and h.level != logging.ERROR
         )
         formatter = json_handler.formatter
+        assert formatter is not None
 
         record = logging.LogRecord("test", logging.INFO, "path.py", 10, "msg", (), None)
         record.page_number = 42
@@ -70,41 +71,33 @@ class TestConfigCoverage:
 
     def test_settings_config_dict_import_fallback(self):
         """Covers lines 3-5 and 97-99 where pydantic_settings fails to import."""
+        import importlib
+
         # Save original sys.modules
-        orig_pydantic_settings = sys.modules.pop("pydantic_settings", None)
+        had_pydantic_settings = "pydantic_settings" in sys.modules
+        orig_pydantic_settings = sys.modules.get("pydantic_settings")
         orig_config_module = sys.modules.pop("blast_ocr.config", None)
 
         try:
-            # Force ImportError for pydantic_settings
-            sys.modules["pydantic_settings"] = None
-
-            with pytest.raises(ImportError) as exc_info:
-                # The fallback tries `from pydantic import BaseSettings` which was removed in pydantic v2.
-                # Since we are using pydantic v2 (usually), this import might fail, or it might succeed if v1.
-                # Regardless, we need to cover the code block.
-                # We can mock builtins.__import__ specifically for pydantic_settings
-                pass
-
-            # A more precise way to trigger lines 3-5, 97-99 without breaking everything:
-            # We will use builtins.__import__ patching to simulate ImportError for 'pydantic_settings'
             real_import = __import__
 
             def mock_import(name, globals=None, locals=None, fromlist=(), level=0):
                 if name == "pydantic_settings":
                     raise ImportError("simulated import error")
+                # Make fallback deterministic across pydantic v1/v2.
+                # If config falls back to `from pydantic import BaseSettings`, force it to fail.
+                if name == "pydantic" and "BaseSettings" in (
+                    fromlist or ()
+                ):  # pragma: no cover - branch for import mechanics
+                    raise ImportError("simulated BaseSettings import error")
                 return real_import(name, globals, locals, fromlist, level)
 
-            # Use importlib on blast_ocr.config with the patched __import__
             with patch("builtins.__import__", side_effect=mock_import):
-                # Try to reload config_module. It will hit the ImportError branch.
-                # It might raise an error if `from pydantic import BaseSettings` fails, so we catch it
-                try:
-                    pass
-                except Exception:
-                    pass
+                with pytest.raises(ImportError):
+                    importlib.import_module("blast_ocr.config")
 
         finally:
-            if orig_pydantic_settings:
+            if had_pydantic_settings and orig_pydantic_settings is not None:
                 sys.modules["pydantic_settings"] = orig_pydantic_settings
             elif "pydantic_settings" in sys.modules:
                 del sys.modules["pydantic_settings"]
@@ -139,35 +132,29 @@ class TestMainCoverage:
         with patch("blast_ocr.main.BlastPipeline") as mock_pipeline_cls:
             mock_pipeline = mock_pipeline_cls.return_value
             mock_pipeline.process_job.return_value = {"status": "success"}
+            cb = lambda _cur, _tot: None
 
-            result = main_module.main("dummy.png", "out_dir", None, {"opt": 1})
+            result = main_module.main("dummy.png", "out_dir", cb, {"opt": 1})
             assert result["status"] == "success"
             mock_pipeline_cls.assert_called_once_with(config_overrides={"opt": 1})
             mock_pipeline.process_job.assert_called_once_with(
-                "dummy.png", "out_dir", None
+                "dummy.png", "out_dir", cb
             )
 
     def test_main_cli_entrypoint(self):
         """Covers the __name__ == '__main__' block in main.py."""
-        # By patching the main function and running the module as if it's __main__
-        with patch(
-            "blast_ocr.main.main", return_value={"status": "cli_success"}
-        ) as mock_main:
-            with patch("sys.argv", ["main.py", "source.pdf", "--out", "out_dir"]):
-                # Set module name to __main__ to execute the block
-                with patch.object(main_module, "__name__", "__main__"):
-                    with patch("builtins.print") as mock_print:
-                        # Re-run or trigger the block
-                        # The code block is at the top level and already executed.
-                        # We must exec the file content or run it directly.
-                        import runpy
+        import runpy
 
-                        with patch("blast_ocr.main.BlastPipeline") as mock_pipeline_cls:
-                            mock_pipeline = mock_pipeline_cls.return_value
-                            mock_pipeline.process_job.return_value = {
-                                "status": "success"
-                            }
-                            try:
-                                runpy.run_module("blast_ocr.main", run_name="__main__")
-                            except SystemExit:
-                                pass  # argparse can exit
+        with patch("sys.argv", ["main.py", "source.pdf", "--out", "out_dir"]):
+            with patch("builtins.print"):
+                with patch("blast_ocr.main.BlastPipeline") as mock_pipeline_cls:
+                    mock_pipeline = mock_pipeline_cls.return_value
+                    mock_pipeline.process_job.return_value = {"status": "success"}
+                    original_main_mod = sys.modules.pop("blast_ocr.main", None)
+                    try:
+                        runpy.run_module("blast_ocr.main", run_name="__main__")
+                    except SystemExit:
+                        pass  # argparse can exit
+                    finally:
+                        if original_main_mod is not None:
+                            sys.modules["blast_ocr.main"] = original_main_mod

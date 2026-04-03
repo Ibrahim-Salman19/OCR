@@ -12,6 +12,12 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch, MagicMock
 
 
+def _new_temp_db_path() -> str:
+    """Create and return a temporary sqlite db path safely."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        return tmp.name
+
+
 # ── Test 1.1: Global lock is module-level singleton, not per-instance ─────
 def test_ocr_global_lock_is_true_singleton():
     """
@@ -75,7 +81,7 @@ def test_sqlite_wal_shared_lock_deadlock():
     → DEADLOCK. busy_timeout DOES NOT HELP HERE.
     Fix: Use BEGIN IMMEDIATE which acquires RESERVED lock upfront.
     """
-    db_file = tempfile.mktemp(suffix=".db")
+    db_file = _new_temp_db_path()
     conn_setup = sqlite3.connect(db_file)
     conn_setup.execute("PRAGMA journal_mode=WAL")
     conn_setup.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY, status TEXT)")
@@ -85,34 +91,47 @@ def test_sqlite_wal_shared_lock_deadlock():
 
     deadlock_errors = []
     results = []
+    state_lock = threading.Lock()
+    start_event = threading.Event()
 
-    def read_then_write(thread_id, barrier):
+    def read_then_write(thread_id):
         conn = sqlite3.connect(db_file, timeout=5.0)
         conn.execute("PRAGMA journal_mode=WAL")
         try:
+            if not start_event.wait(timeout=2.0):
+                raise TimeoutError("start event not set")
+
             # Use BEGIN IMMEDIATE to prove it prevents deadlocks
             conn.execute("BEGIN IMMEDIATE")
             conn.execute("SELECT status FROM jobs WHERE id=1").fetchone()
-            # Synchronize both threads here so both hold SHARED lock
-            barrier.wait(timeout=2.0)
-            # Now both try to write — deadlock territory
+
+            # BEGIN IMMEDIATE serializes writes safely under contention.
             conn.execute("UPDATE jobs SET status=? WHERE id=1", (f"done_{thread_id}",))
             conn.commit()
-            results.append(f"success_{thread_id}")
+            with state_lock:
+                results.append(f"success_{thread_id}")
         except sqlite3.OperationalError as e:
-            deadlock_errors.append(str(e))
+            with state_lock:
+                deadlock_errors.append(str(e))
             try:
                 conn.rollback()
-            except:
+            except Exception:
+                pass
+        except Exception as e:
+            with state_lock:
+                deadlock_errors.append(str(e))
+            try:
+                conn.rollback()
+            except Exception:
                 pass
         finally:
             conn.close()
 
-    barrier = threading.Barrier(2)
-    t1 = threading.Thread(target=read_then_write, args=(1, barrier))
-    t2 = threading.Thread(target=read_then_write, args=(2, barrier))
+    t1 = threading.Thread(target=read_then_write, args=(1,))
+    t2 = threading.Thread(target=read_then_write, args=(2,))
     t1.start()
     t2.start()
+    start_event.set()
     t1.join(timeout=5)
     t2.join(timeout=5)
 
@@ -139,7 +158,7 @@ def test_scoped_session_thread_isolation():
     one thread's flush() call will see the other thread's pending
     ORM objects, causing wrong data to be committed.
     """
-    db_file = tempfile.mktemp(suffix=".db")
+    db_file = _new_temp_db_path()
     from blast_ocr.storage.database import OCRDatabase
 
     db = OCRDatabase(f"sqlite:///{db_file}")
@@ -220,7 +239,7 @@ def test_worker_extractor_singleton_race_condition():
 
 # ── Test 1.6: Concurrent DB writes — 20 simultaneous create_job() calls ──
 def test_concurrent_db_writes_integrity():
-    db_file = tempfile.mktemp(suffix=".db")
+    db_file = _new_temp_db_path()
     from blast_ocr.storage.database import OCRDatabase
 
     db = OCRDatabase(f"sqlite:///{db_file}")

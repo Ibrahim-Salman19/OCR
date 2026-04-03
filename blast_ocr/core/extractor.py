@@ -57,7 +57,10 @@ class RobustOCRExtractor:
                 f"Initializing EasyOCR (GPU={config.ocr_gpu}, Langs={config.ocr_languages})"
             )
             self.reader = easyocr.Reader(
-                config.ocr_languages, gpu=config.ocr_gpu, verbose=False
+                config.ocr_languages,
+                gpu=config.ocr_gpu,
+                verbose=False,
+                quantize=not bool(config.ocr_gpu),
             )
         except Exception as e:
             logger.error(f"Failed to initialize EasyOCR: {e}")
@@ -70,8 +73,10 @@ class RobustOCRExtractor:
 
         try:
             # Load using CV2
+            with open(image_path, "rb") as f:
+                file_bytes = f.read()
             img = cv2.imdecode(
-                np.fromfile(image_path, dtype=np.uint8), cv2.IMREAD_COLOR
+                np.frombuffer(file_bytes, dtype=np.uint8), cv2.IMREAD_COLOR
             )
             if img is None:
                 raise ImageLoadError("cv2.imdecode returned None")
@@ -222,16 +227,25 @@ class RobustOCRExtractor:
             processed_img = self.preprocess_image(image)
 
             # 3. OCR
+            raw_results = None
             try:
                 # detail=1 returns [bbox, text, conf]
                 with self.lock:
-                    raw_results = self.reader.readtext(processed_img, detail=1)
+                    try:
+                        import torch
 
+                        with torch.inference_mode():
+                            raw_results = self.reader.readtext(processed_img, detail=1)
+                    except (ImportError, OSError, NameError):
+                        raw_results = self.reader.readtext(processed_img, detail=1)
+
+            except Exception as e:
+                raise OCREngineError(f"OCR processing failed: {e}")
+            finally:
                 # FIX(phase2-MEM-001): Explicit cleanup to prevent RAM accumulation
-                # We must delete the processed image as it's a large numpy array
-                del processed_img
-
-                # Also delete the original image if it exists in local scope
+                # Run on both success and failure paths.
+                if "processed_img" in locals():
+                    del processed_img
                 if "image" in locals():
                     del image
 
@@ -241,17 +255,13 @@ class RobustOCRExtractor:
                 gc.collect()
 
                 # PERF(phase2): Clear GPU memory after each page to prevent VRAM accumulation
-                # We use a safer import check here
                 try:
                     import torch
 
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
                 except (ImportError, OSError, NameError):
-                    pass  # No torch installed or DLL load failed, skip cache clearing
-
-            except Exception as e:
-                raise OCREngineError(f"OCR processing failed: {e}")
+                    pass
 
             # 4. Extract & Validate
             if not raw_results:
@@ -265,8 +275,16 @@ class RobustOCRExtractor:
                 }
 
             text_parts = [item[1] for item in raw_results]
-            # BUG-VRAM-AUTOGRAD-01 Fix: Explicit cast to float detaches gradient graph in VRAM
-            confidences = [float(item[2]) for item in raw_results]
+
+            def _confidence_to_float(value) -> float:
+                # BUG-VRAM-AUTOGRAD-01: Explicitly break autograd graph before storing.
+                if hasattr(value, "detach"):
+                    value = value.detach()
+                if hasattr(value, "item"):
+                    value = value.item()
+                return float(value)
+
+            confidences = [_confidence_to_float(item[2]) for item in raw_results]
 
             extracted_text = " ".join(text_parts)
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
@@ -275,7 +293,7 @@ class RobustOCRExtractor:
             formatted_details = [
                 {
                     "text": item[1],
-                    "conf": float(item[2]),
+                    "conf": _confidence_to_float(item[2]),
                     "bbox": [int(c) for point in item[0] for c in point],
                 }
                 for item in raw_results
@@ -349,7 +367,7 @@ def extract_from_pptx(pptx_path: str) -> str:
         raise OCREngineError(f"PPTX extraction failed: {e}") from e
 
 
-def sanitize_for_xml(text: str) -> str:
+def sanitize_for_xml(text: Optional[str]) -> str:
     """Removes characters that are not allowed in XML."""
     if not text:
         return ""

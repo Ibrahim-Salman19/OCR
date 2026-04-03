@@ -63,10 +63,11 @@ def test_extractor_large_image_downscaled(extractor):
         return original_preprocess(image_source, target_width)
 
     with patch.object(extractor, "preprocess_image", side_effect=spy_preprocess):
-        try:
-            extractor.process_page(path, 1)
-        except Exception:
-            pass  # We only care about downscaling, not OCR result
+        with patch.object(extractor.reader, "readtext", return_value=[]):
+            try:
+                extractor.process_page(path, 1)
+            except Exception:
+                pass  # We only care about downscaling, not OCR result
 
     os.unlink(path)
     # If downscale was not triggered, OOM risk exists
@@ -84,7 +85,20 @@ def test_extractor_grayscale_image(extractor):
     cv2.imwrite(path, img)
 
     try:
-        result = extractor.process_page(path, 1)
+        # Keep this test focused on grayscale handling, not model inference/memory pressure.
+        # If preprocess/load paths are correct, readtext can be safely mocked.
+        with patch.object(
+            extractor.reader,
+            "readtext",
+            return_value=[
+                (
+                    [[0, 0], [10, 0], [10, 10], [0, 10]],
+                    "gray",
+                    0.99,
+                )
+            ],
+        ):
+            result = extractor.process_page(path, 1)
         assert result is not None
     except cv2.error as e:
         pytest.fail(

@@ -126,8 +126,12 @@ def test_create_job_sql_injection_in_filename(fresh_db):
 # ── Test 11: Two OCRDatabase instances targeting same file ────────────────
 def test_two_database_instances_same_file():
     """BUG HYPOTHESIS: Two pipelines targeting same DB file cause SQLITE_BUSY."""
-    db_file = tempfile.mktemp(suffix=".db")
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_file = tmp.name
     from blast_ocr.storage.database import OCRDatabase
+
+    db1 = None
+    db2 = None
 
     try:
         db1 = OCRDatabase(f"sqlite:///{db_file}")
@@ -155,8 +159,10 @@ def test_two_database_instances_same_file():
             )
     finally:
         try:
-            db1.close()
-            db2.close()
+            if db1 is not None:
+                db1.close()
+            if db2 is not None:
+                db2.close()
             import time
 
             for _ in range(5):
@@ -166,7 +172,7 @@ def test_two_database_instances_same_file():
                     break
                 except PermissionError:
                     time.sleep(0.5)
-        except:
+        except Exception:
             pass
 
 

@@ -33,7 +33,9 @@ class OCRConfig(BaseSettings):
     """Type-safe configuration with validation"""
 
     # OCR Engine
-    ocr_languages: List[str] = Field(default=["en"], description="Languages to detect")
+    ocr_languages: List[str] = Field(
+        default_factory=lambda: ["en"], description="Languages to detect"
+    )
     ocr_gpu: bool = Field(default=False, description="Use GPU acceleration")
     ocr_batch_size: int = Field(default=8, description="Pages to process in parallel")
 
@@ -74,6 +76,7 @@ class OCRConfig(BaseSettings):
     max_retries: int = Field(default=3)
     retry_backoff: int = Field(default=2)
     enable_fallback: bool = Field(default=True)
+    secure_mode: bool = Field(default=False, description="Enable PII redaction")
 
     # Preprocessing (Added for Phase 4 Fix)
     denoise_level: int = Field(default=0, description="Denoising strength (0-20)")

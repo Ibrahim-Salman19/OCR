@@ -12,7 +12,10 @@ from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 from sqlalchemy import event  # Added for FK enforcement
 import datetime
 import threading
+import logging
 from blast_ocr.config import config
+
+logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -94,7 +97,7 @@ class OCRDatabase:
         """Thread-local session property"""
         return self.Session()
 
-    def create_job(self, filename, page_count):
+    def create_job(self, filename, page_count=0):
         session = self.session
         job = OCRJob(filename=filename, page_count=page_count, status="pending")
         session.add(job)
@@ -197,8 +200,8 @@ class OCRDatabase:
             )
             old_job_ids = [j[0] for j in old_jobs]
             if old_job_ids:
-                session.query(OCRJobResult).filter(
-                    OCRJobResult.job_id.in_(old_job_ids)
+                session.query(OCRResult).filter(
+                    OCRResult.job_id.in_(old_job_ids)
                 ).delete()
 
             session.commit()

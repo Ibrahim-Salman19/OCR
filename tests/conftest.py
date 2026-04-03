@@ -1,5 +1,6 @@
 import pytest
 from PIL import Image, ImageDraw
+from unittest.mock import MagicMock, patch
 
 
 @pytest.fixture
@@ -39,3 +40,26 @@ def mock_env(monkeypatch, temp_workspace):
     monkeypatch.setenv("BLAST_OCR_DATABASE_URL", f"sqlite:///{temp_workspace['db']}")
     monkeypatch.setenv("BLAST_OCR_KEY_LOG_DIR", str(temp_workspace["logs"]))
     monkeypatch.setenv("BLAST_OCR_OCR_GPU", "false")
+
+
+@pytest.fixture(autouse=True)
+def mock_easyocr_reader_for_tests(request):
+    """Mock EasyOCR reader by default to prevent C-level crashes in tests.
+
+    Opt-out with @pytest.mark.real_easyocr for tests that explicitly need real engine behavior.
+    """
+    if request.node.get_closest_marker("real_easyocr"):
+        yield
+        return
+
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.readtext.return_value = [
+            (
+                [[0, 0], [20, 0], [20, 10], [0, 10]],
+                "mocked text",
+                0.95,
+            )
+        ]
+        mock_reader_cls.return_value = mock_reader
+        yield

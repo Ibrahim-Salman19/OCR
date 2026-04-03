@@ -1,13 +1,19 @@
 import os
 import tempfile
+from unittest.mock import patch, MagicMock
+
 from blast_ocr.core.extractor import RobustOCRExtractor, _ocr_global_lock
 from blast_ocr.cache.manager import cache_manager
 
 
 def test_global_lock_singleton():
     """Verify that multiple extractor instances share the SAME lock object."""
-    e1 = RobustOCRExtractor()
-    e2 = RobustOCRExtractor()
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.readtext.return_value = []
+        mock_reader_cls.return_value = mock_reader
+        e1 = RobustOCRExtractor()
+        e2 = RobustOCRExtractor()
 
     # Check they point to the module-level lock
     assert e1.lock is _ocr_global_lock
@@ -54,5 +60,9 @@ def test_memory_cleanup_logic():
     didn't break the extractor loop basically.
     """
     # Just ensure we can instantiate execution without errors
-    extractor = RobustOCRExtractor()
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.readtext.return_value = []
+        mock_reader_cls.return_value = mock_reader
+        extractor = RobustOCRExtractor()
     assert extractor.reader is not None

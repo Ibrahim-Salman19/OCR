@@ -158,19 +158,30 @@ def test_inference_thread_local_state_no_bleed():
     def run_inference(tid):
         import tracemalloc as tm
 
-        tm.start()
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
-            cv2.imwrite(f.name, np.full((100, 100, 3), 200, dtype=np.uint8))
+            img_path = f.name
+
+        try:
+            cv2.imwrite(img_path, np.full((100, 100, 3), 200, dtype=np.uint8))
+
+            if not tm.is_tracing():
+                tm.start()
+
             try:
-                extractor.process_page(f.name, tid)
+                extractor.process_page(img_path, tid)
             except Exception:
                 pass
-        snap = tm.take_snapshot()
-        total = sum(s.size for s in snap.statistics("lineno"))
-        with lock:
-            thread_memory[tid] = total
-        tm.stop()
-        os.unlink(f.name)
+
+            if tm.is_tracing():
+                snap = tm.take_snapshot()
+                total = sum(s.size for s in snap.statistics("lineno"))
+                with lock:
+                    thread_memory[tid] = total
+        finally:
+            if tm.is_tracing():
+                tm.stop()
+            if os.path.exists(img_path):
+                os.unlink(img_path)
 
     threads = [threading.Thread(target=run_inference, args=(i,)) for i in range(3)]
     for t in threads:

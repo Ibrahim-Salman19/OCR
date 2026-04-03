@@ -24,6 +24,7 @@ def test_extractor_linux_model_dir_init():
     reload(ext)
 
 
+@pytest.mark.real_easyocr
 def test_extractor_init_engine_failure():
     """Covers lines 60-62 in extractor.py (Init failure)"""
     from blast_ocr.core.extractor import RobustOCRExtractor

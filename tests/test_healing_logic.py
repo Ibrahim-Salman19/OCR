@@ -14,6 +14,13 @@ from blast_ocr.core.exceptions import (
     OCREngineError,
     PageExtractionError,
 )
+
+
+def _run(coro):
+    """Run a coroutine with an isolated event loop."""
+    return asyncio.run(coro)
+
+
 from blast_ocr.core.healing import SelfHealingOCR
 
 
@@ -259,7 +266,7 @@ class TestAsyncRetryWithBackoff:
             with patch("asyncio.sleep"):
                 return await decorated()
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = _run(run())
         assert result == "async_ok"
         assert calls[0] == 2
 
@@ -279,7 +286,7 @@ class TestAsyncRetryWithBackoff:
             await decorated()
 
         with pytest.raises(ImageLoadError):
-            asyncio.get_event_loop().run_until_complete(run())
+            _run(run())
         assert calls[0] == 1
 
     def test_async_retry_exhausted_raises(self, healer):
@@ -294,7 +301,7 @@ class TestAsyncRetryWithBackoff:
                 await decorated()
 
         with pytest.raises(ValueError, match="async permanent"):
-            asyncio.get_event_loop().run_until_complete(run())
+            _run(run())
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

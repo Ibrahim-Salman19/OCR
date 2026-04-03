@@ -1,6 +1,7 @@
 import os
 import tempfile
 import logging
+import psutil
 from typing import List, Dict, Callable
 from pathlib import Path
 from copy import deepcopy
@@ -49,6 +50,12 @@ class BlastPipeline:
 
         self.db = OCRDatabase()
         self.parallel_processor = ParallelOCRProcessor()
+
+    def _apply_optional_redaction(self, text: str) -> str:
+        """Apply PII redaction only when secure mode is enabled."""
+        if getattr(self._config, "secure_mode", False):
+            return ForensicRestorer.redact_pii(text or "")
+        return text or ""
 
     def __del__(self):
         """FIX #2: Close database connection on cleanup"""
@@ -131,6 +138,15 @@ class BlastPipeline:
         if self._config.poppler_path:
             render_args["poppler_path"] = self._config.poppler_path
 
+        original_max_workers = self.parallel_processor.max_workers
+
+        # SCALE-HARDENING: Auto-downgrade parallelism for large docs to prevent OOM
+        if total_pages and total_pages > 500:
+            logger.info(
+                f"Large document detected ({total_pages} pages). Downgrading max_workers to 1."
+            )
+            self.parallel_processor.max_workers = 1
+
         # 3. Batch Processing
         batch_size = 10
         all_results = []
@@ -148,10 +164,14 @@ class BlastPipeline:
                     logger.info(f"Batch {start_idx}-{end_idx} of {total_pages}")
 
                     try:
+                        # SCALE-HARDENING: Stream directly to disk instead of RAM
                         pages = convert_from_path(
                             pdf_path,
                             first_page=start_idx,
                             last_page=end_idx,
+                            output_folder=temp_dir,
+                            fmt="png",
+                            paths_only=True,
                             **render_args,
                         )
                     except Exception as e:
@@ -176,7 +196,13 @@ class BlastPipeline:
             else:
                 # Fallback: Render all (careful with RAM)
                 logger.warning("Unknown page count, rendering all pages...")
-                pages = convert_from_path(pdf_path, **render_args)
+                pages = convert_from_path(
+                    pdf_path,
+                    output_folder=temp_dir,
+                    fmt="png",
+                    paths_only=True,
+                    **render_args,
+                )
                 batch_results = self._process_image_batch(
                     pages,
                     temp_dir,
@@ -210,6 +236,9 @@ class BlastPipeline:
                     logger.error(f"Error during temp dir cleanup: {e}")
                     break
 
+            # Restore worker parallelism for subsequent jobs.
+            self.parallel_processor.max_workers = original_max_workers
+
         return sorted(all_results, key=lambda x: x.get("page", 0))
 
     def _process_image_batch(
@@ -220,23 +249,33 @@ class BlastPipeline:
         job_id: int = None,
         progress_callback: Callable = None,
     ) -> List[Dict]:
-        """Helper to restore images, run worker, and checkpoint to DB"""
+        """Restore page images, run workers, and checkpoint to DB."""
         image_paths = []
-        for i, page in enumerate(pages):
-            fname = f"page_{start_page + i:04d}.png"
-            fpath = os.path.join(temp_dir, fname)
-            page.save(fpath, "PNG")
+        for i, page_item in enumerate(pages):
+            # Accept both pdf2image path output and PIL Image objects for test/migration compatibility.
+            generated_raw = False
+            if isinstance(page_item, (str, os.PathLike)):
+                raw_path = str(page_item)
+            else:
+                generated_raw = True
+                raw_path = os.path.join(temp_dir, f"page_{start_page + i:04d}_raw.png")
+                page_item.save(raw_path, "PNG")
 
             # --- Forensic Restoration Layer ---
-            restored_img = ForensicRestorer.restore(fpath, mode="standard")
-            cv2_path = fpath.replace(".png", "_restored.png")
+            restored_img = ForensicRestorer.restore(raw_path, mode="standard")
+            cv2_path = os.path.join(temp_dir, f"page_{start_page + i:04d}_restored.png")
             import cv2
 
             cv2.imwrite(cv2_path, restored_img)
             image_paths.append(cv2_path)
+
+            # Clean up raw render immediately to save disk
             try:
-                os.remove(fpath)
-            except:
+                if generated_raw or os.path.abspath(
+                    os.path.dirname(raw_path)
+                ) == os.path.abspath(temp_dir):
+                    os.remove(raw_path)
+            except Exception:
                 pass
 
         results = self.parallel_processor.process_batch_threaded(
@@ -268,7 +307,7 @@ class BlastPipeline:
 
                 try:
                     os.remove(reflexion_path)
-                except:
+                except Exception:
                     pass
 
             # --- Phase 4: Layout Grouping (Table Engine) ---
@@ -297,7 +336,7 @@ class BlastPipeline:
         for p in image_paths:
             try:
                 os.remove(p)
-            except:
+            except Exception:
                 pass
 
         explicit_gc()
@@ -308,6 +347,7 @@ class BlastPipeline:
         source_path: str,
         output_dir: str = None,
         progress_callback: Callable = None,
+        job_id: int = None,
     ) -> Dict:
         """Execute a full OCR job"""
         source = Path(source_path)
@@ -321,8 +361,10 @@ class BlastPipeline:
                 output_dir = "."
         os.makedirs(output_dir, exist_ok=True)
 
-        # Create Job ID
-        job_id = self.db.create_job(source.name, page_count=0)
+        # Create Job ID if not provided
+        if job_id is None:
+            job_id = self.db.create_job(source.name, page_count=0)
+
         self.db.update_job_status(job_id, "processing")
 
         try:
@@ -336,27 +378,36 @@ class BlastPipeline:
                 for f in sorted(os.listdir(source)):
                     if Path(f).suffix.lower() in image_exts:
                         image_paths.append(str(source / f))
-                
+
                 if job_id:
                     self.db.update_job_page_count(job_id, len(image_paths))
-                
+
                 if not image_paths:
-                    raise ValueError(f"No supported images found in directory: {source}")
-                
+                    raise ValueError(
+                        f"No supported images found in directory: {source}"
+                    )
+
                 results = self.parallel_processor.process_batch_threaded(
-                    image_paths, 
-                    process_page_wrapper, 
-                    progress_callback=progress_callback
+                    image_paths,
+                    process_page_wrapper,
+                    progress_callback=progress_callback,
                 )
-                
+
                 # Checkpoint & Post-process
                 processed_results = []
                 for r in results:
                     raw_text = r.get("text", "")
                     if isinstance(raw_text, list):
                         r["text"] = self._regroup_text_by_layout(raw_text)
-                    
-                    self.db.save_result(job_id, r.get("page", 0), r.get("text", ""), r.get("confidence", 0.0), r.get("processing_time", 0.0))
+                    r["text"] = self._apply_optional_redaction(r.get("text", ""))
+
+                    self.db.save_result(
+                        job_id,
+                        r.get("page", 0),
+                        r.get("text", ""),
+                        r.get("confidence", 0.0),
+                        r.get("processing_time", 0.0),
+                    )
                     processed_results.append(r)
                 results = processed_results
 
@@ -364,16 +415,28 @@ class BlastPipeline:
                 results = self.process_pdf(str(source), job_id, progress_callback)
             elif ext == ".pptx":
                 text = extract_from_pptx(str(source))
-                results = [{"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}]
+                text = self._apply_optional_redaction(text)
+                results = [
+                    {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}
+                ]
                 self.db.save_result(job_id, 1, text, 1.0, 0.0)
-                if progress_callback: progress_callback(1, 1)
+                if progress_callback:
+                    progress_callback(1, 1)
             elif ext in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
                 res = process_page_wrapper(str(source), 1)
                 if isinstance(res.get("text"), list):
                     res["text"] = self._regroup_text_by_layout(res["text"])
+                res["text"] = self._apply_optional_redaction(res.get("text", ""))
                 results = [res]
-                self.db.save_result(job_id, 1, res.get("text", ""), res.get("confidence", 0.0), res.get("processing_time", 0.0))
-                if progress_callback: progress_callback(1, 1)
+                self.db.save_result(
+                    job_id,
+                    1,
+                    res.get("text", ""),
+                    res.get("confidence", 0.0),
+                    res.get("processing_time", 0.0),
+                )
+                if progress_callback:
+                    progress_callback(1, 1)
             else:
                 raise ValueError(f"Unsupported file type: {ext}")
 
@@ -381,7 +444,10 @@ class BlastPipeline:
             full_text = "\n\n---\n\n".join([r.get("text", "") for r in results])
             md_path, docx_path = save_output(full_text, source.stem, output_dir)
 
-            # --- METRICS CALCULATION (Observability) ---
+            # --- REAL METRICS (psutil) ---
+            process = psutil.Process(os.getpid())
+            peak_mem = process.memory_info().rss / (1024 * 1024)  # MB
+
             avg_time = (
                 sum([r.get("processing_time", 0.0) for r in results]) / len(results)
                 if results
@@ -392,13 +458,11 @@ class BlastPipeline:
                 if results
                 else 0
             )
-            # Mock memory for now as psutil is not in requirements.txt
-            mock_mem = 150.0 + (len(results) * 0.5)
             velocity = len(results) / (
                 sum([r.get("processing_time", 0.0) for r in results]) or 1.0
             )
 
-            self.db.save_metric(job_id, mock_mem, avg_time, avg_conf, velocity)
+            self.db.save_metric(job_id, peak_mem, avg_time, avg_conf, velocity)
 
             self.db.update_job_status(job_id, "completed")
             return {

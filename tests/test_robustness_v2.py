@@ -15,6 +15,21 @@ from blast_ocr.storage.database import OCRDatabase
 from blast_ocr.core.extractor import RobustOCRExtractor
 
 
+@pytest.fixture
+def mocked_extractor():
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.readtext.return_value = [
+            (
+                [[0, 0], [10, 0], [10, 10], [0, 10]],
+                "mock",
+                0.95,
+            )
+        ]
+        mock_reader_cls.return_value = mock_reader
+        yield RobustOCRExtractor()
+
+
 # ── Test 1: SQL Injection Protection (Parameterized Queries) ───────────────
 def test_db_sqli_protection():
     """Verify that malicious filenames do not trigger SQL injection."""
@@ -28,6 +43,7 @@ def test_db_sqli_protection():
         job_id = db.create_job(malicious_name, 1)
         # Check if table still exists
         job = db.get_job(job_id)
+        assert job is not None
         assert job.filename == malicious_name
         assert job.status == "pending"
     finally:
@@ -60,9 +76,9 @@ def test_pipeline_fuzz_corrupt_headers(content):
 
 
 # ── Test 3: Hardware Resilience — CUDA Out-Of-Memory Mock ──────────────────
-def test_extractor_handles_cuda_oom_gracefully():
+def test_extractor_handles_cuda_oom_gracefully(mocked_extractor):
     """Verify that a GPU OOM error is caught and converted to OCREngineError."""
-    extractor = RobustOCRExtractor()
+    extractor = mocked_extractor
     # Mock EasyOCR reader attribute
     extractor.reader = MagicMock()
     extractor.reader.readtext.side_effect = RuntimeError("CUDA out of memory")
@@ -87,9 +103,9 @@ def test_extractor_handles_cuda_oom_gracefully():
 
 # ── Test 4: Resource Cleanup — Explicit GC Trigger Verification ───────────
 @patch("gc.collect")
-def test_extractor_triggers_gc_after_page(mock_gc):
+def test_extractor_triggers_gc_after_page(mock_gc, mocked_extractor):
     """Ensure gc.collect() is called during page processing (Low Priority BUG-MEM-GC-01)."""
-    extractor = RobustOCRExtractor()
+    extractor = mocked_extractor
     img = np.zeros((100, 100, 3), dtype=np.uint8)
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         import cv2
