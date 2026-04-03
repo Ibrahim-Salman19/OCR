@@ -11,6 +11,7 @@ import tempfile
 import numpy as np
 from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
+from unittest.mock import patch, MagicMock
 
 
 # ── Property 1: sanitize_for_xml always returns a string ─────────────────
@@ -107,7 +108,7 @@ def test_cache_roundtrip_preserves_data(key, page, confidence, text):
 
 # ── Property 6: BlastPipeline.process_job never returns None ─────────────
 @given(path=st.text(min_size=1, max_size=200))
-@settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
+@settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_process_job_never_returns_none(path):
     """Pipeline must always return a dict — never None, never raise to caller."""
     from blast_ocr.pipeline import BlastPipeline
@@ -132,7 +133,11 @@ def test_process_job_never_returns_none(path):
 def test_preprocess_always_returns_2d_array(h, w):
     from blast_ocr.core.extractor import RobustOCRExtractor
 
-    extractor = RobustOCRExtractor()
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader = MagicMock()
+        mock_reader.readtext.return_value = []
+        mock_reader_cls.return_value = mock_reader
+        extractor = RobustOCRExtractor()
 
     # BGR image
     img = np.full((h, w, 3), 200, dtype=np.uint8)

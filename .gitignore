@@ -27,6 +27,7 @@ blast_output/
 blast_ocr.db
 /cache/
 .pytest_cache/
+.hypothesis/
 .env
 
 # PyCharm / IDE settings

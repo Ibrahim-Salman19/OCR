@@ -40,8 +40,13 @@ def setup_logging(log_dir="logs", level=logging.INFO):
     logger = logging.getLogger("blast_ocr")
     logger.setLevel(level)
 
-    # Clear existing handlers
-    logger.handlers = []
+    # Clear existing handlers and close file descriptors to avoid leaks
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+        try:
+            handler.close()
+        except Exception:
+            pass
 
     # Console handler (human-readable)
     console_handler = logging.StreamHandler()
