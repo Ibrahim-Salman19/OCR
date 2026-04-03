@@ -7,7 +7,6 @@ numpy<2.0.0
 
 # --- OCR ENGINE ---
 easyocr
-pytesseract
 pillow
 opencv-python-headless
 pdf2image

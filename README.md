@@ -26,8 +26,9 @@ B.L.A.S.T. is a high-performance, deterministic, and self-healing OCR automation
 
 ### Prerequisites
 - Python 3.9+
-- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) (Optional, for Tesseract engine fallback)
 - [Poppler](https://github.com/oschwartz10612/poppler-windows/releases/) (Required for PDF conversion)
+
+Note: The default runtime uses EasyOCR. Tesseract is not required for standard deployment.
 
 ### Setup
 1. **Clone the repository:**
