@@ -2,6 +2,32 @@
 
 All notable changes to the B.L.A.S.T. OCR Engine will be documented in this file.
 
+## [2.0.2] - 2026-04-04
+
+### Fixed
+- **Pipeline Reliability**: Stabilized PDF/image/PPTX processing paths with stronger batching behavior, safer temp-file lifecycle handling, and deterministic post-processing across routes.
+- **OCR Stability**: Hardened extractor inference flow for lower memory pressure and improved resilience during long-running jobs.
+- **Database Robustness**: Improved default job creation behavior and cleanup query correctness for lifecycle maintenance paths.
+- **Web UI Runtime Safety**: Hardened upload/session flows, background-job guards, and non-runtime fallback behavior to reduce Streamlit context-related failures.
+
+### Added
+- **Best-Practice Tests**: Added targeted reliability coverage for pipeline redaction behavior and large-document worker restoration (`tests/test_pipeline_best_practices.py`).
+
+### Changed
+- **Debugging Operations**: Upgraded project OCR debugging skill guidance to a structured, end-to-end incident workflow for faster triage and safer fixes.
+- **Test Architecture**: Standardized mocking and concurrency/memory test behavior for more deterministic CI/local outcomes.
+
+## [2.0.1] - 2026-04-04
+
+### Fixed
+- **Warning Gate Hardening**: Enforced strict warning discipline in tests with explicit third-party suppression policy and marker registration.
+- **Resource Cleanup**: Fixed logging handler teardown to close file descriptors cleanly and prevent unraisable/resource warning failures.
+- **Flake Reduction**: Stabilized memory/property-based tests under stricter warning policy and host variability.
+
+### Added
+- **Decision Framework**: Added `skills/decision_engineering.md` for mitigation-first, OODA, RICE, and ADR-driven execution.
+- **Architecture Record**: Added `docs/adr/0001-stabilization-warning-and-memory-policy.md` documenting reliability decisions and verification gates.
+
 ## [2.0.0] - 2026-03-26
 
 ### Fixed (Forensic Remediation)
