@@ -11,6 +11,10 @@ st.set_page_config(
 # Set writable cache for cloud environments
 os.environ["EASYOCR_CACHE"] = "/tmp/.EasyOCR"
 
+# Streamlit Cloud startup resilience: avoid heavy OCR imports during health checks.
+if os.getenv("STREAMLIT_SERVER_PORT"):
+    os.environ.setdefault("BLAST_OCR_DEFER_PIPELINE", "1")
+
 import time
 import pandas as pd
 from pathlib import Path
@@ -41,10 +45,34 @@ def _has_streamlit_runtime_context() -> bool:
 # Project root for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from blast_ocr.pipeline import BlastPipeline
 from blast_ocr.config import get_settings
 from blast_ocr.storage.database import OCRDatabase
 from blast_ocr.core.cleanup_manager import CleanupManager
+
+
+def _is_real_blast_pipeline(pipeline) -> bool:
+    """Detect real pipeline instance without importing heavy modules at startup."""
+    if pipeline is None:
+        return False
+    klass = pipeline.__class__
+    return (
+        getattr(klass, "__module__", "") == "blast_ocr.pipeline"
+        and getattr(klass, "__name__", "") == "BlastPipeline"
+    )
+
+
+def _get_or_create_pipeline():
+    """Create the OCR pipeline lazily and cache it in session state."""
+    if "pipeline_instance" not in st.session_state:
+        st.session_state.pipeline_instance = None
+
+    if st.session_state.pipeline_instance is None:
+        from blast_ocr.pipeline import BlastPipeline
+
+        st.session_state.pipeline_instance = BlastPipeline()
+
+    return st.session_state.pipeline_instance
+
 
 # --- SVG Icons (Lucide) for Exaggerated Minimalism UI ---
 # UI UX Pro Max Guideline: No emojis as icons.
@@ -98,6 +126,8 @@ def init_session_state():
         st.session_state.active_job_id = None
     if "job_thread" not in st.session_state:
         st.session_state.job_thread = None
+    if "pipeline_instance" not in st.session_state:
+        st.session_state.pipeline_instance = None
 
 
 def get_session_output_dir():
@@ -186,8 +216,30 @@ def handle_file_upload(pipeline, db):
                 }
                 return
 
+            # Lazily initialize pipeline only when a job is actually requested.
+            if pipeline is None:
+                try:
+                    pipeline = _get_or_create_pipeline()
+                except Exception as e:
+                    st.session_state.current_results = {
+                        "summary": [
+                            {
+                                "FILE": uploaded_file.name,
+                                "STATUS": "FAILED",
+                                "ERROR": f"Pipeline initialization failed: {e}",
+                            }
+                        ],
+                        "output_files": [],
+                    }
+                    if tmp_path and os.path.exists(tmp_path):
+                        try:
+                            os.remove(tmp_path)
+                        except OSError:
+                            pass
+                    return
+
             # Compatibility mode for mocked pipelines in tests.
-            if not isinstance(pipeline, BlastPipeline):
+            if not _is_real_blast_pipeline(pipeline):
                 try:
                     res = pipeline.process_job(
                         source_path=tmp_path, output_dir=str(out_dir)
@@ -369,19 +421,7 @@ def main():
     init_session_state()
     settings = get_settings()
     db = OCRDatabase()
-
-    # Build pipeline lazily to avoid heavy model imports during health checks.
-    if "pipeline_instance" not in st.session_state:
-        st.session_state.pipeline_instance = None
-
-    if st.session_state.pipeline_instance is None:
-        try:
-            st.session_state.pipeline_instance = BlastPipeline()
-        except Exception as e:
-            st.error(f"Pipeline initialization failed: {e}")
-            st.stop()
-
-    pipeline = st.session_state.pipeline_instance
+    pipeline = st.session_state.get("pipeline_instance")
 
     # --- HEADER SECTION (Exaggerated Minimalism) ---
     # SEO ENHANCEMENT: Changed .blast-title from a div to an h1 so screen-readers and crawlers capture the main page topic.
@@ -460,7 +500,9 @@ def main():
                     "SECURE MODE (PII REDACTION)",
                     value=getattr(settings, "secure_mode", False),
                 )
-                pipeline._config.secure_mode = secure_mode
+                cfg = getattr(pipeline, "_config", None)
+                if cfg is not None:
+                    setattr(cfg, "secure_mode", secure_mode)
 
         with col_right:
             handle_file_upload(pipeline, db)
@@ -497,6 +539,13 @@ def main():
             ):
                 test_pdf = "data/mybook.pdf"
                 if os.path.exists(test_pdf):
+                    if pipeline is None:
+                        try:
+                            pipeline = _get_or_create_pipeline()
+                        except Exception as e:
+                            st.error(f"PIPELINE INIT FAILED: {e}")
+                            return
+
                     out_dir = get_session_output_dir()
                     out_dir.mkdir(parents=True, exist_ok=True)
                     job_id = db.create_job("Baseline_Test_MyBook.pdf", page_count=0)
