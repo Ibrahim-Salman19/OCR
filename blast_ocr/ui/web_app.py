@@ -45,10 +45,6 @@ def _has_streamlit_runtime_context() -> bool:
 # Project root for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from blast_ocr.config import get_settings
-from blast_ocr.storage.database import OCRDatabase
-from blast_ocr.core.cleanup_manager import CleanupManager
-
 
 def _is_real_blast_pipeline(pipeline) -> bool:
     """Detect real pipeline instance without importing heavy modules at startup."""
@@ -72,6 +68,35 @@ def _get_or_create_pipeline():
         st.session_state.pipeline_instance = BlastPipeline()
 
     return st.session_state.pipeline_instance
+
+
+def _get_or_create_db():
+    """Create DB handle lazily and cache in session state."""
+    if "db_instance" not in st.session_state:
+        st.session_state.db_instance = None
+
+    if st.session_state.db_instance is None:
+        from blast_ocr.storage.database import OCRDatabase
+
+        st.session_state.db_instance = OCRDatabase()
+
+    return st.session_state.db_instance
+
+
+def _get_settings_cached():
+    """Fetch settings lazily (prevents import-time startup failures)."""
+    if "settings_instance" not in st.session_state:
+        from blast_ocr.config import get_settings
+
+        st.session_state.settings_instance = get_settings()
+    return st.session_state.settings_instance
+
+
+def _get_cleanup_manager_class():
+    """Import CleanupManager lazily."""
+    from blast_ocr.core.cleanup_manager import CleanupManager
+
+    return CleanupManager
 
 
 # --- SVG Icons (Lucide) for Exaggerated Minimalism UI ---
@@ -419,9 +444,10 @@ def main():
     load_css()
     inject_seo_metadata()
     init_session_state()
-    settings = get_settings()
-    db = OCRDatabase()
+    settings = _get_settings_cached()
+    db = _get_or_create_db()
     pipeline = st.session_state.get("pipeline_instance")
+    cleanup_cls = _get_cleanup_manager_class()
 
     # --- HEADER SECTION (Exaggerated Minimalism) ---
     # SEO ENHANCEMENT: Changed .blast-title from a div to an h1 so screen-readers and crawlers capture the main page topic.
@@ -609,7 +635,7 @@ def main():
 
         maint_c1, maint_c2 = st.columns([2, 2])
         out_dir = get_session_output_dir().parent  # Get the base blast_output
-        stats = CleanupManager.get_system_disk_stats(str(out_dir))
+        stats = cleanup_cls.get_system_disk_stats(str(out_dir))
 
         with maint_c1:
             st.metric("DISK ASSETS", f"{stats['total_size_mb']:.2f} MB")
@@ -617,7 +643,7 @@ def main():
 
         with maint_c2:
             if st.button("PURGE STALE ASSETS", use_container_width=True):
-                saved = CleanupManager.cleanup_stale_sessions(
+                saved = cleanup_cls.cleanup_stale_sessions(
                     str(out_dir), max_age_hours=0
                 )
                 db.purge_old_data(days=0)
