@@ -1,15 +1,11 @@
-try:
-    from pydantic_settings import BaseSettings, SettingsConfigDict
-except ImportError:
-    from pydantic import BaseSettings
-
-    SettingsConfigDict = None
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from pydantic import Field, field_validator
 from typing import List, Optional
 import os
 import sys
 import tempfile
+import logging
 
 
 def _detect_poppler_path() -> Optional[str]:
@@ -113,17 +109,34 @@ class OCRConfig(BaseSettings):
             raise ValueError("Cannot be empty")
         return v
 
-    if SettingsConfigDict:
-        model_config = SettingsConfigDict(env_file=".env", env_prefix="BLAST_OCR_")
-    else:
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="BLAST_OCR_")
 
-        class Config:
-            env_file = ".env"
-            env_prefix = "BLAST_OCR_"
+
+def _load_config() -> OCRConfig:
+    """Load configuration with a safe fallback for invalid env overrides."""
+    try:
+        return OCRConfig()
+    except Exception:
+        # Fallback path: strip BLAST_OCR_* env overrides and retry with defaults.
+        # This prevents hard startup failures in hosted environments when a
+        # mis-typed secret/env value is provided.
+        invalid_override_keys = [k for k in os.environ if k.startswith("BLAST_OCR_")]
+        if not invalid_override_keys:
+            raise
+
+        for key in invalid_override_keys:
+            os.environ.pop(key, None)
+
+        cfg = OCRConfig()
+        logging.getLogger(__name__).warning(
+            "Ignored invalid BLAST_OCR_* env overrides: %s",
+            ", ".join(sorted(invalid_override_keys)),
+        )
+        return cfg
 
 
 # Load config
-config = OCRConfig()
+config = _load_config()
 
 
 def get_settings() -> OCRConfig:
