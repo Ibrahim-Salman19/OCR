@@ -49,6 +49,41 @@ def _is_cloud_runtime() -> bool:
     )
 
 
+def _as_int_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _is_model_download_in_progress() -> bool:
+    """Detect EasyOCR model bootstrap markers in logs."""
+    log_candidates = [
+        Path("/mount/src/ocr/logs/blast_ocr.log"),
+        Path("/tmp/logs/blast_ocr.log"),
+        Path("logs/blast_ocr.log"),
+    ]
+
+    markers = (
+        "Downloading detection model",
+        "Downloading recognition model",
+    )
+
+    for p in log_candidates:
+        if not p.exists() or not p.is_file():
+            continue
+        try:
+            # Read a bounded tail region to keep this lightweight.
+            data = p.read_text(encoding="utf-8", errors="ignore")
+            tail = data[-8000:]
+            if any(m in tail for m in markers):
+                return True
+        except Exception:
+            continue
+
+    return False
+
+
 # Project root for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -506,6 +541,15 @@ def main():
     # SEO & UI UX: Initial configuration moved to top of file for Streamlit Cloud stability.
     load_css()
     inject_seo_metadata()
+
+    if _is_cloud_runtime() and _is_model_download_in_progress():
+        st.markdown("## INITIALIZING OCR MODELS")
+        st.info(
+            "First-run model download is in progress on the server. "
+            "Please wait 2-5 minutes and refresh this page."
+        )
+        st.stop()
+
     init_session_state()
     settings = _get_settings_cached()
     db = _get_or_create_db()

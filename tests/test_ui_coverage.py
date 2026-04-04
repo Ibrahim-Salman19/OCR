@@ -220,3 +220,23 @@ def test_main_cli_execution():
             if getattr(web_app, "__name__") == "__main__":
                 mock_main()
             mock_main.assert_called_once()
+
+
+def test_main_shows_model_download_initializing_message_on_cloud():
+    """Covers cloud bootstrap gate while OCR models are downloading."""
+    mock_state = MockSessionState({})
+    with patch("streamlit.session_state", mock_state):
+        with patch("blast_ocr.ui.web_app._is_cloud_runtime", return_value=True):
+            with patch(
+                "blast_ocr.ui.web_app._is_model_download_in_progress", return_value=True
+            ):
+                with patch("streamlit.markdown"):
+                    with patch("streamlit.info") as info_mock:
+                        with patch(
+                            "streamlit.stop", side_effect=RuntimeError("stopped")
+                        ):
+                            try:
+                                web_app.main()
+                            except RuntimeError as e:
+                                assert str(e) == "stopped"
+    assert info_mock.called
