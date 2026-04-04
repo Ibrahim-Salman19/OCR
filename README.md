@@ -31,6 +31,9 @@ B.L.A.S.T. is a high-performance, deterministic, and self-healing OCR automation
 Note: The default runtime uses EasyOCR. Tesseract is not required for standard deployment.
 
 ### Setup
+0. **Use a supported Python runtime:**
+   - Recommended: Python `3.11` (Streamlit Cloud uses `runtime.txt`).
+
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/your-username/blast-ocr.git
