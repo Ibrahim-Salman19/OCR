@@ -35,12 +35,6 @@ python-3.11
 
 This avoids Python 3.14 build-toolchain issues for packages that may not yet publish cp314 wheels in all environments.
 
-If your app entrypoint is `blast_ocr/ui/web_app.py`, you can place a dedicated dependency file at:
-
-`blast_ocr/ui/requirements.txt`
-
-Community Cloud prioritizes dependency files in the entrypoint directory. This lets you keep Cloud-specific constraints isolated from root-level local/dev requirements.
-
 ### 2. Runtime Dependencies
 ```dockerfile
 RUN apt-get update && apt-get install -y \
