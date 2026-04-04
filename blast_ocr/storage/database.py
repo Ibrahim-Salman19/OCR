@@ -70,13 +70,26 @@ class OCRDatabase:
         # Use config if no path provided
         self.db_url = db_path or config.database_url
         # FIX #4: Add connection pool settings for thread safety
-        # BUG-DB-ISOLATION-01 Fix: Add IMMEDIATE isolation level to prevent SQLite WAL deadlocks
+        # BUG-DB-ISOLATION-01: Use BEGIN IMMEDIATE for SQLite writes.
+        # Cloud/runtime hardening: allow SQLite connections across threads.
+        engine_kwargs = {
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_pre_ping": True,
+        }
+
+        connect_args = {}
+        if str(self.db_url).startswith("sqlite"):
+            connect_args = {
+                "isolation_level": "IMMEDIATE",
+                "timeout": 30,
+                "check_same_thread": False,
+            }
+
         self.engine = create_engine(
             self.db_url,
-            pool_size=5,
-            max_overflow=10,
-            pool_pre_ping=True,
-            connect_args={"isolation_level": "IMMEDIATE", "timeout": 15},
+            connect_args=connect_args,
+            **engine_kwargs,
         )
 
         # FIX: Ensure SQLite enforces Foreign Key constraints

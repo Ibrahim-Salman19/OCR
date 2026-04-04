@@ -42,6 +42,13 @@ def _has_streamlit_runtime_context() -> bool:
         return False
 
 
+def _is_cloud_runtime() -> bool:
+    """Detect hosted Streamlit runtime."""
+    return bool(
+        os.getenv("STREAMLIT_SERVER_PORT") or os.getenv("STREAMLIT_SHARING_MODE")
+    )
+
+
 # Project root for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -316,6 +323,61 @@ def handle_file_upload(pipeline, db):
                 }
                 return
 
+            # Cloud reliability mode: process synchronously to avoid
+            # background-thread instability under hosted resource limits.
+            if _is_cloud_runtime():
+                try:
+                    res = pipeline.process_job(
+                        source_path=tmp_path, output_dir=str(out_dir)
+                    )
+                except Exception as e:
+                    res = {"status": "failed", "error": str(e)}
+                finally:
+                    if tmp_path and os.path.exists(tmp_path):
+                        try:
+                            os.remove(tmp_path)
+                        except OSError:
+                            pass
+
+                status = str(res.get("status", "failed")).lower()
+                is_success = status == "success"
+
+                output_files = []
+                output_map = res.get("output_files", {})
+                if isinstance(output_map, dict):
+                    for fmt in ("md", "docx"):
+                        p = output_map.get(fmt)
+                        if p:
+                            output_files.append((fmt, p))
+
+                if not output_files:
+                    base = Path(uploaded_file.name).stem
+                    md_path = out_dir / f"{base}.md"
+                    docx_path = out_dir / f"{base}.docx"
+                    if Path(md_path).exists():
+                        output_files.append(("md", str(md_path)))
+                    if Path(docx_path).exists():
+                        output_files.append(("docx", str(docx_path)))
+
+                st.session_state.current_results = {
+                    "summary": [
+                        {
+                            "FILE": uploaded_file.name,
+                            "STATUS": "SUCCESS" if is_success else "FAILED",
+                            "ERROR": ""
+                            if is_success
+                            else str(
+                                res.get("error")
+                                or res.get("message")
+                                or "Unknown error"
+                            ),
+                        }
+                    ],
+                    "output_files": output_files,
+                }
+                st.session_state.active_job_id = None
+                return
+
             job_id = db.create_job(uploaded_file.name, page_count=0)
             st.session_state.active_job_id = job_id
 
@@ -345,6 +407,7 @@ def handle_file_upload(pipeline, db):
                     "output_dir": str(out_dir),
                     "job_id": job_id,
                 },
+                daemon=True,
             )
             st.session_state.job_thread = thread
             thread.start()
