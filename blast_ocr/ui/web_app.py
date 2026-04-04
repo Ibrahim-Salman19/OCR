@@ -369,7 +369,19 @@ def main():
     init_session_state()
     settings = get_settings()
     db = OCRDatabase()
-    pipeline = BlastPipeline()
+
+    # Build pipeline lazily to avoid heavy model imports during health checks.
+    if "pipeline_instance" not in st.session_state:
+        st.session_state.pipeline_instance = None
+
+    if st.session_state.pipeline_instance is None:
+        try:
+            st.session_state.pipeline_instance = BlastPipeline()
+        except Exception as e:
+            st.error(f"Pipeline initialization failed: {e}")
+            st.stop()
+
+    pipeline = st.session_state.pipeline_instance
 
     # --- HEADER SECTION (Exaggerated Minimalism) ---
     # SEO ENHANCEMENT: Changed .blast-title from a div to an h1 so screen-readers and crawlers capture the main page topic.

@@ -18,7 +18,6 @@ if sys.platform != "win32":
     os.makedirs(_easyocr_model_dir, exist_ok=True)
     os.environ.setdefault("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
 
-import easyocr
 import defusedxml
 
 defusedxml.defuse_stdlib()
@@ -53,6 +52,8 @@ class RobustOCRExtractor:
     def _init_engine(self):
         """Initialize EasyOCR with retry logic"""
         try:
+            import easyocr
+
             logger.info(
                 f"Initializing EasyOCR (GPU={config.ocr_gpu}, Langs={config.ocr_languages})"
             )

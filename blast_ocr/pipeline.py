@@ -29,6 +29,13 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _is_streamlit_cloud() -> bool:
+    """Best-effort detection for Streamlit Community Cloud runtime."""
+    return bool(
+        os.getenv("STREAMLIT_SERVER_PORT") or os.getenv("STREAMLIT_SHARING_MODE")
+    )
+
+
 class BlastPipeline:
     """
     Main orchestration pipeline for B.L.A.S.T. OCR.
@@ -50,6 +57,11 @@ class BlastPipeline:
 
         self.db = OCRDatabase()
         self.parallel_processor = ParallelOCRProcessor()
+
+        # Streamlit Cloud stability: avoid eager heavyweight model init on app boot.
+        # Worker/extractor will initialize lazily on first actual OCR page execution.
+        if _is_streamlit_cloud():
+            self.parallel_processor.max_workers = 1
 
     def _apply_optional_redaction(self, text: str) -> str:
         """Apply PII redaction only when secure mode is enabled."""
