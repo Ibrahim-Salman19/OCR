@@ -59,3 +59,42 @@ def test_image_load_error(tmp_path, extractor):
     assert "extraction failed" in str(excinfo.value) or "cv2.imdecode" in str(
         excinfo.value
     )
+
+
+def test_init_engine_respects_easyocr_env_overrides(monkeypatch):
+    monkeypatch.setenv("BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED", "0")
+    monkeypatch.setenv("BLAST_OCR_EASYOCR_MODEL_DIR", "/custom/easyocr")
+
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader_cls.return_value = MagicMock()
+        RobustOCRExtractor()
+
+    kwargs = mock_reader_cls.call_args.kwargs
+    assert kwargs["download_enabled"] is False
+    assert kwargs["model_storage_directory"] == "/custom/easyocr"
+
+
+def test_init_engine_uses_linux_model_dir_fallback(monkeypatch):
+    monkeypatch.setenv("BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED", "1")
+    monkeypatch.delenv("BLAST_OCR_EASYOCR_MODEL_DIR", raising=False)
+    monkeypatch.delenv("EASYOCR_MODULE_PATH", raising=False)
+
+    with patch("blast_ocr.core.extractor.sys.platform", "linux"):
+        with patch("easyocr.Reader") as mock_reader_cls:
+            mock_reader_cls.return_value = MagicMock()
+            RobustOCRExtractor()
+
+    kwargs = mock_reader_cls.call_args.kwargs
+    assert kwargs["download_enabled"] is True
+    assert kwargs["model_storage_directory"] == "/tmp/.EasyOCR/model"
+
+
+def test_init_engine_normalizes_disabled_download_values(monkeypatch):
+    monkeypatch.setenv("BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED", "false")
+
+    with patch("easyocr.Reader") as mock_reader_cls:
+        mock_reader_cls.return_value = MagicMock()
+        RobustOCRExtractor()
+
+    kwargs = mock_reader_cls.call_args.kwargs
+    assert kwargs["download_enabled"] is False

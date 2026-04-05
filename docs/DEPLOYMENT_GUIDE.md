@@ -63,6 +63,8 @@ Configure these in a `.env` file for production safety.
 | :--- | :--- | :--- |
 | `BLAST_OCR_MAX_WORKERS` | `2` (CPU) or `1` (GPU) | Limit concurrency to balance RAM vs Speed. |
 | `BLAST_OCR_OCR_GPU` | `True` | Set to `True` only if CUDA is verified. |
+| `BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED` | `0` after first successful bootstrap | Set `0/false/off` to disable runtime model downloads once models are preloaded. |
+| `BLAST_OCR_EASYOCR_MODEL_DIR` | `/tmp/.EasyOCR/model` on cloud Linux | Explicit EasyOCR model directory override for writable, deterministic model cache location. |
 | `DATABASE_URL` | `sqlite:///data/blast.db` | Persistent database path. |
 | `LOG_LEVEL` | `INFO` | Use `DEBUG` only for forensic troubleshooting. |
 

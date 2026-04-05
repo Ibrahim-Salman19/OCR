@@ -54,6 +54,18 @@ class RobustOCRExtractor:
         try:
             import easyocr
 
+            download_flag = os.getenv("BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED", "1")
+            download_enabled = download_flag.strip().lower() not in {
+                "0",
+                "false",
+                "no",
+                "off",
+            }
+            model_storage_directory = os.getenv("BLAST_OCR_EASYOCR_MODEL_DIR")
+            if not model_storage_directory and sys.platform != "win32":
+                module_path = os.getenv("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
+                model_storage_directory = f"{module_path.rstrip('/\\')}/model"
+
             logger.info(
                 f"Initializing EasyOCR (GPU={config.ocr_gpu}, Langs={config.ocr_languages})"
             )
@@ -62,6 +74,8 @@ class RobustOCRExtractor:
                 gpu=config.ocr_gpu,
                 verbose=False,
                 quantize=not bool(config.ocr_gpu),
+                model_storage_directory=model_storage_directory,
+                download_enabled=download_enabled,
             )
         except Exception as e:
             logger.error(f"Failed to initialize EasyOCR: {e}")

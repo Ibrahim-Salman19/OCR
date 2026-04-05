@@ -113,6 +113,8 @@ Settings are managed via `blast_ocr/config.py` and `.env`.
 | `BLAST_OCR_MAX_WORKERS` | 4 | Number of parallel threads |
 | `BLAST_OCR_MIN_CONFIDENCE` | 0.6 | Threshold for low-confidence warnings |
 | `BLAST_OCR_OCR_GPU` | False | Enable GPU acceleration for EasyOCR |
+| `BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED` | True | Allow EasyOCR model download at startup (`0/false/off` to disable once preloaded) |
+| `BLAST_OCR_EASYOCR_MODEL_DIR` | auto | Optional explicit EasyOCR model cache path (Linux cloud default is `/tmp/.EasyOCR/model`) |
 | `BLAST_OCR_POPPLER_PATH` | None | (Optional) Path to Poppler `bin` directory for PDF support |
 | `BLAST_OCR_RETRY_BACKOFF` | 2 | Backoff factor for self-healing retries |
 
