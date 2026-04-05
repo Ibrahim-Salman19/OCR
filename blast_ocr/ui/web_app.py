@@ -16,7 +16,6 @@ if os.getenv("STREAMLIT_SERVER_PORT"):
     os.environ.setdefault("BLAST_OCR_DEFER_PIPELINE", "1")
 
 import time
-import pandas as pd
 from pathlib import Path
 import tempfile
 import sys
@@ -24,6 +23,14 @@ import threading
 import uuid
 import logging
 import traceback
+
+try:
+    import pandas as pd
+except Exception as _pandas_exc:
+    pd = None
+    _PANDAS_IMPORT_ERROR = str(_pandas_exc)
+else:
+    _PANDAS_IMPORT_ERROR = None
 
 try:
     from streamlit.runtime.scriptrunner import get_script_run_ctx
@@ -105,6 +112,16 @@ class _InMemoryDB:
 
     def get_results(self, job_id):
         return self._results.get(job_id, [])
+
+
+def _to_table(data):
+    """Return a dataframe when pandas is available, otherwise raw records."""
+    if pd is None:
+        return data
+    try:
+        return pd.DataFrame(data)
+    except Exception:
+        return data
 
 
 def _has_streamlit_runtime_context() -> bool:
@@ -536,7 +553,7 @@ def handle_file_upload(pipeline, db):
         results = st.session_state.current_results or {}
         summary = results.get("summary", [])
         if summary:
-            st.dataframe(pd.DataFrame(summary))
+            st.dataframe(_to_table(summary))
         for fmt, file_path in results.get("output_files", []):
             try:
                 with open(file_path, "rb") as f:
@@ -640,6 +657,12 @@ def main():
         cleanup_cls = _get_cleanup_manager_class()
         db_init_error = st.session_state.get("db_init_error")
 
+        if _PANDAS_IMPORT_ERROR:
+            st.warning(
+                "Pandas is unavailable; using degraded table/chart mode: "
+                f"{_PANDAS_IMPORT_ERROR}"
+            )
+
         if db_init_error:
             st.warning(
                 "Database fallback mode is active due to an initialization error: "
@@ -737,7 +760,7 @@ def main():
                 st.session_state.processing_history = []
                 st.rerun()
             if st.session_state.processing_history:
-                st.dataframe(pd.DataFrame(st.session_state.processing_history))
+                st.dataframe(_to_table(st.session_state.processing_history))
             else:
                 st.info("NO LOGS IN MEMORY.")
 
@@ -810,17 +833,19 @@ def main():
                         st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
 
                     # Chart
-                    df_metrics = pd.DataFrame(
-                        [
-                            {
-                                "timestamp": m.timestamp,
-                                "fidelity": m.fidelity_score,
-                                "velocity": m.extraction_velocity,
-                            }
-                            for m in reversed(metrics)
-                        ]
-                    )
-                    st.line_chart(df_metrics.set_index("timestamp"))
+                    chart_records = [
+                        {
+                            "timestamp": m.timestamp,
+                            "fidelity": m.fidelity_score,
+                            "velocity": m.extraction_velocity,
+                        }
+                        for m in reversed(metrics)
+                    ]
+                    if pd is None:
+                        st.line_chart(chart_records)
+                    else:
+                        df_metrics = pd.DataFrame(chart_records)
+                        st.line_chart(df_metrics.set_index("timestamp"))
                 else:
                     st.info("NO TELEMETRY DATA ACQUIRED YET.")
 
