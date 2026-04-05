@@ -57,4 +57,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if _running_in_streamlit():
+        main()
+    else:
+        sys.exit(main())
