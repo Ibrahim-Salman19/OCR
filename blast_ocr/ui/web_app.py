@@ -23,6 +23,7 @@ import sys
 import threading
 import uuid
 import logging
+import traceback
 
 try:
     from streamlit.runtime.scriptrunner import get_script_run_ctx
@@ -30,6 +31,80 @@ except Exception:  # pragma: no cover - runtime compatibility fallback
     get_script_run_ctx = None
 
 logger = logging.getLogger(__name__)
+
+
+class _InMemoryDB:
+    """Resilient DB fallback to keep UI alive when SQLite init fails."""
+
+    class _Obj:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    def __init__(self):
+        self._next_job_id = 1
+        self._jobs = {}
+        self._results = {}
+        self._metrics = []
+
+    def create_job(self, filename, page_count=0):
+        job_id = self._next_job_id
+        self._next_job_id += 1
+        job = self._Obj(
+            id=job_id,
+            filename=filename,
+            page_count=page_count,
+            status="pending",
+            error_message=None,
+        )
+        self._jobs[job_id] = job
+        self._results[job_id] = []
+        return job_id
+
+    def update_job_status(self, job_id, status, error_message=None):
+        job = self._jobs.get(job_id)
+        if job is None:
+            return
+        job.status = status
+        if error_message:
+            job.error_message = error_message
+
+    def save_result(self, job_id, page_number, text, confidence, processing_time):
+        result = self._Obj(
+            page_number=page_number,
+            extracted_text=text,
+            confidence_score=float(confidence),
+            processing_time=float(processing_time),
+        )
+        self._results.setdefault(job_id, []).append(result)
+
+    def update_job_page_count(self, job_id, page_count):
+        job = self._jobs.get(job_id)
+        if job is not None:
+            job.page_count = page_count
+
+    def save_metric(self, job_id, peak_mem, avg_time, fidelity, velocity):
+        self._metrics.append(
+            self._Obj(
+                job_id=job_id,
+                peak_memory_mb=float(peak_mem),
+                avg_page_time=float(avg_time),
+                fidelity_score=float(fidelity),
+                extraction_velocity=float(velocity),
+                timestamp=time.time(),
+            )
+        )
+
+    def purge_old_data(self, days=7):
+        return None
+
+    def get_recent_metrics(self, limit=10):
+        return list(reversed(self._metrics[-limit:]))
+
+    def get_job(self, job_id):
+        return self._jobs.get(job_id)
+
+    def get_results(self, job_id):
+        return self._results.get(job_id, [])
 
 
 def _has_streamlit_runtime_context() -> bool:
@@ -116,11 +191,18 @@ def _get_or_create_db():
     """Create DB handle lazily and cache in session state."""
     if "db_instance" not in st.session_state:
         st.session_state.db_instance = None
+    if "db_init_error" not in st.session_state:
+        st.session_state.db_init_error = None
 
     if st.session_state.db_instance is None:
-        from blast_ocr.storage.database import OCRDatabase
+        try:
+            from blast_ocr.storage.database import OCRDatabase
 
-        st.session_state.db_instance = OCRDatabase()
+            st.session_state.db_instance = OCRDatabase()
+        except Exception as e:
+            st.session_state.db_init_error = str(e)
+            logger.exception("DB initialization failed; using in-memory fallback")
+            st.session_state.db_instance = _InMemoryDB()
 
     return st.session_state.db_instance
 
@@ -538,226 +620,242 @@ def render_mission_control(db, job_id):
 
 
 def main():
-    # SEO & UI UX: Initial configuration moved to top of file for Streamlit Cloud stability.
-    load_css()
-    inject_seo_metadata()
+    try:
+        # SEO & UI UX: Initial configuration moved to top of file for Streamlit Cloud stability.
+        load_css()
+        inject_seo_metadata()
 
-    if _is_cloud_runtime() and _is_model_download_in_progress():
-        st.markdown("## INITIALIZING OCR MODELS")
-        st.info(
-            "First-run model download is in progress on the server. "
-            "Please wait 2-5 minutes and refresh this page."
-        )
-        st.stop()
+        if _is_cloud_runtime() and _is_model_download_in_progress():
+            st.markdown("## INITIALIZING OCR MODELS")
+            st.info(
+                "First-run model download is in progress on the server. "
+                "Please wait 2-5 minutes and refresh this page."
+            )
+            st.stop()
 
-    init_session_state()
-    settings = _get_settings_cached()
-    db = _get_or_create_db()
-    pipeline = st.session_state.get("pipeline_instance")
-    cleanup_cls = _get_cleanup_manager_class()
+        init_session_state()
+        settings = _get_settings_cached()
+        db = _get_or_create_db()
+        pipeline = st.session_state.get("pipeline_instance")
+        cleanup_cls = _get_cleanup_manager_class()
+        db_init_error = st.session_state.get("db_init_error")
 
-    # --- HEADER SECTION (Exaggerated Minimalism) ---
-    # SEO ENHANCEMENT: Changed .blast-title from a div to an h1 so screen-readers and crawlers capture the main page topic.
-    st.markdown(
-        """
+        if db_init_error:
+            st.warning(
+                "Database fallback mode is active due to an initialization error: "
+                f"{db_init_error}"
+            )
+
+        # --- HEADER SECTION (Exaggerated Minimalism) ---
+        # SEO ENHANCEMENT: Changed .blast-title from a div to an h1 so screen-readers and crawlers capture the main page topic.
+        st.markdown(
+            """
     <div class="blast-header">
         <h1 class="blast-title">B.L.A.S.T.</h1>
         <div class="blast-subtitle">BATCH LARGE-SCALE AUTOMATED SCANNED TEXT</div>
         <div class="blast-tagline fira-code">SYSTEM V2.1 // REAL-TIME OPS</div>
     </div>
     """,
-        unsafe_allow_html=True,
-    )
-
-    def _pad_columns(cols, count):
-        cols = list(cols)
-        if cols and len(cols) < count:
-            cols.extend([cols[-1]] * (count - len(cols)))
-        return cols[:count]
-
-    # --- METRICS SECTION ---
-    m1, m2, m3 = _pad_columns(st.columns(3), 3)
-    with m1:
-        st.metric(
-            label="TOTAL MISSIONS", value=st.session_state.total_scans, delta="+12"
-        )
-    with m2:
-        st.metric(
-            label="PAGES DECODED", value=st.session_state.pages_decoded, delta="+45"
-        )
-    with m3:
-        st.metric(label="SYSTEM ACCURACY", value="99.8%", delta="OK")
-
-    st.markdown(
-        "<hr style='border-color: #334155; margin: 3rem 0; border-width: 2px;'>",
-        unsafe_allow_html=True,
-    )
-
-    # --- MAIN APP LAYOUT ---
-    tabs = list(st.tabs(["NEW DEPLOYMENT", "SYSTEM LOGS", "SYSTEM HEALTH"]))
-    if tabs and len(tabs) < 3:
-        tabs.extend([tabs[-1]] * (3 - len(tabs)))
-
-    # --- TAB 1: NEW SCAN ---
-    with tabs[0]:
-        col_left, col_right = st.columns([1, 2])
-
-        with col_left:
-            st.markdown(
-                f'<div class="minimal-panel"><h3>{ICON_SETTINGS} CONFIGURATION</h3></div>',
-                unsafe_allow_html=True,
-            )
-            preset = st.radio(
-                "PROCESSING PRESET",
-                [
-                    "STANDARD DOC",
-                    "RECEIPT DECODE",
-                    "HANDWRITING ANALYSIS",
-                    "RAW OVERRIDE",
-                ],
-            )
-
-            # Logic flow parameters
-            denoise, contrast, deskew = 5, 1.2, True
-            if preset == "RECEIPT DECODE":
-                denoise, contrast = 12, 1.8
-            elif preset == "HANDWRITING ANALYSIS":
-                denoise, contrast, deskew = 3, 1.1, False
-
-            with st.expander("ADVANCED PROTOCOLS"):
-                language_selection = st.selectbox(
-                    "SOURCE LOGIC", ["ENG_CORE", "FRA_CORE", "MULTILINGUAL_NODE"]
-                )
-                gpu_enabled = st.toggle("GPU HYPER-THREAD", value=settings.ocr_gpu)
-                secure_mode = st.toggle(
-                    "SECURE MODE (PII REDACTION)",
-                    value=getattr(settings, "secure_mode", False),
-                )
-                cfg = getattr(pipeline, "_config", None)
-                if cfg is not None:
-                    setattr(cfg, "secure_mode", secure_mode)
-
-        with col_right:
-            handle_file_upload(pipeline, db)
-
-    # --- TAB 2: HISTORY ---
-    with tabs[1]:
-        st.markdown("### SECURE LOGS")
-        if st.button("PURGE LOGS"):
-            st.session_state.processing_history = []
-            st.rerun()
-        if st.session_state.processing_history:
-            st.dataframe(pd.DataFrame(st.session_state.processing_history))
-        else:
-            st.info("NO LOGS IN MEMORY.")
-
-    # --- TAB 3: SYSTEM HEALTH ---
-    with tabs[2]:
-        st.markdown("### 📊 LIVE TELEMETRY")
-
-        health_c1, health_c2 = _pad_columns(st.columns([3, 1]), 2)
-
-        with health_c2:
-            st.markdown("#### 🕵️ MISSION STRATEGY")
-            st.info(
-                "REFLEXION: **ENABLED**\nSCRIPT ROUTER: **ACTIVE**\nREDACTION: **READY**"
-            )
-
-        with health_c1:
-            st.markdown("#### 🛠️ DIAGNOSTIC CONTROLS")
-            if st.button(
-                "RUN BASELINE TEST (mybook.pdf)",
-                type="primary",
-                use_container_width=True,
-            ):
-                test_pdf = "data/mybook.pdf"
-                if os.path.exists(test_pdf):
-                    if pipeline is None:
-                        try:
-                            pipeline = _get_or_create_pipeline()
-                        except Exception as e:
-                            st.error(f"PIPELINE INIT FAILED: {e}")
-                            return
-
-                    out_dir = get_session_output_dir()
-                    out_dir.mkdir(parents=True, exist_ok=True)
-                    job_id = db.create_job("Baseline_Test_MyBook.pdf", page_count=0)
-
-                    if not _has_streamlit_runtime_context():
-                        st.warning(
-                            "BASELINE SKIPPED: Missing Streamlit runtime context."
-                        )
-                        return
-
-                    st.session_state.active_job_id = job_id
-
-                    thread = threading.Thread(
-                        target=pipeline.process_job,
-                        kwargs={
-                            "source_path": test_pdf,
-                            "output_dir": str(out_dir),
-                            "job_id": job_id,
-                        },
-                    )
-                    thread.start()
-                    st.success("BASELINE SEQUENCE INITIATED.")
-                    st.rerun()
-                else:
-                    st.error("TEST VECTOR NOT FOUND: data/mybook.pdf")
-
-            st.markdown("---")
-            metrics = db.get_recent_metrics(limit=10)
-            if metrics:
-                m_cols = _pad_columns(st.columns(4), 4)
-                latest = metrics[0]
-                with m_cols[0]:
-                    st.metric("LATEST MEMORY", f"{latest.peak_memory_mb:.1f} MB")
-                with m_cols[1]:
-                    st.metric("AVG FIDELITY", f"{latest.fidelity_score:.1%}")
-                with m_cols[2]:
-                    st.metric("VELOCITY", f"{latest.extraction_velocity:.2f} P/S")
-                with m_cols[3]:
-                    st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
-
-                # Chart
-                df_metrics = pd.DataFrame(
-                    [
-                        {
-                            "timestamp": m.timestamp,
-                            "fidelity": m.fidelity_score,
-                            "velocity": m.extraction_velocity,
-                        }
-                        for m in reversed(metrics)
-                    ]
-                )
-                st.line_chart(df_metrics.set_index("timestamp"))
-            else:
-                st.info("NO TELEMETRY DATA ACQUIRED YET.")
-
-        st.markdown(
-            "<hr style='border-color: #334155; margin: 2rem 0; border-style: dashed;'>",
             unsafe_allow_html=True,
         )
-        st.markdown("### 🛠️ SYSTEM MAINTENANCE")
 
-        maint_c1, maint_c2 = st.columns([2, 2])
-        out_dir = get_session_output_dir().parent  # Get the base blast_output
-        stats = cleanup_cls.get_system_disk_stats(str(out_dir))
+        def _pad_columns(cols, count):
+            cols = list(cols)
+            if cols and len(cols) < count:
+                cols.extend([cols[-1]] * (count - len(cols)))
+            return cols[:count]
 
-        with maint_c1:
-            st.metric("DISK ASSETS", f"{stats['total_size_mb']:.2f} MB")
-            st.caption(f"ACTIVE SESSIONS: {stats['session_count']}")
+        # --- METRICS SECTION ---
+        m1, m2, m3 = _pad_columns(st.columns(3), 3)
+        with m1:
+            st.metric(
+                label="TOTAL MISSIONS", value=st.session_state.total_scans, delta="+12"
+            )
+        with m2:
+            st.metric(
+                label="PAGES DECODED", value=st.session_state.pages_decoded, delta="+45"
+            )
+        with m3:
+            st.metric(label="SYSTEM ACCURACY", value="99.8%", delta="OK")
 
-        with maint_c2:
-            if st.button("PURGE STALE ASSETS", use_container_width=True):
-                saved = cleanup_cls.cleanup_stale_sessions(
-                    str(out_dir), max_age_hours=0
+        st.markdown(
+            "<hr style='border-color: #334155; margin: 3rem 0; border-width: 2px;'>",
+            unsafe_allow_html=True,
+        )
+
+        # --- MAIN APP LAYOUT ---
+        tabs = list(st.tabs(["NEW DEPLOYMENT", "SYSTEM LOGS", "SYSTEM HEALTH"]))
+        if tabs and len(tabs) < 3:
+            tabs.extend([tabs[-1]] * (3 - len(tabs)))
+
+        # --- TAB 1: NEW SCAN ---
+        with tabs[0]:
+            col_left, col_right = st.columns([1, 2])
+
+            with col_left:
+                st.markdown(
+                    f'<div class="minimal-panel"><h3>{ICON_SETTINGS} CONFIGURATION</h3></div>',
+                    unsafe_allow_html=True,
                 )
-                db.purge_old_data(days=0)
-                st.success(
-                    f"MAINTENANCE COMPLETE: Freed {saved / (1024 * 1024):.2f} MB"
+                preset = st.radio(
+                    "PROCESSING PRESET",
+                    [
+                        "STANDARD DOC",
+                        "RECEIPT DECODE",
+                        "HANDWRITING ANALYSIS",
+                        "RAW OVERRIDE",
+                    ],
                 )
+
+                # Logic flow parameters
+                denoise, contrast, deskew = 5, 1.2, True
+                if preset == "RECEIPT DECODE":
+                    denoise, contrast = 12, 1.8
+                elif preset == "HANDWRITING ANALYSIS":
+                    denoise, contrast, deskew = 3, 1.1, False
+
+                with st.expander("ADVANCED PROTOCOLS"):
+                    language_selection = st.selectbox(
+                        "SOURCE LOGIC", ["ENG_CORE", "FRA_CORE", "MULTILINGUAL_NODE"]
+                    )
+                    gpu_enabled = st.toggle("GPU HYPER-THREAD", value=settings.ocr_gpu)
+                    secure_mode = st.toggle(
+                        "SECURE MODE (PII REDACTION)",
+                        value=getattr(settings, "secure_mode", False),
+                    )
+                    cfg = getattr(pipeline, "_config", None)
+                    if cfg is not None:
+                        setattr(cfg, "secure_mode", secure_mode)
+
+            with col_right:
+                handle_file_upload(pipeline, db)
+
+        # --- TAB 2: HISTORY ---
+        with tabs[1]:
+            st.markdown("### SECURE LOGS")
+            if st.button("PURGE LOGS"):
+                st.session_state.processing_history = []
                 st.rerun()
+            if st.session_state.processing_history:
+                st.dataframe(pd.DataFrame(st.session_state.processing_history))
+            else:
+                st.info("NO LOGS IN MEMORY.")
+
+        # --- TAB 3: SYSTEM HEALTH ---
+        with tabs[2]:
+            st.markdown("### 📊 LIVE TELEMETRY")
+
+            health_c1, health_c2 = _pad_columns(st.columns([3, 1]), 2)
+
+            with health_c2:
+                st.markdown("#### 🕵️ MISSION STRATEGY")
+                st.info(
+                    "REFLEXION: **ENABLED**\nSCRIPT ROUTER: **ACTIVE**\nREDACTION: **READY**"
+                )
+
+            with health_c1:
+                st.markdown("#### 🛠️ DIAGNOSTIC CONTROLS")
+                if st.button(
+                    "RUN BASELINE TEST (mybook.pdf)",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    test_pdf = "data/mybook.pdf"
+                    if os.path.exists(test_pdf):
+                        if pipeline is None:
+                            try:
+                                pipeline = _get_or_create_pipeline()
+                            except Exception as e:
+                                st.error(f"PIPELINE INIT FAILED: {e}")
+                                return
+
+                        out_dir = get_session_output_dir()
+                        out_dir.mkdir(parents=True, exist_ok=True)
+                        job_id = db.create_job("Baseline_Test_MyBook.pdf", page_count=0)
+
+                        if not _has_streamlit_runtime_context():
+                            st.warning(
+                                "BASELINE SKIPPED: Missing Streamlit runtime context."
+                            )
+                            return
+
+                        st.session_state.active_job_id = job_id
+
+                        thread = threading.Thread(
+                            target=pipeline.process_job,
+                            kwargs={
+                                "source_path": test_pdf,
+                                "output_dir": str(out_dir),
+                                "job_id": job_id,
+                            },
+                        )
+                        thread.start()
+                        st.success("BASELINE SEQUENCE INITIATED.")
+                        st.rerun()
+                    else:
+                        st.error("TEST VECTOR NOT FOUND: data/mybook.pdf")
+
+                st.markdown("---")
+                metrics = db.get_recent_metrics(limit=10)
+                if metrics:
+                    m_cols = _pad_columns(st.columns(4), 4)
+                    latest = metrics[0]
+                    with m_cols[0]:
+                        st.metric("LATEST MEMORY", f"{latest.peak_memory_mb:.1f} MB")
+                    with m_cols[1]:
+                        st.metric("AVG FIDELITY", f"{latest.fidelity_score:.1%}")
+                    with m_cols[2]:
+                        st.metric("VELOCITY", f"{latest.extraction_velocity:.2f} P/S")
+                    with m_cols[3]:
+                        st.metric("PAGE LATENCY", f"{latest.avg_page_time:.2f}s")
+
+                    # Chart
+                    df_metrics = pd.DataFrame(
+                        [
+                            {
+                                "timestamp": m.timestamp,
+                                "fidelity": m.fidelity_score,
+                                "velocity": m.extraction_velocity,
+                            }
+                            for m in reversed(metrics)
+                        ]
+                    )
+                    st.line_chart(df_metrics.set_index("timestamp"))
+                else:
+                    st.info("NO TELEMETRY DATA ACQUIRED YET.")
+
+            st.markdown(
+                "<hr style='border-color: #334155; margin: 2rem 0; border-style: dashed;'>",
+                unsafe_allow_html=True,
+            )
+            st.markdown("### 🛠️ SYSTEM MAINTENANCE")
+
+            maint_c1, maint_c2 = st.columns([2, 2])
+            out_dir = get_session_output_dir().parent  # Get the base blast_output
+            stats = cleanup_cls.get_system_disk_stats(str(out_dir))
+
+            with maint_c1:
+                st.metric("DISK ASSETS", f"{stats['total_size_mb']:.2f} MB")
+                st.caption(f"ACTIVE SESSIONS: {stats['session_count']}")
+
+            with maint_c2:
+                if st.button("PURGE STALE ASSETS", use_container_width=True):
+                    saved = cleanup_cls.cleanup_stale_sessions(
+                        str(out_dir), max_age_hours=0
+                    )
+                    db.purge_old_data(days=0)
+                    st.success(
+                        f"MAINTENANCE COMPLETE: Freed {saved / (1024 * 1024):.2f} MB"
+                    )
+                    st.rerun()
+    except Exception as e:
+        logger.exception("Fatal top-level Streamlit UI error")
+        st.error("Application startup failed.")
+        st.code(str(e))
+        st.code(traceback.format_exc())
+        if _is_cloud_runtime():
+            st.stop()
+        raise
 
 
 if __name__ == "__main__":

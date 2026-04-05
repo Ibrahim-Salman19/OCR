@@ -77,6 +77,12 @@ Configure these in a `.env` file for production safety.
 
 Using `streamlit_app.py` as the main file avoids startup redirect/entrypoint misconfiguration and delegates cleanly into `run_gui.py`.
 
+Reliability defaults for cloud:
+- Set `BLAST_OCR_MAX_WORKERS=1`
+- Set `BLAST_OCR_DATABASE_URL=sqlite:////tmp/blast_ocr.db`
+- Keep `BLAST_OCR_EASYOCR_MODEL_DIR=/tmp/.EasyOCR/model`
+- For first deployment use `BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED=1`, then switch to `0`
+
 ## 🔗 Next Steps
 -   [Troubleshooting](TROUBLESHOOTING.md)
 -   [Introduction](INTRODUCTION.md)
