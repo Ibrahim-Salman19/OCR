@@ -72,6 +72,7 @@ Or directly via Streamlit:
 ```bash
 streamlit run blast_ocr/ui/web_app.py
 ```
+For Streamlit Community Cloud, use `streamlit_app.py` as the app entrypoint.
 
 ## 🏗️ Architecture & Documentation
 

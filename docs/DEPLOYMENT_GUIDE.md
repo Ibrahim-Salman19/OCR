@@ -68,6 +68,15 @@ Configure these in a `.env` file for production safety.
 | `DATABASE_URL` | `sqlite:///data/blast.db` | Persistent database path. |
 | `LOG_LEVEL` | `INFO` | Use `DEBUG` only for forensic troubleshooting. |
 
+## ☁️ Streamlit Community Cloud App Settings
+
+- Main file path: `streamlit_app.py`
+- Python version: root `runtime.txt` (`python-3.11`)
+- Pip dependencies: root `requirements.txt`
+- System packages: root `packages.txt`
+
+Using `streamlit_app.py` as the main file avoids startup redirect/entrypoint misconfiguration and delegates cleanly into `run_gui.py`.
+
 ## 🔗 Next Steps
 -   [Troubleshooting](TROUBLESHOOTING.md)
 -   [Introduction](INTRODUCTION.md)
