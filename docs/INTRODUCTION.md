@@ -31,3 +31,4 @@ The core vision of B.L.A.S.T. is to bridge the gap between volatile OCR engines 
 -   [Architecture Deep Dive](ARCHITECTURE_DEEP_DIVE.md)
 -   [Security Hardening Guide](SECURITY_HARDENING.md)
 -   [Installation & Deployment](DEPLOYMENT_GUIDE.md)
+-   [OCR Engine Evaluation (2026)](OCR_ENGINE_EVALUATION_2026.md)

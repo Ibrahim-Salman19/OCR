@@ -2,6 +2,17 @@
 
 All notable changes to the B.L.A.S.T. OCR Engine will be documented in this file.
 
+## [Unreleased] - 2026-04-06
+
+### Added
+- **OCR Transition Documentation**: Added deep documentation set for safe OCR engine migration planning:
+  - `docs/OCR_ENGINE_EVALUATION_2026.md`
+  - `docs/OCR_ENGINE_TRANSITION_PLAYBOOK.md`
+  - `docs/OCR_ENGINE_INTEGRATION_MAP.md`
+
+### Changed
+- **Docs Navigation**: Updated README and core docs to cross-link migration references, deployment notes, integration constraints, and CPU-only benchmark guidance.
+
 ## [2.0.2] - 2026-04-04
 
 ### Fixed

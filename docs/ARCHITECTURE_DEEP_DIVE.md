@@ -92,3 +92,17 @@ erDiagram
 ## 🔗 Next Steps
 -   [Performance Tuning](PERFORMANCE_TUNING.md)
 -   [API Reference](API_REFERENCE.md)
+
+---
+
+## 🔌 OCR Backend Coupling Notes
+
+Current architecture is EasyOCR-first in Layer 3 (`blast_ocr/core/extractor.py`) with a stable pipeline/UI contract built around extractor output.
+
+Before changing engines:
+
+- Preserve extractor output schema (`page`, `text`, `confidence`, `bbox_count`, `details`).
+- Keep concurrency controls (`_ocr_global_lock`, worker singleton initialization) until equivalent safety is validated for the new backend.
+- Validate cloud startup and model bootstrap behavior separately from local inference behavior.
+
+For migration sequencing and rollback controls, see `docs/OCR_ENGINE_TRANSITION_PLAYBOOK.md`.

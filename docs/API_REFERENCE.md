@@ -26,6 +26,24 @@ Manages the `EasyOCR` lifecycle and image preprocessing.
 -   **`process_page(image_path: str, page_num: int)`**: Loads and OCRs a single page. Handled under `_ocr_global_lock`.
 -   **`preprocess_image(img: np.ndarray)`**: Grayscale conversion, CLAHE normalization, and noise reduction.
 
+### Engine Configuration Environment Variables
+
+- `BLAST_OCR_OCR_GPU`: Enable/disable GPU usage for OCR backend.
+- `BLAST_OCR_EASYOCR_DOWNLOAD_ENABLED`: Controls EasyOCR runtime model download behavior.
+- `BLAST_OCR_EASYOCR_MODEL_DIR`: Explicit EasyOCR model storage directory.
+
+### Output Contract (Engine Adapter Requirement)
+
+Any OCR backend must return page results in the current contract:
+
+- `page` (int)
+- `text` (str)
+- `confidence` (float)
+- `bbox_count` (int)
+- `details` (list of `{text, conf, bbox}` objects)
+
+This contract is required by pipeline aggregation and Streamlit mission-control views.
+
 ---
 
 ## 📦 `blast_ocr.storage.database`
@@ -69,3 +87,4 @@ Retry-oriented wrapper for flaky OCR operations.
 ## 🔗 Next Steps
 -   [Deployment Guide](DEPLOYMENT_GUIDE.md)
 -   [Troubleshooting](TROUBLESHOOTING.md)
+-   [OCR Engine Evaluation (2026)](OCR_ENGINE_EVALUATION_2026.md)

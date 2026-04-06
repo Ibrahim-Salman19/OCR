@@ -86,3 +86,13 @@ Reliability defaults for cloud:
 ## 🔗 Next Steps
 -   [Troubleshooting](TROUBLESHOOTING.md)
 -   [Introduction](INTRODUCTION.md)
+
+---
+
+## 📚 OCR Engine Transition References
+
+For planned migration from EasyOCR to alternate engines (CPU-first safety path), see:
+
+- `docs/OCR_ENGINE_EVALUATION_2026.md`
+- `docs/OCR_ENGINE_TRANSITION_PLAYBOOK.md`
+- `docs/OCR_ENGINE_INTEGRATION_MAP.md`

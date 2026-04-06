@@ -44,3 +44,23 @@ Typical performance on a mid-range CPU (i7 / 16GB RAM):
 ## 🔗 Next Steps
 -   [Troubleshooting](TROUBLESHOOTING.md)
 -   [API Reference](API_REFERENCE.md)
+
+---
+
+## 🧪 CPU-Only Engine Benchmarking Baseline (Migration)
+
+When evaluating an alternate OCR backend for CPU-only deployment, benchmark with the same representative corpus and report:
+
+- Job success rate and fatal error rate
+- Average page latency (p50/p95)
+- Extraction confidence distribution
+- Throughput (pages/sec)
+- Peak RSS memory
+
+Recommended migration baseline controls:
+
+- `BLAST_OCR_OCR_GPU=false`
+- `BLAST_OCR_MAX_WORKERS=1` on cloud
+- identical preprocessing and output post-processing paths across backends
+
+Do not promote a new backend to default until it matches or exceeds EasyOCR baseline on reliability and quality gates.

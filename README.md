@@ -85,6 +85,9 @@ B.L.A.S.T. is fully documented across several technical modules:
 -   **[📖 API Reference](docs/API_REFERENCE.md)**: Technical breakdown of core modules.
 -   **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)**: Windows/Linux production setup.
 -   **[🛠️ Troubleshooting](docs/TROUBLESHOOTING.md)**: Solutions for common errors and self-healing logic.
+-   **[🧭 OCR Engine Evaluation (2026)](docs/OCR_ENGINE_EVALUATION_2026.md)**: Web-backed CPU-first engine analysis.
+-   **[🔁 OCR Transition Playbook](docs/OCR_ENGINE_TRANSITION_PLAYBOOK.md)**: Safe migration and rollback methodology.
+-   **[🗺️ OCR Integration Map](docs/OCR_ENGINE_INTEGRATION_MAP.md)**: Exact code touchpoints and contracts.
 
 ---
 

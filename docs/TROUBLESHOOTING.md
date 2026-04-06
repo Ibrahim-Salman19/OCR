@@ -47,3 +47,23 @@ B.L.A.S.T. employs a **Tiered Recovery Logic**:
 ## 🔗 Next Steps
 -   [API Reference](API_REFERENCE.md)
 -   [Introduction](INTRODUCTION.md)
+
+---
+
+## 🔄 OCR Engine Migration Troubleshooting
+
+### Symptom: New backend runs but pipeline output is malformed
+- Cause: backend result schema does not match current extractor contract.
+- Fix: enforce adapter normalization to `{page, text, confidence, bbox_count, details}` before returning from extractor path.
+
+### Symptom: Cloud startup fails after backend swap
+- Cause: model bootstrap/download path or runtime dependency mismatch.
+- Fix: keep EasyOCR default and enable new backend with feature flag only after runtime compatibility validation.
+
+### Symptom: CPU inference slower than expected after migration
+- Cause: default backend tuning not aligned with cloud CPU limits.
+- Fix: cap workers, set backend-specific CPU thread controls, benchmark representative documents before cutover.
+
+### Symptom: Canary failures after enabling new backend
+- Cause: hidden edge cases in document layouts.
+- Fix: rollback immediately via engine feature flag and continue shadow comparison until acceptance criteria pass.
