@@ -259,3 +259,80 @@ div[data-testid="stMarkdownContainer"] > div.success-box {
     border-radius: 6px;
     font-family: var(--blast-font-mono);
 }
+
+/* ==========================================================================
+   Tab Navigation & Controls
+   ========================================================================== */
+
+[data-baseweb="tab-list"] {
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--blast-border);
+    padding-bottom: 0.5rem;
+}
+
+[data-baseweb="tab"] {
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    border-radius: 6px 6px 0 0 !important;
+    padding: 0.75rem 1.25rem !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-baseweb="tab"][aria-selected="true"] {
+    background: rgba(249, 115, 22, 0.1) !important;
+    color: var(--blast-accent) !important;
+    border-bottom: 2px solid var(--blast-accent) !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}
+
+/* Accessibility & Focus States */
+*:focus-visible {
+    outline: 2px solid var(--blast-accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ==========================================================================
+   Mobile Responsive Fallback & Reduced Motion
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .blast-header {
+        padding: 1.5rem 0 1rem 0;
+    }
+    .blast-title {
+        font-size: 2.25rem;
+    }
+    .minimal-panel {
+        padding: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .status-dot {
+        animation: none !important;
+    }
+}

@@ -347,170 +347,110 @@ def handle_file_upload(pipeline, db):
             out_dir = get_session_output_dir()
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            uploaded_file = uploaded_files[0]
-            ext = Path(uploaded_file.name).suffix.lower()
-            if ext not in ALLOWED_EXTENSIONS:
-                st.session_state.current_results = {
-                    "summary": [
+            all_summaries = []
+            all_output_files = []
+
+            for uploaded_file in uploaded_files:
+                ext = Path(uploaded_file.name).suffix.lower()
+                if ext not in ALLOWED_EXTENSIONS:
+                    all_summaries.append(
                         {
                             "FILE": uploaded_file.name,
                             "STATUS": "FAILED",
                             "ERROR": f"UNAUTHORIZED EXTENSION: {ext}",
                         }
-                    ],
-                    "output_files": [],
-                }
-                return
+                    )
+                    continue
 
-            tmp_path = None
-            try:
-                with tempfile.NamedTemporaryFile(
-                    delete=False, suffix=Path(uploaded_file.name).suffix
-                ) as tmp:
-                    tmp.write(uploaded_file.getbuffer())
-                    tmp_path = tmp.name
-            except Exception as e:
-                st.session_state.current_results = {
-                    "summary": [
+                tmp_path = None
+                try:
+                    with tempfile.NamedTemporaryFile(
+                        delete=False, suffix=Path(uploaded_file.name).suffix
+                    ) as tmp:
+                        tmp.write(uploaded_file.getbuffer())
+                        tmp_path = tmp.name
+                except Exception as e:
+                    all_summaries.append(
                         {
                             "FILE": uploaded_file.name,
                             "STATUS": "FAILED",
                             "ERROR": str(e),
                         }
-                    ],
-                    "output_files": [],
-                }
-                return
+                    )
+                    continue
 
-            # Lazily initialize pipeline only when a job is actually requested.
-            if pipeline is None:
-                try:
-                    pipeline = _get_or_create_pipeline()
-                except Exception as e:
-                    st.session_state.current_results = {
-                        "summary": [
+                if pipeline is None:
+                    try:
+                        pipeline = _get_or_create_pipeline()
+                    except Exception as e:
+                        all_summaries.append(
                             {
                                 "FILE": uploaded_file.name,
                                 "STATUS": "FAILED",
                                 "ERROR": f"Pipeline initialization failed: {e}",
                             }
-                        ],
-                        "output_files": [],
+                        )
+                        if tmp_path and os.path.exists(tmp_path):
+                            try:
+                                os.remove(tmp_path)
+                            except OSError:
+                                pass
+                        continue
+
+                try:
+                    res = pipeline.process_job(
+                        source_path=tmp_path, output_dir=str(out_dir)
+                    )
+                except Exception as e:
+                    res = {"status": "failed", "error": str(e)}
+                finally:
+                    if tmp_path and os.path.exists(tmp_path):
+                        try:
+                            os.remove(tmp_path)
+                        except OSError:
+                            pass
+
+                status = str(res.get("status", "failed")).lower()
+                is_success = status == "success"
+
+                output_files = []
+                output_map = res.get("output_files", {})
+                if isinstance(output_map, dict):
+                    for fmt in ("md", "docx"):
+                        p = output_map.get(fmt)
+                        if p:
+                            output_files.append((fmt, p))
+
+                if not output_files:
+                    base = Path(uploaded_file.name).stem
+                    md_path = out_dir / f"{base}.md"
+                    docx_path = out_dir / f"{base}.docx"
+                    if Path(md_path).exists():
+                        output_files.append(("md", str(md_path)))
+                    if Path(docx_path).exists():
+                        output_files.append(("docx", str(docx_path)))
+
+                all_summaries.append(
+                    {
+                        "FILE": uploaded_file.name,
+                        "STATUS": "SUCCESS" if is_success else "FAILED",
+                        "ERROR": ""
+                        if is_success
+                        else str(
+                            res.get("error")
+                            or res.get("message")
+                            or "Unknown error"
+                        ),
                     }
-                    if tmp_path and os.path.exists(tmp_path):
-                        try:
-                            os.remove(tmp_path)
-                        except OSError:
-                            pass
-                    return
+                )
+                all_output_files.extend(output_files)
 
-            # Compatibility mode for mocked pipelines in tests.
-            if not _is_real_blast_pipeline(pipeline):
-                try:
-                    res = pipeline.process_job(
-                        source_path=tmp_path, output_dir=str(out_dir)
-                    )
-                except Exception as e:
-                    res = {"status": "failed", "error": str(e)}
-                finally:
-                    if tmp_path and os.path.exists(tmp_path):
-                        try:
-                            os.remove(tmp_path)
-                        except OSError:
-                            pass
-
-                status = str(res.get("status", "failed")).lower()
-                is_success = status == "success"
-
-                output_files = []
-                output_map = res.get("output_files", {})
-                if isinstance(output_map, dict):
-                    for fmt in ("md", "docx"):
-                        p = output_map.get(fmt)
-                        if p:
-                            output_files.append((fmt, p))
-
-                if not output_files:
-                    base = Path(uploaded_file.name).stem
-                    md_path = out_dir / f"{base}.md"
-                    docx_path = out_dir / f"{base}.docx"
-                    if Path(md_path).exists():
-                        output_files.append(("md", str(md_path)))
-                    if Path(docx_path).exists():
-                        output_files.append(("docx", str(docx_path)))
-
-                st.session_state.current_results = {
-                    "summary": [
-                        {
-                            "FILE": uploaded_file.name,
-                            "STATUS": "SUCCESS" if is_success else "FAILED",
-                            "ERROR": ""
-                            if is_success
-                            else str(
-                                res.get("error")
-                                or res.get("message")
-                                or "Unknown error"
-                            ),
-                        }
-                    ],
-                    "output_files": output_files,
-                }
-                return
-
-            # Cloud reliability mode: process synchronously to avoid
-            # background-thread instability under hosted resource limits.
-            if _is_cloud_runtime():
-                try:
-                    res = pipeline.process_job(
-                        source_path=tmp_path, output_dir=str(out_dir)
-                    )
-                except Exception as e:
-                    res = {"status": "failed", "error": str(e)}
-                finally:
-                    if tmp_path and os.path.exists(tmp_path):
-                        try:
-                            os.remove(tmp_path)
-                        except OSError:
-                            pass
-
-                status = str(res.get("status", "failed")).lower()
-                is_success = status == "success"
-
-                output_files = []
-                output_map = res.get("output_files", {})
-                if isinstance(output_map, dict):
-                    for fmt in ("md", "docx"):
-                        p = output_map.get(fmt)
-                        if p:
-                            output_files.append((fmt, p))
-
-                if not output_files:
-                    base = Path(uploaded_file.name).stem
-                    md_path = out_dir / f"{base}.md"
-                    docx_path = out_dir / f"{base}.docx"
-                    if Path(md_path).exists():
-                        output_files.append(("md", str(md_path)))
-                    if Path(docx_path).exists():
-                        output_files.append(("docx", str(docx_path)))
-
-                st.session_state.current_results = {
-                    "summary": [
-                        {
-                            "FILE": uploaded_file.name,
-                            "STATUS": "SUCCESS" if is_success else "FAILED",
-                            "ERROR": ""
-                            if is_success
-                            else str(
-                                res.get("error")
-                                or res.get("message")
-                                or "Unknown error"
-                            ),
-                        }
-                    ],
-                    "output_files": output_files,
-                }
-                st.session_state.active_job_id = None
-                return
+            st.session_state.current_results = {
+                "summary": all_summaries,
+                "output_files": all_output_files,
+            }
+            st.session_state.active_job_id = None
+            return
 
             job_id = db.create_job(uploaded_file.name, page_count=0)
             st.session_state.active_job_id = job_id
