@@ -1,106 +1,145 @@
 /**
- * B.L.A.S.T. OCR - UI UX Pro Max
- * Pattern: Real-Time / Operations Landing
- * Style: Exaggerated Minimalism
- * 
- * Future notes: Keep complex shadows out. Stick to flat borders, massive typography, 
- * and strict white space. We use Fira fonts for a data-dense, technical look.
+ * B.L.A.S.T. OCR - Anti-Slop Design System (design-taste-frontend)
+ * Aesthetic: Dark Tech / Linear-Style Operations Mission Control
+ * Dials: DESIGN_VARIANCE=7 | MOTION_INTENSITY=6 | VISUAL_DENSITY=4
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap');
+
+/* ==========================================================================
+   Design Tokens & CSS Variables
+   ========================================================================== */
+
+:root {
+    --blast-font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --blast-font-mono: 'Geist Mono', 'Fira Code', monospace;
+    
+    --blast-bg-card: var(--secondary-background-color, #090d16);
+    --blast-bg-elevated: #111827;
+    --blast-border: rgba(255, 255, 255, 0.08);
+    --blast-border-active: #f97316;
+    
+    --blast-text-main: var(--text-color, #f8fafc);
+    --blast-text-muted: #94a3b8;
+    --blast-accent: #f97316;
+    --blast-accent-hover: #ea580c;
+    --blast-accent-active: #c2410c;
+    --blast-emerald: #10b981;
+}
 
 /* ==========================================================================
    Base Scope & Typography
    ========================================================================== */
 
-/* 
-   SECURITY/UI UX NOTE: Streamlit widgets rely on global classes. 
-   We scope overrides carefully to prevent breaking internal DOM structures.
-*/
-
 [data-testid="stMainBlockContainer"] * {
-    font-family: 'Fira Sans', sans-serif !important;
+    font-family: var(--blast-font-sans) !important;
 }
 
 [data-testid="stMainBlockContainer"] h1,
 [data-testid="stMainBlockContainer"] h2,
 [data-testid="stMainBlockContainer"] h3,
-.fira-code {
-    font-family: 'Fira Code', monospace !important;
+.fira-code,
+.geist-mono {
+    font-family: var(--blast-font-mono) !important;
 }
 
-/* ==========================================================================
-   SEO hidden meta
-   ========================================================================== */
 .seo-metadata {
     display: none !important;
     visibility: hidden;
 }
 
 /* ==========================================================================
-   Header & Branding (Exaggerated Minimalism)
+   Header & Mission Control Branding
    ========================================================================== */
 
 .blast-header {
-    text-align: left; /* Shifted to left for raw minimalist layout */
-    padding: 3rem 0;
+    text-align: left;
+    padding: 2.5rem 0 2rem 0;
     margin-bottom: 2rem;
-    border-bottom: 4px solid #1e293b; /* Thick minimalist border */
+    border-bottom: 2px solid var(--blast-border);
+    position: relative;
 }
 
-/* Clamp scaling for massive hero effect */
 .blast-title {
-    font-family: 'Fira Code', monospace !important;
-    font-size: clamp(3rem, 6vw, 6rem);
-    font-weight: 900;
-    color: #f8fafc;
-    letter-spacing: -0.05em;
-    line-height: 1;
-    margin-bottom: 1rem;
+    font-family: var(--blast-font-mono) !important;
+    font-size: clamp(2.5rem, 5vw, 5.5rem);
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 0.75rem;
     text-transform: uppercase;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .blast-subtitle {
-    font-size: clamp(1rem, 2vw, 1.5rem);
-    color: #94a3b8;
-    letter-spacing: 0.1rem;
+    font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+    color: var(--blast-text-muted);
+    letter-spacing: 0.05em;
     font-weight: 400;
+    line-height: 1.5;
+    max-width: 65ch;
+}
+
+/* Operational Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-family: var(--blast-font-mono) !important;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    margin-bottom: 1rem;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    animation: pulse-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 /* ==========================================================================
-   Minimal Panels (Replacing Glassmorphism)
+   Minimal Panels & Glassmorphism
    ========================================================================== */
-
-:root {
-    --blast-bg-card: var(--secondary-background-color, #0f172a);
-    --blast-border: #334155;
-    --blast-border-active: #2563eb;
-    --blast-text-main: var(--text-color, #f8fafc);
-    --blast-text-muted: #94a3b8;
-    --blast-accent: #f97316;
-    --blast-accent-hover: #ea580c;
-}
 
 .minimal-panel {
     background: var(--blast-bg-card);
-    border: 2px solid var(--blast-border);
-    border-radius: 4px;
+    border: 1px solid var(--blast-border);
+    border-radius: 8px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    overflow: visible; /* FIX: Allow dropdowns and selectboxes to render without clipping */
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: visible;
     word-wrap: break-word;
 }
 
 .minimal-panel:hover {
-    border-color: var(--blast-border-active);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    border-color: rgba(249, 115, 22, 0.35);
+    box-shadow: 0 8px 24px -6px rgba(249, 115, 22, 0.12);
 }
 
 .minimal-panel h3 {
     margin-top: 0;
     color: var(--blast-text-main) !important;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 1rem;
@@ -112,109 +151,111 @@
     overflow: visible !important;
 }
 [data-testid="stExpander"] summary {
-    font-family: 'Fira Code', monospace !important;
-    font-size: 0.9rem;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.85rem;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
     cursor: pointer;
 }
 
 /* ==========================================================================
-   Input Widgets & Controls
+   Input Widgets & Interactive CTAs
    ========================================================================== */
 
 /* File Uploader styling */
 [data-testid="stFileUploader"] {
-    background: transparent;
-    border: 2px dashed #475569;
-    border-radius: 0; /* Flat edge */
+    background: rgba(15, 23, 42, 0.5);
+    border: 2px dashed rgba(249, 115, 22, 0.3);
+    border-radius: 8px;
     padding: 2rem;
     cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 [data-testid="stFileUploader"]:hover {
-    border-color: #f97316; /* Focus outline */
+    border-color: var(--blast-accent);
+    background: rgba(249, 115, 22, 0.04);
 }
 
-/* Buttons - Flat, high contrast */
+/* Buttons - High contrast with tactile feedback */
 .stButton > button {
     width: 100%;
-    background: #f97316 !important; /* Flat CTA */
+    background: var(--blast-accent) !important;
     color: #ffffff !important;
     border: none;
-    padding: 1rem 0;
+    padding: 0.875rem 1.5rem;
     font-weight: 700;
-    letter-spacing: 0.05rem;
-    border-radius: 0; /* No radius */
+    font-family: var(--blast-font-mono) !important;
+    letter-spacing: 0.06em;
+    border-radius: 6px;
     text-transform: uppercase;
-    transition: all 0.2s ease;
-    cursor: pointer; /* Pro Max Checklist: cursor-pointer on all clickable elements */
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    cursor: pointer;
 }
 
 .stButton > button:hover {
-    background: #c2410c !important;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 0 #9a3412; /* Flat block shadow instead of blur */
+    background: var(--blast-accent-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -4px rgba(249, 115, 22, 0.4);
 }
 
-/* Secondary Button Support if needed */
-.stButton > button[kind="secondary"] {
-    background: #1e293b !important;
-    color: #f8fafc !important;
-}
-.stButton > button[kind="secondary"]:hover {
-    background: #334155 !important;
-    box-shadow: 0 10px 0 #0f172a;
+.stButton > button:active {
+    transform: scale(0.98) translateY(0);
+    background: var(--blast-accent-active) !important;
 }
 
 /* ==========================================================================
-   Native Metrics
+   Native Technical Metrics
    ========================================================================== */
 
 [data-testid="stMetric"] {
-    background: #0f172a;
-    border: 2px solid #1e293b;
-    border-left: 6px solid #2563eb; /* Technical stripe */
-    border-radius: 0;
-    padding: 1.5rem;
+    background: var(--blast-bg-elevated);
+    border: 1px solid var(--blast-border);
+    border-left: 4px solid var(--blast-accent);
+    border-radius: 6px;
+    padding: 1.25rem;
+    transition: transform 0.2s ease;
+}
+
+[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
 }
 
 [data-testid="stMetricLabel"] p {
-    color: #94a3b8 !important;
-    font-size: 0.85rem !important;
+    color: var(--blast-text-muted) !important;
+    font-size: 0.8rem !important;
     text-transform: uppercase;
-    letter-spacing: 0.1rem;
-    font-family: 'Fira Code', monospace !important;
+    letter-spacing: 0.08em;
+    font-family: var(--blast-font-mono) !important;
 }
 
 [data-testid="stMetricValue"] {
-    color: #f8fafc !important;
-    font-size: 3rem !important;
-    font-weight: 900 !important;
-    line-height: 1.2;
+    color: var(--blast-text-main) !important;
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    line-height: 1.1;
+    font-family: var(--blast-font-mono) !important;
 }
 
 /* ==========================================================================
-   Utilities & Alerts (Status indicators)
+   Status Alerts & Info Cards
    ========================================================================== */
 
 div[data-testid="stMarkdownContainer"] > div.info-box {
-    background: #1e3a8a;
+    background: rgba(30, 58, 138, 0.4);
+    border: 1px solid rgba(59, 130, 246, 0.4);
     border-left: 4px solid #3b82f6;
     color: #dbeafe !important;
     padding: 1.2rem;
-    border-radius: 0;
-    font-family: 'Fira Code', monospace;
+    border-radius: 6px;
+    font-family: var(--blast-font-mono);
 }
 
 div[data-testid="stMarkdownContainer"] > div.success-box {
-    background: #14532d;
+    background: rgba(20, 83, 45, 0.4);
+    border: 1px solid rgba(34, 197, 94, 0.4);
     border-left: 4px solid #22c55e;
     color: #dcfce7 !important;
     padding: 1.2rem;
-    border-radius: 0;
-    font-family: 'Fira Code', monospace;
-}
-
-svg.lucide {
-    vertical-align: text-bottom;
-    margin-right: 8px;
+    border-radius: 6px;
+    font-family: var(--blast-font-mono);
 }

@@ -674,9 +674,9 @@ def main():
         st.markdown(
             """
     <div class="blast-header">
-        <h1 class="blast-title">B.L.A.S.T.</h1>
-        <div class="blast-subtitle">BATCH LARGE-SCALE AUTOMATED SCANNED TEXT</div>
-        <div class="blast-tagline fira-code">SYSTEM V2.1 // REAL-TIME OPS</div>
+        <div class="status-badge"><span class="status-dot"></span> OPERATIONAL // MISSION CONTROL V2.1</div>
+        <h1 class="blast-title">B.L.A.S.T. OCR</h1>
+        <div class="blast-subtitle">Batch Large-Scale Automated Scanned-Text Extraction Engine</div>
     </div>
     """,
             unsafe_allow_html=True,
