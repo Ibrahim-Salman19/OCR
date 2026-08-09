@@ -2,7 +2,7 @@ import os
 import tempfile
 import logging
 import psutil
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Optional
 from pathlib import Path
 from copy import deepcopy
 import defusedxml
@@ -63,19 +63,48 @@ class BlastPipeline:
         if _is_streamlit_cloud():
             self.parallel_processor.max_workers = 1
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self) -> None:
+        """Close pipeline database connection and dispose underlying resources."""
+        if hasattr(self, "db") and self.db:
+            try:
+                self.db.close()
+            except Exception as e:
+                logger.debug(f"Error closing database in pipeline: {e}")
+
+    def __del__(self):
+        """Cleanup on garbage collection."""
+        self.close()
+
+    def _post_process_page_result(self, r: Dict, job_id: Optional[int] = None) -> Dict:
+        """Unified layout regrouping, PII redaction, and database checkpoint saving."""
+        raw_text = r.get("text", "")
+        if isinstance(raw_text, list):
+            r["text"] = self._regroup_text_by_layout(raw_text)
+
+        if getattr(self._config, "secure_mode", False):
+            r["text"] = ForensicRestorer.redact_pii(r.get("text", "") or "")
+
+        if job_id:
+            self.db.save_result(
+                job_id,
+                r.get("page", 0),
+                r.get("text", ""),
+                r.get("confidence", 0.0),
+                r.get("processing_time", 0.0),
+            )
+        return r
+
     def _apply_optional_redaction(self, text: str) -> str:
         """Apply PII redaction only when secure mode is enabled."""
         if getattr(self._config, "secure_mode", False):
             return ForensicRestorer.redact_pii(text or "")
         return text or ""
-
-    def __del__(self):
-        """FIX #2: Close database connection on cleanup"""
-        if hasattr(self, "db") and self.db:
-            try:
-                self.db.close()
-            except Exception:
-                pass
 
     def _regroup_text_by_layout(self, ocr_results: List) -> str:
         """
@@ -322,27 +351,8 @@ class BlastPipeline:
                 except Exception:
                     pass
 
-            # --- Phase 4: Layout Grouping (Table Engine) ---
-            raw_text = r.get("text", "")
-            if isinstance(raw_text, list):
-                r["text"] = self._regroup_text_by_layout(raw_text)
-
-            # --- Phase 3: PII Redaction ---
-            if getattr(self._config, "secure_mode", False):
-                r["text"] = ForensicRestorer.redact_pii(r["text"])
-
+            r = self._post_process_page_result(r, job_id=job_id)
             final_results.append(r)
-
-        # --- Intermediate Checkpointing & Heartbeat ---
-        if job_id:
-            for r in final_results:
-                self.db.save_result(
-                    job_id=job_id,
-                    page_number=r.get("page", 0),
-                    text=r.get("text", ""),
-                    confidence=r.get("confidence", 0.0),
-                    processing_time=r.get("processing_time", 0.0),
-                )
 
         # Cleanup
         for p in image_paths:
@@ -405,48 +415,22 @@ class BlastPipeline:
                     progress_callback=progress_callback,
                 )
 
-                # Checkpoint & Post-process
-                processed_results = []
-                for r in results:
-                    raw_text = r.get("text", "")
-                    if isinstance(raw_text, list):
-                        r["text"] = self._regroup_text_by_layout(raw_text)
-                    r["text"] = self._apply_optional_redaction(r.get("text", ""))
-
-                    self.db.save_result(
-                        job_id,
-                        r.get("page", 0),
-                        r.get("text", ""),
-                        r.get("confidence", 0.0),
-                        r.get("processing_time", 0.0),
-                    )
-                    processed_results.append(r)
-                results = processed_results
-
+                results = [
+                    self._post_process_page_result(r, job_id) for r in results
+                ]
             elif ext == ".pdf":
                 results = self.process_pdf(str(source), job_id, progress_callback)
             elif ext == ".pptx":
                 text = extract_from_pptx(str(source))
-                text = self._apply_optional_redaction(text)
-                results = [
-                    {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}
-                ]
-                self.db.save_result(job_id, 1, text, 1.0, 0.0)
+                res = {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}
+                res = self._post_process_page_result(res, job_id)
+                results = [res]
                 if progress_callback:
                     progress_callback(1, 1)
             elif ext in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
                 res = process_page_wrapper(str(source), 1)
-                if isinstance(res.get("text"), list):
-                    res["text"] = self._regroup_text_by_layout(res["text"])
-                res["text"] = self._apply_optional_redaction(res.get("text", ""))
+                res = self._post_process_page_result(res, job_id)
                 results = [res]
-                self.db.save_result(
-                    job_id,
-                    1,
-                    res.get("text", ""),
-                    res.get("confidence", 0.0),
-                    res.get("processing_time", 0.0),
-                )
                 if progress_callback:
                     progress_callback(1, 1)
             else:

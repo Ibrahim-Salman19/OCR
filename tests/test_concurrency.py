@@ -64,26 +64,34 @@ def test_scoped_session_is_thread_local():
     """BUG HYPOTHESIS: Shared Session object causes 'Session is already flushing' errors."""
     from blast_ocr.storage.database import OCRDatabase
 
+    import time
     db_file = tempfile.mktemp(suffix=".db")
     db = OCRDatabase(f"sqlite:///{db_file}")
     sessions_per_thread = {}
+    start_event = threading.Event()
+    done_event = threading.Event()
 
     def get_session(tid):
-        # Keep reference to prevent id() reuse by garbage collector
+        start_event.wait()
         s = db.Session()
         sessions_per_thread[tid] = s
+        done_event.wait()
 
     threads = [threading.Thread(target=get_session, args=(i,)) for i in range(5)]
     for t in threads:
         t.start()
-    for t in threads:
-        t.join()
+    start_event.set()
+    time.sleep(0.1)
 
     # Each thread should have a different Session instance (thread-local)
     session_ids = [id(s) for s in sessions_per_thread.values()]
     assert len(set(session_ids)) > 1, (
         "scoped_session should return different session objects per thread"
     )
+
+    done_event.set()
+    for t in threads:
+        t.join()
 
     db.close()
     import time

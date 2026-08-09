@@ -262,7 +262,7 @@ class TestAsyncRetryWithBackoff:
             return "async_ok"
 
         async def run():
-            decorated = await healer.retry_with_backoff_async(flaky_async)
+            decorated = healer.retry_with_backoff_async(flaky_async)
             with patch("asyncio.sleep"):
                 return await decorated()
 
@@ -282,7 +282,7 @@ class TestAsyncRetryWithBackoff:
             raise ImageLoadError("missing")
 
         async def run():
-            decorated = await healer.retry_with_backoff_async(raises_fatal_async)
+            decorated = healer.retry_with_backoff_async(raises_fatal_async)
             await decorated()
 
         with pytest.raises(ImageLoadError):
@@ -296,7 +296,7 @@ class TestAsyncRetryWithBackoff:
             raise ValueError("async permanent")
 
         async def run():
-            decorated = await healer.retry_with_backoff_async(always_fails_async)
+            decorated = healer.retry_with_backoff_async(always_fails_async)
             with patch("asyncio.sleep"):
                 await decorated()
 

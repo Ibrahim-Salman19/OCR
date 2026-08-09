@@ -71,35 +71,44 @@
    Minimal Panels (Replacing Glassmorphism)
    ========================================================================== */
 
+:root {
+    --blast-bg-card: var(--secondary-background-color, #0f172a);
+    --blast-border: #334155;
+    --blast-border-active: #2563eb;
+    --blast-text-main: var(--text-color, #f8fafc);
+    --blast-text-muted: #94a3b8;
+    --blast-accent: #f97316;
+    --blast-accent-hover: #ea580c;
+}
+
 .minimal-panel {
-    background: transparent;
-    border: 2px solid #334155;
-    border-radius: 0; /* Flat, raw brutalist/minimalist edges */
+    background: var(--blast-bg-card);
+    border: 2px solid var(--blast-border);
+    border-radius: 4px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    transition: border-color 0.2s ease-in-out;
-    overflow: hidden; /* FIX: Prevent text overflow in narrow columns */
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    overflow: visible; /* FIX: Allow dropdowns and selectboxes to render without clipping */
     word-wrap: break-word;
 }
 
 .minimal-panel:hover {
-    border-color: #2563eb; /* Pro Max Primary Blue hover */
+    border-color: var(--blast-border-active);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .minimal-panel h3 {
     margin-top: 0;
-    color: #e2e8f0 !important;
-    font-size: 1.1rem;  /* Slightly smaller to fit narrow panels */
+    color: var(--blast-text-main) !important;
+    font-size: 1.1rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 1rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-/* Streamlit expander fix: prevent clipping in narrow columns */
-[data-testid="stExpander"] {
+/* Streamlit expander and selectbox container fixes */
+[data-testid="stExpander"],
+[data-testid="stSelectbox"] {
     overflow: visible !important;
 }
 [data-testid="stExpander"] summary {

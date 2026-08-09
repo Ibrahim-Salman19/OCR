@@ -38,7 +38,7 @@ def sample_image(temp_workspace):
 def mock_env(monkeypatch, temp_workspace):
     """Set environment variables for testing"""
     monkeypatch.setenv("BLAST_OCR_DATABASE_URL", f"sqlite:///{temp_workspace['db']}")
-    monkeypatch.setenv("BLAST_OCR_KEY_LOG_DIR", str(temp_workspace["logs"]))
+    monkeypatch.setenv("BLAST_OCR_LOG_DIR", str(temp_workspace["logs"]))
     monkeypatch.setenv("BLAST_OCR_OCR_GPU", "false")
 
 

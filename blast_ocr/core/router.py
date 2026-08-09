@@ -1,6 +1,6 @@
 import langdetect
 import logging
-from typing import List
+from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 class ScriptRouter:
     """
     Intelligent Script & Language Router for OCR.
-    Inspired by 'WordPress/wordpress-router' and 'anthropics/pdf' patterns.
+    Dynamically routes multi-lingual content to optimal engine language combinations.
     """
 
-    SUPPORTED_SCRIPTS = {
+    SUPPORTED_SCRIPTS: Dict[str, str] = {
         "en": "english",
         "fr": "french",
         "de": "german",
@@ -24,40 +24,47 @@ class ScriptRouter:
     @staticmethod
     def detect_script(text_sample: str) -> str:
         """
-        Detects the probable script/language of a text snippet.
+        Detects the probable script/language of a text snippet using langdetect.
+        Falls back to 'en' gracefully if text is invalid or language is unknown.
         """
+        if not text_sample or not text_sample.strip():
+            return "en"
         try:
-            # Fast detection using langdetect
             lang = langdetect.detect(text_sample)
             logger.info(f"Detected script: {lang}")
             return lang
         except Exception as e:
             logger.warning(f"Script detection failed: {e}")
-            return "en"  # Fallback to core logic
+            return "en"
 
     @classmethod
     def get_ocr_engine_params(cls, lang: str) -> List[str]:
         """
-        Returns the optimized language list for EasyOCR based on detection.
+        Returns the optimized language combination list for EasyOCR based on detected language code.
         """
-        # Common Script Groups
-        script_groups = {
+        script_groups: Dict[str, List[str]] = {
             "en": ["en"],
             "fr": ["en", "fr"],
             "de": ["en", "de"],
+            "es": ["en", "es"],
+            "pt": ["en", "pt"],
             "ar": ["en", "ar"],
+            "zh": ["en", "ch_sim"],
+            "zh-cn": ["en", "ch_sim"],
+            "zh-tw": ["en", "ch_tra"],
         }
-        return script_groups.get(lang, ["en"])
+        return script_groups.get(lang.lower(), ["en"])
 
 
-def apply_auto_routing(pipeline_instance, sample_text: str):
+def apply_auto_routing(pipeline_instance: Any, sample_text: str) -> List[str]:
     """
-    Dynamically adjusts pipeline settings based on script discovery.
+    Dynamically adjusts pipeline language settings based on script discovery.
     """
     lang = ScriptRouter.detect_script(sample_text)
     engine_langs = ScriptRouter.get_ocr_engine_params(lang)
 
-    # We update the internal config if needed - however, EasyOCR initialization is expensive.
-    # We typically signal the pipeline to use these for the next job or re-initialize.
-    logger.info(f"Routing to engine profile: {engine_langs}")
+    if pipeline_instance and hasattr(pipeline_instance, "_config"):
+        pipeline_instance._config.ocr_languages = engine_langs
+
+    logger.info(f"Routing pipeline to engine profile: {engine_langs}")
     return engine_langs

@@ -37,6 +37,13 @@ blast_ocr.db
 
 # Excel / Word temporary files
 ~$*.xlsx
+
+# PyCharm / IDE settings
+.idea/
+.vscode/
+
+# Excel / Word temporary files
+~$*.xlsx
 ~$*.docx
 
 # Large local binaries (Windows-only, not needed on cloud)
@@ -46,4 +53,5 @@ VC_redist.x64.exe
 # Test artifacts
 test_output.txt
 test_images/
-
+.firecrawl/
+*.txt

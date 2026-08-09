@@ -2,35 +2,57 @@ import time
 from functools import wraps
 import logging
 import asyncio
+from typing import Callable, Any, List, Type
+
+from blast_ocr.core.exceptions import (
+    BLASTOCRException,
+    ImageLoadError,
+    PageExtractionError,
+    OCREngineError,
+)
 
 logger = logging.getLogger(__name__)
 
+FATAL_ERRORS: tuple[Type[BaseException], ...] = (
+    ImageLoadError,
+    PageExtractionError,
+    FileNotFoundError,
+    OCREngineError,
+    BLASTOCRException,
+)
+
+
+def _is_fatal_error(e: Exception) -> bool:
+    """Polymorphic check to determine if an exception is fatal and should not be retried."""
+    if isinstance(e, FATAL_ERRORS):
+        return True
+    # Fallback string check for backwards compatibility with dynamic exceptions
+    return type(e).__name__ in [
+        "ImageLoadError",
+        "PageExtractionError",
+        "FileNotFoundError",
+        "OCREngineError",
+        "BLASTOCRException",
+    ]
+
 
 class SelfHealingOCR:
-    """Automatic retry and fallback logic"""
+    """Automatic retry and fallback logic with exponential backoff and fatal error detection."""
 
-    def __init__(self, max_retries=3, backoff_factor=2):
+    def __init__(self, max_retries: int = 3, backoff_factor: float = 2.0) -> None:
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
 
-    def retry_with_backoff(self, func):
-        """Decorator for exponential backoff retry"""
+    def retry_with_backoff(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        """Decorator for synchronous exponential backoff retry."""
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             for attempt in range(self.max_retries):
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    # Check for fatal errors (by name to avoid circular imports)
-                    # FIX(phase2): BUG-02 - Added 'OCREngineError' to prevent retries on memory errors
-                    error_type = type(e).__name__
-                    if error_type in [
-                        "ImageLoadError",
-                        "PageExtractionError",
-                        "FileNotFoundError",
-                        "OCREngineError",
-                    ]:
+                    if _is_fatal_error(e):
                         logger.error(
                             f"Fatal error in {func.__name__}: {e}. Not retrying."
                         )
@@ -51,23 +73,16 @@ class SelfHealingOCR:
 
         return wrapper
 
-    async def retry_with_backoff_async(self, func):
-        """Decorator for exponential backoff retry (async ver)"""
+    def retry_with_backoff_async(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        """Decorator for asynchronous exponential backoff retry."""
 
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             for attempt in range(self.max_retries):
                 try:
                     return await func(*args, **kwargs)
                 except Exception as e:
-                    # BUG-HEALING-ASYNC-01 Fix: Prevent infinite async loops on fatal/unrecoverable errors
-                    error_type = type(e).__name__
-                    if error_type in [
-                        "ImageLoadError",
-                        "PageExtractionError",
-                        "FileNotFoundError",
-                        "OCREngineError",
-                    ]:
+                    if _is_fatal_error(e):
                         logger.error(
                             f"Fatal error in {func.__name__}: {e}. Not retrying."
                         )
@@ -86,12 +101,14 @@ class SelfHealingOCR:
                         )
                         raise
 
-        return wrapper
+        return async_wrapper
 
-    def fallback_chain(self, primary_func, fallback_funcs):
-        """Try primary method, fall back to alternatives"""
+    def fallback_chain(
+        self, primary_func: Callable[..., Any], fallback_funcs: List[Callable[..., Any]]
+    ) -> Callable[..., Any]:
+        """Try primary method, fall back to alternatives."""
 
-        def execute(*args, **kwargs):
+        def execute(*args: Any, **kwargs: Any) -> Any:
             try:
                 return primary_func(*args, **kwargs)
             except Exception as e:

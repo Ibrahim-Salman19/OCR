@@ -140,8 +140,6 @@ class OCRCache:
                             else:
                                 raise
                 except Exception as e:
-                    if "fd" in locals():
-                        os.close(fd)
                     if os.path.exists(temp_path):
                         try:
                             os.remove(temp_path)

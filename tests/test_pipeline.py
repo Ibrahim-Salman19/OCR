@@ -26,4 +26,4 @@ def test_end_to_end_image(temp_workspace, sample_image):
     out_files = list(temp_workspace["output"].glob("*.md"))
     assert len(out_files) == 1
     content = out_files[0].read_text(encoding="utf-8")
-    assert len(content) >= 0  # May be empty if OCR doesn't detect text in test image
+    assert isinstance(content, str)

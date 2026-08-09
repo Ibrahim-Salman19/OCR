@@ -158,25 +158,33 @@ def test_scoped_session_thread_isolation():
     one thread's flush() call will see the other thread's pending
     ORM objects, causing wrong data to be committed.
     """
+    import time
     db_file = _new_temp_db_path()
     from blast_ocr.storage.database import OCRDatabase
 
     db = OCRDatabase(f"sqlite:///{db_file}")
     session_ids = {}
     lock = threading.Lock()
+    start_event = threading.Event()
+    done_event = threading.Event()
 
     def capture_session(tid):
+        start_event.wait()
         s = db.Session()
         with lock:
             session_ids[tid] = s
+        done_event.wait()
 
     threads = [threading.Thread(target=capture_session, args=(i,)) for i in range(5)]
     for t in threads:
         t.start()
-    for t in threads:
-        t.join()
+    start_event.set()
+    time.sleep(0.1)
 
     unique = len(set(id(s) for s in session_ids.values()))
+    done_event.set()
+    for t in threads:
+        t.join()
     db.close()
     import time
 

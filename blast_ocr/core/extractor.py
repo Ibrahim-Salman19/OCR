@@ -23,8 +23,14 @@ import defusedxml
 defusedxml.defuse_stdlib()
 
 from blast_ocr.config import config
-from blast_ocr.core.exceptions import *
+from blast_ocr.core.exceptions import (
+    ImageLoadError,
+    OCREngineError,
+    PageExtractionError,
+    BLASTOCRException,
+)
 from blast_ocr.core.healing import healer
+from blast_ocr.core.exporter import save_output, sanitize_for_xml, extract_from_pptx
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +70,8 @@ class RobustOCRExtractor:
             model_storage_directory = os.getenv("BLAST_OCR_EASYOCR_MODEL_DIR")
             if not model_storage_directory and sys.platform != "win32":
                 module_path = os.getenv("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
-                model_storage_directory = f"{module_path.rstrip('/\\')}/model"
+                clean_module_path = module_path.rstrip("/\\")
+                model_storage_directory = f"{clean_module_path}/model"
 
             logger.info(
                 f"Initializing EasyOCR (GPU={config.ocr_gpu}, Langs={config.ocr_languages})"
@@ -339,87 +346,11 @@ class RobustOCRExtractor:
             logger.error(f"Page {page_number}: Unexpected error - {e}")
             raise PageExtractionError(page_number, e)
 
-
-# --- Legacy Support / Utilities (Migrated) ---
-
-
-def extract_from_pptx(pptx_path: str) -> str:
-    """Extracts text from slides, including notes and tables."""
-    text_content = []
-    try:
-        prs = Presentation(pptx_path)
-        for i, slide in enumerate(prs.slides, start=1):
-            slide_text = []
-            slide_text.append(f"## Slide {i}")
-
-            # 1. Shapes Text
-            for shape in slide.shapes:
-                if hasattr(shape, "text") and shape.text:
-                    slide_text.append(shape.text)
-
-                # 2. Tables
-                if shape.has_table:
-                    for row in shape.table.rows:
-                        row_text = " | ".join(
-                            [cell.text_frame.text for cell in row.cells]
-                        )
-                        slide_text.append(f"| {row_text} |")
-
-            # 3. Notes
-            if slide.has_notes_slide and slide.notes_slide.notes_text_frame:
-                notes = slide.notes_slide.notes_text_frame.text
-                if notes:
-                    slide_text.append(f"> **Notes:** {notes}")
-
-            text_content.append("\n".join(slide_text))
-
-        return "\n\n---\n\n".join(text_content)
-    except Exception as e:
-        # FIX(phase2): HIGH-007 - Raise exception instead of returning error string.
-        # The original code returned "[ERROR: ...]" which caused silent failures
-        # where error text was written to output files instead of failing the job.
-        logger.error(f"PPTX extraction failed: {e}")
-        raise OCREngineError(f"PPTX extraction failed: {e}") from e
-
-
-def sanitize_for_xml(text: Optional[str]) -> str:
-    """Removes characters that are not allowed in XML."""
-    if not text:
-        return ""
-    return re.sub(r"[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]", "", text)
-
-
-def save_output(
-    text: str, base_name: str, output_dir: str
-) -> Tuple[str, Optional[str]]:
-    """Saves to Markdown and DOCX."""
-    os.makedirs(output_dir, exist_ok=True)
-
-    # MD
-    md_path = os.path.join(output_dir, f"{base_name}.md")
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(text)
-
-    # DOCX
-    docx_path = os.path.join(output_dir, f"{base_name}.docx")
-    try:
-        doc = Document()
-        doc.add_heading(base_name, 0)
-
-        clean_text = sanitize_for_xml(text)
-
-        for line in clean_text.split("\n"):
-            line = line.strip()
-            if line.startswith("## "):
-                doc.add_heading(line.replace("## ", ""), level=2)
-            elif line.startswith("---"):
-                doc.add_page_break()
-            else:
-                if line:
-                    doc.add_paragraph(line)
-        doc.save(docx_path)
-    except Exception as e:
-        logger.error(f"DOCX generation failed: {e}")
-        docx_path = None
-
-    return md_path, docx_path
+# Re-exported utilities from blast_ocr.core.exporter for backward compatibility
+__all__ = [
+    "RobustOCRExtractor",
+    "extract_from_pptx",
+    "sanitize_for_xml",
+    "save_output",
+    "_ocr_global_lock",
+]

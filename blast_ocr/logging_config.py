@@ -3,38 +3,43 @@ import logging.handlers
 from pathlib import Path
 import json
 from datetime import datetime, timezone
+from typing import Union, Dict, Any
 
 
-def setup_logging(log_dir="logs", level=logging.INFO):
-    """Configure structured logging"""
+class JSONFormatter(logging.Formatter):
+    """Structured JSON Formatter for log records."""
 
-    log_dir = Path(log_dir)
-    log_dir.mkdir(parents=True, exist_ok=True)
+    def format(self, record: logging.LogRecord) -> str:
+        log_data: Dict[str, Any] = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
 
-    # Create formatter
-    class JSONFormatter(logging.Formatter):
-        def format(self, record):
-            log_data = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "level": record.levelname,
-                "logger": record.name,
-                "message": record.getMessage(),
-                "module": record.module,
-                "function": record.funcName,
-                "line": record.lineno,
-            }
+        # Add exception info if present
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
 
-            # Add exception info if present
-            if record.exc_info:
-                log_data["exception"] = self.formatException(record.exc_info)
+        # Add custom fields
+        if hasattr(record, "page_number"):
+            log_data["page_number"] = getattr(record, "page_number")
+        if hasattr(record, "confidence"):
+            log_data["confidence"] = getattr(record, "confidence")
 
-            # Add custom fields
-            if hasattr(record, "page_number"):
-                log_data["page_number"] = record.page_number
-            if hasattr(record, "confidence"):
-                log_data["confidence"] = record.confidence
+        return json.dumps(log_data)
 
-            return json.dumps(log_data)
+
+def setup_logging(
+    log_dir: Union[str, Path] = "logs", level: int = logging.INFO
+) -> logging.Logger:
+    """Configure structured logging with console and rotating JSON file handlers."""
+
+    log_path = Path(log_dir)
+    log_path.mkdir(parents=True, exist_ok=True)
 
     # Root logger
     logger = logging.getLogger("blast_ocr")
@@ -57,7 +62,7 @@ def setup_logging(log_dir="logs", level=logging.INFO):
 
     # File handler (JSON format)
     file_handler = logging.handlers.RotatingFileHandler(
-        log_dir / "blast_ocr.log",
+        log_path / "blast_ocr.log",
         maxBytes=10 * 1024 * 1024,  # 10MB
         backupCount=5,
     )
@@ -66,7 +71,7 @@ def setup_logging(log_dir="logs", level=logging.INFO):
 
     # Error file (errors only)
     error_handler = logging.handlers.RotatingFileHandler(
-        log_dir / "errors.log", maxBytes=10 * 1024 * 1024, backupCount=5
+        log_path / "errors.log", maxBytes=10 * 1024 * 1024, backupCount=5
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(JSONFormatter())
