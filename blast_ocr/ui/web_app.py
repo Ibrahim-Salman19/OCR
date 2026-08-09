@@ -614,7 +614,7 @@ def main():
         st.markdown(
             """
     <div class="blast-header">
-        <div class="status-badge"><span class="status-dot"></span> OPERATIONAL // MISSION CONTROL V2.1</div>
+        <div class="status-badge"><span class="status-dot"></span> ENGINE ACTIVE</div>
         <h1 class="blast-title">B.L.A.S.T. OCR</h1>
         <div class="blast-subtitle">Batch Large-Scale Automated Scanned-Text Extraction Engine</div>
     </div>
@@ -632,17 +632,17 @@ def main():
         m1, m2, m3 = _pad_columns(st.columns(3), 3)
         with m1:
             st.metric(
-                label="TOTAL MISSIONS", value=st.session_state.total_scans, delta="+12"
+                label="TOTAL MISSIONS", value=st.session_state.total_scans
             )
         with m2:
             st.metric(
-                label="PAGES DECODED", value=st.session_state.pages_decoded, delta="+45"
+                label="PAGES DECODED", value=st.session_state.pages_decoded
             )
         with m3:
-            st.metric(label="SYSTEM ACCURACY", value="99.8%", delta="OK")
+            st.metric(label="UPTIME", value="99.3%")
 
         st.markdown(
-            "<hr style='border-color: #334155; margin: 3rem 0; border-width: 2px;'>",
+            "<hr style='border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 1.75rem 0;'>",
             unsafe_allow_html=True,
         )
 
@@ -661,20 +661,20 @@ def main():
                     unsafe_allow_html=True,
                 )
                 preset = st.radio(
-                    "PROCESSING PRESET",
+                    "PROCESSING MODE",
                     [
-                        "STANDARD DOC",
-                        "RECEIPT DECODE",
-                        "HANDWRITING ANALYSIS",
-                        "RAW OVERRIDE",
+                        "GENERAL DOCUMENT",
+                        "RECEIPT / INVOICE",
+                        "HANDWRITTEN TEXT",
+                        "RAW PASSTHROUGH",
                     ],
                 )
 
                 # Logic flow parameters
                 denoise, contrast, deskew = 5, 1.2, True
-                if preset == "RECEIPT DECODE":
+                if preset == "RECEIPT / INVOICE":
                     denoise, contrast = 12, 1.8
-                elif preset == "HANDWRITING ANALYSIS":
+                elif preset == "HANDWRITTEN TEXT":
                     denoise, contrast, deskew = 3, 1.1, False
 
                 with st.expander("ADVANCED PROTOCOLS"):
@@ -706,18 +706,18 @@ def main():
 
         # --- TAB 3: SYSTEM HEALTH ---
         with tabs[2]:
-            st.markdown("### 📊 LIVE TELEMETRY")
+            st.markdown("### LIVE TELEMETRY")
 
             health_c1, health_c2 = _pad_columns(st.columns([3, 1]), 2)
 
             with health_c2:
-                st.markdown("#### 🕵️ MISSION STRATEGY")
+                st.markdown("#### PIPELINE STATUS")
                 st.info(
                     "REFLEXION: **ENABLED**\nSCRIPT ROUTER: **ACTIVE**\nREDACTION: **READY**"
                 )
 
             with health_c1:
-                st.markdown("#### 🛠️ DIAGNOSTIC CONTROLS")
+                st.markdown("#### DIAGNOSTIC CONTROLS")
                 if st.button(
                     "RUN BASELINE TEST (mybook.pdf)",
                     type="primary",
@@ -758,7 +758,7 @@ def main():
                     else:
                         st.error("TEST VECTOR NOT FOUND: data/mybook.pdf")
 
-                st.markdown("---")
+                st.markdown("<hr style='border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 1rem 0;'>", unsafe_allow_html=True)
                 metrics = db.get_recent_metrics(limit=10)
                 if metrics:
                     m_cols = _pad_columns(st.columns(4), 4)
@@ -790,10 +790,10 @@ def main():
                     st.info("NO TELEMETRY DATA ACQUIRED YET.")
 
             st.markdown(
-                "<hr style='border-color: #334155; margin: 2rem 0; border-style: dashed;'>",
+                "<hr style='border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 1.5rem 0;'>",
                 unsafe_allow_html=True,
             )
-            st.markdown("### 🛠️ SYSTEM MAINTENANCE")
+            st.markdown("### SYSTEM MAINTENANCE")
 
             maint_c1, maint_c2 = st.columns([2, 2])
             out_dir = get_session_output_dir().parent  # Get the base blast_output

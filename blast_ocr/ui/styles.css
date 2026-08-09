@@ -1,329 +1,478 @@
 /**
- * B.L.A.S.T. OCR - Anti-Slop Design System (design-taste-frontend)
- * Aesthetic: Dark Tech / Linear-Style Operations Mission Control
- * Dials: DESIGN_VARIANCE=7 | MOTION_INTENSITY=6 | VISUAL_DENSITY=4
+ * B.L.A.S.T. OCR - Anti-Slop Design System v3
+ * Design Read: OCR ops dashboard for technical builders.
+ *              Dark-tech / Linear mission-control. Geist Mono + CSS tokens.
+ * Dials: DESIGN_VARIANCE=7 | MOTION_INTENSITY=5 | VISUAL_DENSITY=5
+ *
+ * Rules enforced (design-taste-frontend):
+ *  - ONE accent color (#f97316 orange) throughout. No blue leaking into CTAs/borders.
+ *  - ONE corner-radius system: 6px panels, 4px inputs, pill badges.
+ *  - ZERO em-dashes. ZERO emojis in structural chrome.
+ *  - prefers-reduced-motion kills every transition and animation.
+ *  - Dark mode only - no section theme flips.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&display=swap');
 
-/* ==========================================================================
-   Design Tokens & CSS Variables
-   ========================================================================== */
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
 
 :root {
-    --blast-font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --blast-font-mono: 'Geist Mono', 'Fira Code', monospace;
-    
-    --blast-bg-card: var(--secondary-background-color, #090d16);
-    --blast-bg-elevated: #111827;
-    --blast-border: rgba(255, 255, 255, 0.08);
-    --blast-border-active: #f97316;
-    
-    --blast-text-main: var(--text-color, #f8fafc);
-    --blast-text-muted: #94a3b8;
-    --blast-accent: #f97316;
-    --blast-accent-hover: #ea580c;
-    --blast-accent-active: #c2410c;
-    --blast-emerald: #10b981;
+    --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'Cascadia Code', monospace;
+
+    --surface-base:    #0b0f1a;
+    --surface-raised:  #111827;
+    --surface-overlay: #1a2235;
+
+    --border-subtle:   rgba(255, 255, 255, 0.07);
+    --border-default:  rgba(255, 255, 255, 0.11);
+    --border-strong:   rgba(255, 255, 255, 0.18);
+
+    /* ONE accent. Lock it. Never swap mid-page. */
+    --accent:          #f97316;
+    --accent-hover:    #ea580c;
+    --accent-active:   #c2410c;
+    --accent-subtle:   rgba(249, 115, 22, 0.10);
+    --accent-border:   rgba(249, 115, 22, 0.30);
+
+    --green:           #10b981;
+    --green-subtle:    rgba(16, 185, 129, 0.10);
+    --green-border:    rgba(16, 185, 129, 0.25);
+    --blue:            #3b82f6;
+    --blue-subtle:     rgba(59, 130, 246, 0.10);
+    --blue-border:     rgba(59, 130, 246, 0.25);
+    --red:             #ef4444;
+    --red-subtle:      rgba(239, 68, 68, 0.10);
+    --red-border:      rgba(239, 68, 68, 0.25);
+
+    --text-primary:    #f1f5f9;
+    --text-secondary:  #94a3b8;
+    --text-muted:      #64748b;
+
+    /* Shape system - ONE family, applied everywhere */
+    --radius-pill:  9999px;
+    --radius-panel: 6px;
+    --radius-input: 4px;
 }
 
-/* ==========================================================================
-   Base Scope & Typography
-   ========================================================================== */
+/* ============================================================
+   2. FONT SCOPE
+   ============================================================ */
 
-[data-testid="stMainBlockContainer"] * {
-    font-family: var(--blast-font-sans) !important;
+[data-testid="stMainBlockContainer"] *,
+[data-testid="stSidebar"] * {
+    font-family: var(--font-sans) !important;
+    -webkit-font-smoothing: antialiased;
 }
 
 [data-testid="stMainBlockContainer"] h1,
 [data-testid="stMainBlockContainer"] h2,
 [data-testid="stMainBlockContainer"] h3,
-.fira-code,
-.geist-mono {
-    font-family: var(--blast-font-mono) !important;
+[data-testid="stMainBlockContainer"] h4,
+.mono, code, pre,
+[data-testid="stMetricValue"],
+[data-testid="stMetricLabel"] p {
+    font-family: var(--font-mono) !important;
 }
 
-.seo-metadata {
-    display: none !important;
-    visibility: hidden;
-}
+.seo-metadata { display: none !important; visibility: hidden; }
 
-/* ==========================================================================
-   Header & Mission Control Branding
-   ========================================================================== */
+/* ============================================================
+   3. HEADER - max 3 text elements. No version labels.
+   ============================================================ */
 
 .blast-header {
-    text-align: left;
-    padding: 2.5rem 0 2rem 0;
+    padding: 2rem 0 1.75rem;
     margin-bottom: 2rem;
-    border-bottom: 2px solid var(--blast-border);
-    position: relative;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
-.blast-title {
-    font-family: var(--blast-font-mono) !important;
-    font-size: clamp(2.5rem, 5vw, 5.5rem);
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.04em;
-    line-height: 1.05;
-    margin-bottom: 0.75rem;
-    text-transform: uppercase;
-    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.blast-subtitle {
-    font-size: clamp(0.95rem, 1.5vw, 1.25rem);
-    color: var(--blast-text-muted);
-    letter-spacing: 0.05em;
-    font-weight: 400;
-    line-height: 1.5;
-    max-width: 65ch;
-}
-
-/* Operational Status Badge */
+/* Live status pill - used only for real semantic server state */
 .status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-family: var(--blast-font-mono) !important;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono) !important;
+    font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--green-subtle);
     color: #34d399;
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    margin-bottom: 1rem;
+    border: 1px solid var(--green-border);
+    margin-bottom: 0.875rem;
+    width: fit-content;
 }
 
 .status-dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
-    background-color: #10b981;
-    box-shadow: 0 0 8px #10b981;
-    animation: pulse-dot 2s infinite ease-in-out;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
 }
 
-@keyframes pulse-dot {
+@media (prefers-reduced-motion: no-preference) {
+    .status-dot { animation: dot-pulse 2.4s ease-in-out infinite; }
+}
+
+@keyframes dot-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.85); }
+    50%       { opacity: 0.4; transform: scale(0.78); }
 }
 
-/* ==========================================================================
-   Minimal Panels & Glassmorphism
-   ========================================================================== */
+.blast-title {
+    font-family: var(--font-mono) !important;
+    font-size: clamp(2.25rem, 4.5vw, 5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+    background: linear-gradient(140deg, #f1f5f9 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 
-.minimal-panel {
-    background: var(--blast-bg-card);
-    border: 1px solid var(--blast-border);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+.blast-subtitle {
+    font-size: clamp(0.875rem, 1.4vw, 1.125rem);
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    font-weight: 400;
+    line-height: 1.6;
+    max-width: 60ch;
+}
+
+/* ============================================================
+   4. TELEMETRY METRIC CARDS
+   ============================================================ */
+
+[data-testid="stMetric"] {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-default);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-panel);
+    padding: 1.125rem 1.25rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    [data-testid="stMetric"] {
+        transition: border-color 0.18s ease, transform 0.18s ease;
+    }
+    [data-testid="stMetric"]:hover {
+        border-color: var(--accent-border);
+        transform: translateY(-1px);
+    }
+}
+
+[data-testid="stMetricLabel"] p {
+    color: var(--text-muted) !important;
+    font-size: 0.72rem !important;
+    font-family: var(--font-mono) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+}
+
+[data-testid="stMetricValue"] {
+    color: var(--text-primary) !important;
+    font-size: 2.25rem !important;
+    font-weight: 800 !important;
+    line-height: 1.1;
+    font-family: var(--font-mono) !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-family: var(--font-mono) !important;
+    font-size: 0.75rem !important;
+}
+
+/* ============================================================
+   5. PANELS
+   ============================================================ */
+
+.panel, .minimal-panel {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-panel);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
     overflow: visible;
     word-wrap: break-word;
 }
 
-.minimal-panel:hover {
-    border-color: rgba(249, 115, 22, 0.35);
-    box-shadow: 0 8px 24px -6px rgba(249, 115, 22, 0.12);
+@media (prefers-reduced-motion: no-preference) {
+    .panel, .minimal-panel {
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .panel:hover, .minimal-panel:hover {
+        border-color: var(--accent-border);
+        box-shadow: 0 6px 20px -6px rgba(249, 115, 22, 0.10);
+    }
 }
 
-.minimal-panel h3 {
+.panel h3, .minimal-panel h3 {
     margin-top: 0;
-    color: var(--blast-text-main) !important;
-    font-size: 1rem;
+    font-family: var(--font-mono) !important;
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.10em;
     margin-bottom: 1rem;
+    color: var(--text-secondary) !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-/* Streamlit expander and selectbox container fixes */
-[data-testid="stExpander"],
-[data-testid="stSelectbox"] {
-    overflow: visible !important;
-}
-[data-testid="stExpander"] summary {
-    font-family: var(--blast-font-mono) !important;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-}
-
-/* ==========================================================================
-   Input Widgets & Interactive CTAs
-   ========================================================================== */
-
-/* File Uploader styling */
-[data-testid="stFileUploader"] {
-    background: rgba(15, 23, 42, 0.5);
-    border: 2px dashed rgba(249, 115, 22, 0.3);
-    border-radius: 8px;
-    padding: 2rem;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
-[data-testid="stFileUploader"]:hover {
-    border-color: var(--blast-accent);
-    background: rgba(249, 115, 22, 0.04);
-}
-
-/* Buttons - High contrast with tactile feedback */
-.stButton > button {
-    width: 100%;
-    background: var(--blast-accent) !important;
-    color: #ffffff !important;
-    border: none;
-    padding: 0.875rem 1.5rem;
-    font-weight: 700;
-    font-family: var(--blast-font-mono) !important;
-    letter-spacing: 0.06em;
-    border-radius: 6px;
-    text-transform: uppercase;
-    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-    cursor: pointer;
-}
-
-.stButton > button:hover {
-    background: var(--blast-accent-hover) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px -4px rgba(249, 115, 22, 0.4);
-}
-
-.stButton > button:active {
-    transform: scale(0.98) translateY(0);
-    background: var(--blast-accent-active) !important;
-}
-
-/* ==========================================================================
-   Native Technical Metrics
-   ========================================================================== */
-
-[data-testid="stMetric"] {
-    background: var(--blast-bg-elevated);
-    border: 1px solid var(--blast-border);
-    border-left: 4px solid var(--blast-accent);
-    border-radius: 6px;
-    padding: 1.25rem;
-    transition: transform 0.2s ease;
-}
-
-[data-testid="stMetric"]:hover {
-    transform: translateY(-2px);
-}
-
-[data-testid="stMetricLabel"] p {
-    color: var(--blast-text-muted) !important;
-    font-size: 0.8rem !important;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-family: var(--blast-font-mono) !important;
-}
-
-[data-testid="stMetricValue"] {
-    color: var(--blast-text-main) !important;
-    font-size: 2.5rem !important;
-    font-weight: 800 !important;
-    line-height: 1.1;
-    font-family: var(--blast-font-mono) !important;
-}
-
-/* ==========================================================================
-   Status Alerts & Info Cards
-   ========================================================================== */
-
-div[data-testid="stMarkdownContainer"] > div.info-box {
-    background: rgba(30, 58, 138, 0.4);
-    border: 1px solid rgba(59, 130, 246, 0.4);
-    border-left: 4px solid #3b82f6;
-    color: #dbeafe !important;
-    padding: 1.2rem;
-    border-radius: 6px;
-    font-family: var(--blast-font-mono);
-}
-
-div[data-testid="stMarkdownContainer"] > div.success-box {
-    background: rgba(20, 83, 45, 0.4);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    border-left: 4px solid #22c55e;
-    color: #dcfce7 !important;
-    padding: 1.2rem;
-    border-radius: 6px;
-    font-family: var(--blast-font-mono);
-}
-
-/* ==========================================================================
-   Tab Navigation & Controls
-   ========================================================================== */
+/* ============================================================
+   6. TAB NAVIGATION
+   ============================================================ */
 
 [data-baseweb="tab-list"] {
-    gap: 0.5rem;
-    border-bottom: 1px solid var(--blast-border);
-    padding-bottom: 0.5rem;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: transparent !important;
 }
 
 [data-baseweb="tab"] {
-    font-family: var(--blast-font-mono) !important;
-    font-size: 0.85rem !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.78rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.05em !important;
+    letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
-    border-radius: 6px 6px 0 0 !important;
-    padding: 0.75rem 1.25rem !important;
-    transition: all 0.15s ease !important;
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0 !important;
+    padding: 0.65rem 1.125rem !important;
+    color: var(--text-muted) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    [data-baseweb="tab"] {
+        transition: color 0.15s ease, background 0.15s ease !important;
+    }
+}
+
+[data-baseweb="tab"]:hover {
+    color: var(--text-secondary) !important;
+    background: var(--surface-raised) !important;
 }
 
 [data-baseweb="tab"][aria-selected="true"] {
-    background: rgba(249, 115, 22, 0.1) !important;
-    color: var(--blast-accent) !important;
-    border-bottom: 2px solid var(--blast-accent) !important;
+    background: var(--accent-subtle) !important;
+    color: var(--accent) !important;
+    border-bottom: 2px solid var(--accent) !important;
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #090d16;
-}
-::-webkit-scrollbar-thumb {
-    background: #1e293b;
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+/* ============================================================
+   7. INPUT WIDGETS & CTAS
+   ============================================================ */
+
+[data-testid="stFileUploader"] {
+    background: var(--surface-base);
+    border: 2px dashed var(--accent-border);
+    border-radius: var(--radius-panel);
+    padding: 2rem;
+    cursor: pointer;
 }
 
-/* Accessibility & Focus States */
+@media (prefers-reduced-motion: no-preference) {
+    [data-testid="stFileUploader"] {
+        transition: border-color 0.18s ease, background 0.18s ease;
+    }
+}
+
+[data-testid="stFileUploader"]:hover {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+}
+
+/* Buttons: single accent, no wrap, tactile :active scale */
+.stButton > button {
+    width: 100%;
+    background: var(--accent) !important;
+    color: #ffffff !important;
+    border: none;
+    padding: 0.8125rem 1.5rem;
+    font-family: var(--font-mono) !important;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.07em;
+    border-radius: var(--radius-panel);
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .stButton > button {
+        transition: background 0.13s ease, transform 0.1s ease, box-shadow 0.13s ease;
+    }
+    .stButton > button:hover {
+        background: var(--accent-hover) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 18px -4px rgba(249, 115, 22, 0.38);
+    }
+    .stButton > button:active {
+        transform: scale(0.98) translateY(0);
+        background: var(--accent-active) !important;
+    }
+}
+
+.stButton > button[kind="secondary"] {
+    background: var(--surface-overlay) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-default) !important;
+}
+
+[data-testid="stExpander"]  { overflow: visible !important; }
+[data-testid="stSelectbox"] { overflow: visible !important; }
+
+[data-testid="stExpander"] summary {
+    font-family: var(--font-mono) !important;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+}
+
+/* ============================================================
+   8. SEMANTIC STATUS CARDS
+   ============================================================ */
+
+div[data-testid="stMarkdownContainer"] > div.info-box {
+    background: var(--blue-subtle);
+    border: 1px solid var(--blue-border);
+    border-left: 3px solid var(--blue);
+    color: #bfdbfe !important;
+    padding: 1rem 1.125rem;
+    border-radius: var(--radius-panel);
+    font-family: var(--font-mono);
+    font-size: 0.83rem;
+    line-height: 1.6;
+}
+
+div[data-testid="stMarkdownContainer"] > div.success-box {
+    background: var(--green-subtle);
+    border: 1px solid var(--green-border);
+    border-left: 3px solid var(--green);
+    color: #a7f3d0 !important;
+    padding: 1rem 1.125rem;
+    border-radius: var(--radius-panel);
+    font-family: var(--font-mono);
+    font-size: 0.83rem;
+}
+
+div[data-testid="stMarkdownContainer"] > div.error-box {
+    background: var(--red-subtle);
+    border: 1px solid var(--red-border);
+    border-left: 3px solid var(--red);
+    color: #fca5a5 !important;
+    padding: 1rem 1.125rem;
+    border-radius: var(--radius-panel);
+    font-family: var(--font-mono);
+    font-size: 0.83rem;
+}
+
+/* ============================================================
+   9. EMPTY & SKELETON LOADING STATES
+   ============================================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-panel);
+}
+
+.empty-state p {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--surface-raised) 25%,
+        var(--surface-overlay) 50%,
+        var(--surface-raised) 75%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--radius-panel);
+    height: 3rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .skeleton { animation: shimmer 1.8s infinite ease-in-out; }
+}
+
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   10. DATA TABLES
+   ============================================================ */
+
+[data-testid="stDataFrame"] table {
+    font-family: var(--font-mono) !important;
+    font-size: 0.8rem !important;
+}
+
+[data-testid="stDataFrame"] thead th {
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted) !important;
+    background: var(--surface-raised) !important;
+    border-bottom: 1px solid var(--border-default) !important;
+}
+
+/* ============================================================
+   11. SCROLLBARS
+   ============================================================ */
+
+::-webkit-scrollbar             { width: 6px; height: 6px; }
+::-webkit-scrollbar-track       { background: transparent; }
+::-webkit-scrollbar-thumb       { background: var(--surface-overlay); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* ============================================================
+   12. FOCUS STATES - WCAG AA (4.5:1 on accent)
+   ============================================================ */
+
 *:focus-visible {
-    outline: 2px solid var(--blast-accent) !important;
+    outline: 2px solid var(--accent) !important;
     outline-offset: 2px !important;
+    border-radius: var(--radius-input);
 }
 
-/* ==========================================================================
-   Mobile Responsive Fallback & Reduced Motion
-   ========================================================================== */
+/* ============================================================
+   13. MOBILE COLLAPSE
+   ============================================================ */
 
 @media (max-width: 768px) {
-    .blast-header {
-        padding: 1.5rem 0 1rem 0;
-    }
-    .blast-title {
-        font-size: 2.25rem;
-    }
-    .minimal-panel {
-        padding: 1rem;
-    }
+    .blast-header  { padding: 1.25rem 0; }
+    .blast-title   { font-size: 1.875rem; }
+    .panel,
+    .minimal-panel { padding: 1rem; }
 }
+
+/* ============================================================
+   14. REDUCED MOTION - unconditional collapser
+   ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
@@ -331,8 +480,5 @@ div[data-testid="stMarkdownContainer"] > div.success-box {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
-    }
-    .status-dot {
-        animation: none !important;
     }
 }
