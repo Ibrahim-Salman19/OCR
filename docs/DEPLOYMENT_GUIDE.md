@@ -47,9 +47,9 @@ RUN apt-get update && apt-get install -y \
 ```
 
 Notes:
-- `libglib2.0-0` provides `libgthread-2.0.so.0` required by OpenCV / GLib threading in headless/container environments.
-- `libgomp1` provides OpenMP multi-threading acceleration for ONNX Runtime and PyTorch SIMD tensor operations.
-- `tesseract-ocr` provides native CLI and language data for the optional Tesseract engine and multi-engine ensemble consensus.
+- Use `libglib2.0-dev` in `packages.txt` for cloud PaaS (Streamlit Community Cloud) to safely resolve `libgthread-2.0.so.0` across Debian Bullseye, Bookworm, and Trixie (`t64` 64-bit time transition) without package naming conflicts.
+- `libgl1` provides OpenGL rendering for OpenCV image transformations.
+- `poppler-utils` provides `pdftoppm` and `pdftocairo` for PDF rendering.
 
 ### 3. Execution
 ```bash
