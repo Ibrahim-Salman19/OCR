@@ -1,7 +1,13 @@
 """Streamlit Community Cloud entrypoint."""
 
-from run_gui import main
+import sys
+from pathlib import Path
 
+# Add project root to sys.path
+_ROOT = Path(__file__).parent.resolve()
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
-if __name__ == "__main__":
-    main()
+from blast_ocr.ui.web_app import main
+
+main()
