@@ -39,13 +39,14 @@ This avoids Python 3.14 build-toolchain issues for packages that may not yet pub
 ```dockerfile
 RUN apt-get update && apt-get install -y \
     libgl1 \
+    libglib2.0-0 \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 ```
 
 Notes:
-- Avoid pinning `libglib2.0-0` explicitly on mixed Debian images (bullseye/trixie) to prevent `libglib2.0-0` vs `libglib2.0-0t64` conflicts.
-- Tesseract is optional in this project and is not required for the default EasyOCR pipeline.
+- `libglib2.0-0` provides `libgthread-2.0.so.0` required by OpenCV / GLib threading in headless/container environments.
+- Tesseract is optional in this project and is not required for the default RapidOCR/EasyOCR pipeline.
 
 ### 3. Execution
 ```bash

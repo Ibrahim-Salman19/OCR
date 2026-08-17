@@ -52,6 +52,7 @@ FROM python:3.11-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
         poppler-utils \
         libgl1 \
+        libglib2.0-0 \
         libxml2 \
         libxslt1.1 \
         curl \
