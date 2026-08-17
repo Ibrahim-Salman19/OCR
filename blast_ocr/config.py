@@ -183,7 +183,9 @@ class OCRConfig(BaseSettings):
             raise ValueError("Cannot be empty")
         return v
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="BLAST_OCR_")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="BLAST_OCR_", extra="allow"
+    )
 
 
 def _load_config() -> OCRConfig:
