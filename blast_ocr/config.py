@@ -93,6 +93,7 @@ class OCRConfig(BaseSettings):
         default=1.0, description="Contrast multiplier (1.0-3.0)"
     )
     auto_deskew: bool = Field(default=True, description="Enable auto-deskewing")
+    enable_dewarp: bool = Field(default=False, description="Enable book spine curvature dewarping")
 
     # Durable Queue (Execution Plan v2, Phase 5/8) -- "sync" (default) requires no
     # extra infra and matches all prior behavior; "redis" enables out-of-process,

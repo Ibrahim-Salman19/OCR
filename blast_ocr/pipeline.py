@@ -65,6 +65,7 @@ class BlastPipeline:
             "denoise_level": getattr(self._config, "denoise_level", 0),
             "contrast_boost": getattr(self._config, "contrast_boost", 1.0),
             "auto_deskew": getattr(self._config, "auto_deskew", True),
+            "enable_dewarp": getattr(self._config, "enable_dewarp", False),
             "max_workers": getattr(self._config, "max_workers", 2),
             "timeout_per_page": getattr(self._config, "timeout_per_page", 60),
             "min_confidence": getattr(self._config, "min_confidence", 0.6),

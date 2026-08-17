@@ -46,6 +46,7 @@ class JobConfig:
     denoise_level: int = 0
     contrast_boost: float = 1.0
     auto_deskew: bool = True
+    enable_dewarp: bool = False
     max_workers: int = 2
     timeout_per_page: int = 60
     min_confidence: float = 0.6

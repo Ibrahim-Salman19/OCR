@@ -848,26 +848,36 @@ def main():
 
                     cfg = getattr(pipeline, "_config", None)
                     if cfg is not None:
-                        setattr(cfg, "ocr_engine", selected_engine)
-                        setattr(cfg, "secure_mode", secure_mode)
-                        setattr(cfg, "enable_book_intelligence", enable_book_intel)
-                        setattr(cfg, "enable_tier0_routing", enable_tier0)
-                        setattr(cfg, "auto_deskew", auto_deskew)
-                        setattr(cfg, "enable_dewarp", enable_dewarp)
-                        setattr(cfg, "denoise_level", denoise_lvl)
-                        setattr(cfg, "contrast_boost", contrast_boost)
+                        for attr, val in [
+                            ("ocr_engine", selected_engine),
+                            ("secure_mode", secure_mode),
+                            ("enable_book_intelligence", enable_book_intel),
+                            ("enable_tier0_routing", enable_tier0),
+                            ("auto_deskew", auto_deskew),
+                            ("enable_dewarp", enable_dewarp),
+                            ("denoise_level", denoise_lvl),
+                            ("contrast_boost", contrast_boost),
+                        ]:
+                            try:
+                                if hasattr(cfg, attr):
+                                    setattr(cfg, attr, val)
+                            except Exception:
+                                pass
                     if hasattr(pipeline, "job_config"):
-                        from blast_ocr.core.models import JobConfig
-                        setattr(pipeline, "job_config", JobConfig.from_dict({
-                            "ocr_engine": selected_engine,
-                            "secure_mode": secure_mode,
-                            "enable_book_intelligence": enable_book_intel,
-                            "enable_tier0_routing": enable_tier0,
-                            "auto_deskew": auto_deskew,
-                            "enable_dewarp": enable_dewarp,
-                            "denoise_level": denoise_lvl,
-                            "contrast_boost": contrast_boost,
-                        }))
+                        try:
+                            from blast_ocr.core.models import JobConfig
+                            setattr(pipeline, "job_config", JobConfig.from_dict({
+                                "ocr_engine": selected_engine,
+                                "secure_mode": secure_mode,
+                                "enable_book_intelligence": enable_book_intel,
+                                "enable_tier0_routing": enable_tier0,
+                                "auto_deskew": auto_deskew,
+                                "enable_dewarp": enable_dewarp,
+                                "denoise_level": denoise_lvl,
+                                "contrast_boost": contrast_boost,
+                            }))
+                        except Exception:
+                            pass
 
             with col_right:
                 handle_file_upload(pipeline, db)
