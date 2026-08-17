@@ -10,4 +10,6 @@ if str(_ROOT) not in sys.path:
 
 from blast_ocr.ui.web_app import main
 
-main()
+
+if __name__ == "__main__":
+    main()

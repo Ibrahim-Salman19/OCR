@@ -193,44 +193,57 @@ def _is_real_blast_pipeline(pipeline) -> bool:
 
 def _get_or_create_pipeline():
     """Create the OCR pipeline lazily and cache it in session state."""
-    if "pipeline_instance" not in st.session_state:
-        st.session_state.pipeline_instance = None
+    try:
+        if "pipeline_instance" not in st.session_state:
+            st.session_state.pipeline_instance = None
 
-    if st.session_state.pipeline_instance is None:
+        if st.session_state.pipeline_instance is None:
+            from blast_ocr.pipeline import BlastPipeline
+
+            st.session_state.pipeline_instance = BlastPipeline()
+
+        return st.session_state.pipeline_instance
+    except Exception:
         from blast_ocr.pipeline import BlastPipeline
 
-        st.session_state.pipeline_instance = BlastPipeline()
-
-    return st.session_state.pipeline_instance
+        return BlastPipeline()
 
 
 def _get_or_create_db():
     """Create DB handle lazily and cache in session state."""
-    if "db_instance" not in st.session_state:
-        st.session_state.db_instance = None
-    if "db_init_error" not in st.session_state:
-        st.session_state.db_init_error = None
+    try:
+        if "db_instance" not in st.session_state:
+            st.session_state.db_instance = None
+        if "db_init_error" not in st.session_state:
+            st.session_state.db_init_error = None
 
-    if st.session_state.db_instance is None:
-        try:
-            from blast_ocr.storage.database import OCRDatabase
+        if st.session_state.db_instance is None:
+            try:
+                from blast_ocr.storage.database import OCRDatabase
 
-            st.session_state.db_instance = OCRDatabase()
-        except Exception as e:
-            st.session_state.db_init_error = str(e)
-            logger.exception("DB initialization failed; using in-memory fallback")
-            st.session_state.db_instance = _InMemoryDB()
+                st.session_state.db_instance = OCRDatabase()
+            except Exception as e:
+                st.session_state.db_init_error = str(e)
+                logger.exception("DB initialization failed; using in-memory fallback")
+                st.session_state.db_instance = _InMemoryDB()
 
-    return st.session_state.db_instance
+        return st.session_state.db_instance
+    except Exception:
+        return _InMemoryDB()
 
 
 def _get_settings_cached():
     """Fetch settings lazily (prevents import-time startup failures)."""
-    if "settings_instance" not in st.session_state:
+    try:
+        if "settings_instance" not in st.session_state:
+            from blast_ocr.config import get_settings
+
+            st.session_state.settings_instance = get_settings()
+        return st.session_state.settings_instance
+    except Exception:
         from blast_ocr.config import get_settings
 
-        st.session_state.settings_instance = get_settings()
-    return st.session_state.settings_instance
+        return get_settings()
 
 
 def _get_cleanup_manager_class():
