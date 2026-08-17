@@ -1,0 +1,13 @@
+# Pages 122-123: footnote marker + long block quotation + compound hyphenates
+# (North-West, joint-defence) that must survive dehyphenation logic unharmed.
+page: p069
+checks:
+  - type: contains
+    text: "joint-defence"
+  - type: contains
+    text: "North-West"
+  - type: ordered_before
+    first: "Red Chinese incursion from the East and North-East"
+    second: "Anyway, in order to dispel the fear"
+  - type: absent
+    text: "North West-"

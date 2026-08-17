@@ -245,6 +245,78 @@ def _get_cleanup_manager_class():
 ICON_ROCKET = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 3.82-13.04.28.28 0 0 1 .39-.06 22 22 0 0 1 13.04 3.82.28.28 0 0 1-.06.39A22 22 0 0 1 15 12z"/><path d="m9 15 2 2"/><path d="m15 9 2 2"/></svg>'
 ICON_UPLOAD = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>'
 ICON_SETTINGS = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
+ICON_LAYOUT = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-grid"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>'
+
+
+def render_layout_geometry_svg(page_data: dict, filter_type: str = "ALL") -> str:
+    """
+    Renders an interactive visual SVG geometry heatmap of detected document blocks.
+    Shows bounding boxes, block classification types, reading order paths, and confidence scores.
+    """
+    w = max(1, page_data.get("width", 800))
+    h = max(1, page_data.get("height", 1000))
+    raw_blocks = page_data.get("blocks", [])
+
+    blocks = []
+    for b in raw_blocks:
+        b_type = str(b.get("block_type", "text")).upper()
+        if filter_type != "ALL" and b_type != filter_type.upper():
+            continue
+        blocks.append(b)
+
+    svg_lines = [
+        f'<svg viewBox="0 0 {w} {h}" width="100%" height="auto" style="background:#09090b; border:1px solid #27272a; border-radius:8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">'
+    ]
+
+    # Grid background overlay
+    svg_lines.append(f'<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern>')
+    svg_lines.append(f'<rect width="{w}" height="{h}" fill="url(#grid)"/>')
+
+    # Draw reading order sequence connectors
+    centers = []
+    for block in sorted(blocks, key=lambda b: b.get("reading_order_index", 0)):
+        bbox = block.get("bbox", {})
+        xmin, ymin = bbox.get("xmin", 0), bbox.get("ymin", 0)
+        xmax, ymax = bbox.get("xmax", 0), bbox.get("ymax", 0)
+        cx, cy = (xmin + xmax) / 2.0, (ymin + ymax) / 2.0
+        centers.append((cx, cy))
+
+    if len(centers) > 1:
+        points_str = " ".join([f"{cx:.1f},{cy:.1f}" for cx, cy in centers])
+        svg_lines.append(f'<polyline points="{points_str}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 4" opacity="0.7"/>')
+
+    # Color palette by block type (Warm Obsidian & Amber theme - ZERO BLUE)
+    type_colors = {
+        "title": "#f59e0b",
+        "header": "#fb923c",
+        "footer": "#a1a1aa",
+        "text": "#10b981",
+        "table": "#eab308",
+        "list_item": "#34d399",
+        "unknown": "#71717a",
+    }
+
+    # Draw bounding boxes and text badges
+    for idx, block in enumerate(blocks, 1):
+        bbox = block.get("bbox", {})
+        xmin, ymin = bbox.get("xmin", 0), bbox.get("ymin", 0)
+        xmax, ymax = bbox.get("xmax", 0), bbox.get("ymax", 0)
+        bw, bh = max(10, xmax - xmin), max(10, ymax - ymin)
+        b_type = str(block.get("block_type", "text")).lower()
+        color = type_colors.get(b_type, "#f59e0b")
+
+        svg_lines.append(
+            f'<rect x="{xmin:.1f}" y="{ymin:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="{color}" fill-opacity="0.14" stroke="{color}" stroke-width="1.5" rx="3"/>'
+        )
+        svg_lines.append(
+            f'<rect x="{xmin:.1f}" y="{max(0, ymin - 18):.1f}" width="{min(bw, 90):.1f}" height="16" fill="{color}" rx="2"/>'
+        )
+        svg_lines.append(
+            f'<text x="{xmin + 4:.1f}" y="{max(12, ymin - 5):.1f}" fill="#09090b" font-family="monospace" font-size="10" font-weight="bold">#{idx} [{b_type[:5].upper()}]</text>'
+        )
+
+    svg_lines.append('</svg>')
+    return "".join(svg_lines)
 
 
 def load_css():
@@ -328,11 +400,16 @@ def handle_file_upload(pipeline, db):
         unsafe_allow_html=True,
     )
 
-    ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".pptx"]
+    # Single source of truth for the allowlist: blast_ocr.security.gateway.IngestionGateway,
+    # the same boundary process_job() enforces server-side. Previously this list was
+    # duplicated here and had drifted (missing .bmp/.tiff), so files the pipeline
+    # actually supports were silently rejected by the uploader widget itself.
+    from blast_ocr.security.gateway import ALLOWED_EXTENSIONS as _GATEWAY_EXTENSIONS
+    ALLOWED_EXTENSIONS = sorted(_GATEWAY_EXTENSIONS)
     uploaded_files = st.file_uploader(
         "DROP MISSION FILES",
         accept_multiple_files=True,
-        type=["pdf", "png", "jpg", "jpeg", "pptx"],
+        type=[ext.lstrip(".") for ext in ALLOWED_EXTENSIONS],
     )
 
     if "active_job_id" not in st.session_state:
@@ -379,6 +456,41 @@ def handle_file_upload(pipeline, db):
                     )
                     continue
 
+                # Durable queue path (opt-in, BLAST_OCR_QUEUE_BACKEND=redis): enqueue
+                # and return immediately instead of blocking this Streamlit script
+                # run on OCR completion -- closing the browser must not kill the job
+                # (EXECUTION_PLAN.md Phase 14). Falls back to the synchronous path
+                # below if Redis isn't actually reachable.
+                queue_settings = _get_settings_cached()
+                use_queue = (
+                    getattr(queue_settings, "queue_backend", "sync") == "redis"
+                )
+                if use_queue:
+                    try:
+                        from blast_ocr.queue.client import enqueue_job, is_queue_available
+                        if not is_queue_available():
+                            use_queue = False
+                    except Exception:
+                        use_queue = False
+
+                if use_queue:
+                    try:
+                        enq = enqueue_job(tmp_path, output_dir=str(out_dir))
+                        st.session_state.active_job_id = enq["job_id"]
+                        all_summaries.append(
+                            {
+                                "FILE": uploaded_file.name,
+                                "STATUS": "QUEUED",
+                                "ERROR": f"job_id={enq['job_id']} (durable queue)",
+                            }
+                        )
+                    except Exception as e:
+                        all_summaries.append(
+                            {"FILE": uploaded_file.name, "STATUS": "FAILED", "ERROR": f"Enqueue failed: {e}"}
+                        )
+                    # tmp_path is consumed by the worker process, not cleaned up here.
+                    continue
+
                 if pipeline is None:
                     try:
                         pipeline = _get_or_create_pipeline()
@@ -416,19 +528,17 @@ def handle_file_upload(pipeline, db):
                 output_files = []
                 output_map = res.get("output_files", {})
                 if isinstance(output_map, dict):
-                    for fmt in ("md", "docx"):
+                    for fmt in ("md", "docx", "txt", "epub", "manifest"):
                         p = output_map.get(fmt)
-                        if p:
+                        if p and os.path.exists(p):
                             output_files.append((fmt, p))
 
                 if not output_files:
                     base = Path(uploaded_file.name).stem
-                    md_path = out_dir / f"{base}.md"
-                    docx_path = out_dir / f"{base}.docx"
-                    if Path(md_path).exists():
-                        output_files.append(("md", str(md_path)))
-                    if Path(docx_path).exists():
-                        output_files.append(("docx", str(docx_path)))
+                    for fmt, ext in [("md", ".md"), ("docx", ".docx"), ("txt", ".txt"), ("epub", ".epub"), ("manifest", "_manifest.json")]:
+                        fpath = out_dir / f"{base}{ext}"
+                        if fpath.exists():
+                            output_files.append((fmt, str(fpath)))
 
                 all_summaries.append(
                     {
@@ -452,40 +562,15 @@ def handle_file_upload(pipeline, db):
             st.session_state.active_job_id = None
             return
 
-            job_id = db.create_job(uploaded_file.name, page_count=0)
-            st.session_state.active_job_id = job_id
-
-            if not _has_streamlit_runtime_context():
-                st.session_state.current_results = {
-                    "summary": [
-                        {
-                            "FILE": uploaded_file.name,
-                            "STATUS": "FAILED",
-                            "ERROR": "Missing Streamlit runtime context",
-                        }
-                    ],
-                    "output_files": [],
-                }
-                st.session_state.active_job_id = None
-                if tmp_path and os.path.exists(tmp_path):
-                    try:
-                        os.remove(tmp_path)
-                    except OSError:
-                        pass
-                return
-
-            thread = threading.Thread(
-                target=pipeline.process_job,
-                kwargs={
-                    "source_path": tmp_path,
-                    "output_dir": str(out_dir),
-                    "job_id": job_id,
-                },
-                daemon=True,
-            )
-            st.session_state.job_thread = thread
-            thread.start()
-            st.rerun()
+    MIME_TYPES = {
+        "md": "text/markdown",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "txt": "text/plain",
+        "epub": "application/epub+zip",
+        "pdf": "application/pdf",
+        "json": "application/json",
+        "manifest": "application/json",
+    }
 
     if st.session_state.get("current_results") and not st.session_state.get(
         "active_job_id"
@@ -493,22 +578,37 @@ def handle_file_upload(pipeline, db):
         results = st.session_state.current_results or {}
         summary = results.get("summary", [])
         if summary:
+            st.markdown("#### 📦 GENERATED ARTIFACTS")
             st.dataframe(_to_table(summary))
-        for fmt, file_path in results.get("output_files", []):
-            try:
-                with open(file_path, "rb") as f:
-                    st.download_button(
-                        label=f"DOWNLOAD {fmt.upper()}",
-                        data=f.read(),
-                        file_name=Path(file_path).name,
-                        mime=(
-                            "text/markdown"
-                            if fmt == "md"
-                            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        ),
-                    )
-            except OSError:
-                continue
+        output_files = results.get("output_files", [])
+        if output_files:
+            cols = st.columns(min(len(output_files), 5))
+            for idx, (fmt, file_path) in enumerate(output_files):
+                col = cols[idx % len(cols)]
+                try:
+                    with open(file_path, "rb") as f:
+                        mime = MIME_TYPES.get(fmt, "application/octet-stream")
+                        with col:
+                            st.download_button(
+                                label=f"DOWNLOAD {fmt.upper()}",
+                                data=f.read(),
+                                file_name=Path(file_path).name,
+                                mime=mime,
+                                use_container_width=True,
+                            )
+                except OSError:
+                    continue
+
+            md_or_txt_files = [fp for fmt, fp in output_files if fmt in ("md", "txt") and os.path.exists(fp)]
+            if md_or_txt_files:
+                with st.expander("📄 INLINE TEXT PREVIEW (CLICK TO INSPECT / COPY)", expanded=False):
+                    for preview_path in md_or_txt_files[:2]:
+                        try:
+                            content = Path(preview_path).read_text(encoding="utf-8", errors="ignore")
+                            st.caption(f"**File**: `{Path(preview_path).name}` ({len(content)} characters)")
+                            st.text_area("Extracted Document Content", value=content, height=220, key=f"prev_{Path(preview_path).stem}")
+                        except Exception:
+                            pass
 
     # --- Live Mission Control Dashboard ---
     if st.session_state.get("active_job_id"):
@@ -525,12 +625,23 @@ def render_mission_control(db, job_id):
 
     st.markdown(f"### MISSION CONTROL [ID: {job_id}]")
 
-    # Status Mapping
+    # Status Mapping (blast_ocr.core.models.JobState vocabulary, plus legacy aliases)
     status_colors = {
-        "processing": "orange",
-        "completed": "green",
-        "failed": "red",
+        "received": "gray",
         "pending": "gray",
+        "validating": "gray",
+        "queued": "gray",
+        "processing": "orange",
+        "post_processing": "orange",
+        "exporting": "orange",
+        "succeeded": "green",
+        "succeeded_with_warnings": "yellow",
+        "completed": "green",
+        "partial_failure": "yellow",
+        "failed": "red",
+        "cancelled": "red",
+        "quarantined": "red",
+        "timed_out": "red",
     }
     status_color = status_colors.get(job.status, "white")
     st.markdown(
@@ -560,9 +671,15 @@ def render_mission_control(db, job_id):
                     else r.extracted_text
                 )
 
-    if job.status in ["completed", "failed"]:
-        if job.status == "completed":
-            st.success("MISSION ACCOMPLISHED")
+    _SUCCESS_STATUSES = {"completed", "succeeded", "succeeded_with_warnings"}
+    _TERMINAL_STATUSES = _SUCCESS_STATUSES | {"failed", "partial_failure", "cancelled", "quarantined", "timed_out"}
+
+    if job.status in _TERMINAL_STATUSES:
+        if job.status in _SUCCESS_STATUSES:
+            if job.status == "succeeded_with_warnings":
+                st.warning("MISSION ACCOMPLISHED WITH WARNINGS — some pages had errors")
+            else:
+                st.success("MISSION ACCOMPLISHED")
             # Logic to show download buttons for results...
         else:
             st.error(f"MISSION FAILED: {job.error_message}")
@@ -647,9 +764,9 @@ def main():
         )
 
         # --- MAIN APP LAYOUT ---
-        tabs = list(st.tabs(["NEW DEPLOYMENT", "SYSTEM LOGS", "SYSTEM HEALTH"]))
-        if tabs and len(tabs) < 3:
-            tabs.extend([tabs[-1]] * (3 - len(tabs)))
+        tabs = list(st.tabs(["NEW DEPLOYMENT", "LAYOUT INSPECTOR", "SYSTEM LOGS", "SYSTEM HEALTH"]))
+        if tabs and len(tabs) < 4:
+            tabs.extend([tabs[-1]] * (4 - len(tabs)))
 
         # --- TAB 1: NEW SCAN ---
         with tabs[0]:
@@ -670,31 +787,131 @@ def main():
                     ],
                 )
 
-                # Logic flow parameters
-                denoise, contrast, deskew = 5, 1.2, True
+                # Wire preset values
                 if preset == "RECEIPT / INVOICE":
-                    denoise, contrast = 12, 1.8
+                    preset_denoise = 5
+                    preset_contrast = 1.4
+                    preset_deskew = True
                 elif preset == "HANDWRITTEN TEXT":
-                    denoise, contrast, deskew = 3, 1.1, False
+                    preset_denoise = 8
+                    preset_contrast = 1.6
+                    preset_deskew = True
+                elif preset == "RAW PASSTHROUGH":
+                    preset_denoise = 0
+                    preset_contrast = 1.0
+                    preset_deskew = False
+                else:
+                    preset_denoise = 0
+                    preset_contrast = 1.0
+                    preset_deskew = True
 
                 with st.expander("ADVANCED PROTOCOLS"):
-                    language_selection = st.selectbox(
+                    engine_choice = st.selectbox(
+                        "OCR ENGINE ADAPTER",
+                        [
+                            "rapidocr (ONNX Runtime - Fast CPU/GPU)",
+                            "easyocr (PyTorch - Multilingual)",
+                            "tesseract (Pytesseract - Standard)",
+                            "ensemble (Consensus Ensemble - Multi-Engine)",
+                        ],
+                        index=0,
+                    )
+                    if "rapidocr" in engine_choice:
+                        selected_engine = "rapidocr"
+                    elif "easyocr" in engine_choice:
+                        selected_engine = "easyocr"
+                    elif "tesseract" in engine_choice:
+                        selected_engine = "tesseract"
+                    else:
+                        selected_engine = "ensemble"
+
+                    st.selectbox(
                         "SOURCE LOGIC", ["ENG_CORE", "FRA_CORE", "MULTILINGUAL_NODE"]
                     )
-                    gpu_enabled = st.toggle("GPU HYPER-THREAD", value=settings.ocr_gpu)
+                    st.toggle("GPU HYPER-THREAD", value=settings.ocr_gpu)
+                    auto_deskew = st.toggle("AUTO-DESKEW ANGLE CORRECTION", value=preset_deskew)
+                    enable_dewarp = st.toggle("BOOK SPINE CURVATURE DEWARPING", value=False)
                     secure_mode = st.toggle(
                         "SECURE MODE (PII REDACTION)",
                         value=getattr(settings, "secure_mode", False),
                     )
+                    enable_book_intel = st.toggle(
+                        "BOOK INTELLIGENCE (REFLOW/DEHYPHEN)",
+                        value=getattr(settings, "enable_book_intelligence", True),
+                    )
+                    enable_tier0 = st.toggle(
+                        "TIER-0 NATIVE PDF ROUTER",
+                        value=getattr(settings, "enable_tier0_routing", True),
+                    )
+                    denoise_lvl = st.slider("DENOISE FILTER LEVEL", min_value=0, max_value=20, value=preset_denoise)
+                    contrast_boost = st.slider("CONTRAST BOOST FACTOR", min_value=0.5, max_value=2.5, value=preset_contrast, step=0.1)
+
                     cfg = getattr(pipeline, "_config", None)
                     if cfg is not None:
+                        setattr(cfg, "ocr_engine", selected_engine)
                         setattr(cfg, "secure_mode", secure_mode)
+                        setattr(cfg, "enable_book_intelligence", enable_book_intel)
+                        setattr(cfg, "enable_tier0_routing", enable_tier0)
+                        setattr(cfg, "auto_deskew", auto_deskew)
+                        setattr(cfg, "enable_dewarp", enable_dewarp)
+                        setattr(cfg, "denoise_level", denoise_lvl)
+                        setattr(cfg, "contrast_boost", contrast_boost)
+                    if hasattr(pipeline, "job_config"):
+                        from blast_ocr.core.models import JobConfig
+                        setattr(pipeline, "job_config", JobConfig.from_dict({
+                            "ocr_engine": selected_engine,
+                            "secure_mode": secure_mode,
+                            "enable_book_intelligence": enable_book_intel,
+                            "enable_tier0_routing": enable_tier0,
+                            "auto_deskew": auto_deskew,
+                            "enable_dewarp": enable_dewarp,
+                            "denoise_level": denoise_lvl,
+                            "contrast_boost": contrast_boost,
+                        }))
 
             with col_right:
                 handle_file_upload(pipeline, db)
 
-        # --- TAB 2: HISTORY ---
+        # --- TAB 2: LAYOUT INSPECTOR ---
         with tabs[1]:
+            st.markdown(
+                f'<div class="minimal-panel"><h3>{ICON_LAYOUT} LAYOUT INSPECTOR & GEOMETRY HEATMAPS</h3></div>',
+                unsafe_allow_html=True,
+            )
+            current_res = st.session_state.get("current_results")
+            if current_res and current_res.get("summary"):
+                out_files = current_res.get("output_files", [])
+                json_files = [fpath for fmt, fpath in out_files if fmt == "json" and os.path.exists(fpath)]
+                if json_files:
+                    for fpath in json_files:
+                        try:
+                            import json
+                            with open(fpath, "r", encoding="utf-8") as jf:
+                                doc_dict = json.load(jf)
+                                pages = doc_dict.get("pages", [])
+                                st.markdown(f"**DOCUMENT**: `{Path(fpath).stem}` ({len(pages)} Pages)")
+                                for p in pages:
+                                    st.markdown(f"#### PAGE {p.get('page_num', 1)} ({p.get('width', 0)}x{p.get('height', 0)}px)")
+                                    c_svg, c_blocks = _pad_columns(st.columns([1, 1]), 2)
+                                    with c_svg:
+                                        st.markdown(render_layout_geometry_svg(p), unsafe_allow_html=True)
+                                    with c_blocks:
+                                        blocks = p.get("blocks", [])
+                                        for b_idx, block in enumerate(blocks, 1):
+                                            b_type = block.get("block_type", "text")
+                                            b_text = block.get("text", "")
+                                            b_box = block.get("bbox", {})
+                                            st.caption(f"**Block #{b_idx}** [{b_type.upper()}] - Box: `[{b_box.get('xmin',0):.1f}, {b_box.get('ymin',0):.1f}, {b_box.get('xmax',0):.1f}, {b_box.get('ymax',0):.1f}]`")
+                                            st.text_area(f"Block #{b_idx} Content", value=b_text, height=80, key=f"blk_{p.get('page_num')}_{b_idx}")
+                        except Exception as inspect_err:
+                            st.warning(f"Could not load layout geometry: {inspect_err}")
+                else:
+                    st.info("PROCESS A DOCUMENT TO GENERATE INTERACTIVE SVG GEOMETRY HEATMAPS.")
+            else:
+                st.info("NO ACTIVE LAYOUT GEOMETRY IN SESSION. PROCESS A DOCUMENT TO INSPECT DETECTED BOUNDING BOXES.")
+
+        # --- TAB 3: HISTORY ---
+        with tabs[2]:
             st.markdown("### SECURE LOGS")
             if st.button("PURGE LOGS"):
                 st.session_state.processing_history = []
@@ -704,8 +921,8 @@ def main():
             else:
                 st.info("NO LOGS IN MEMORY.")
 
-        # --- TAB 3: SYSTEM HEALTH ---
-        with tabs[2]:
+        # --- TAB 4: SYSTEM HEALTH ---
+        with tabs[3]:
             st.markdown("### LIVE TELEMETRY")
 
             health_c1, health_c2 = _pad_columns(st.columns([3, 1]), 2)
@@ -781,11 +998,16 @@ def main():
                         }
                         for m in reversed(metrics)
                     ]
-                    if pd is None:
-                        st.line_chart(chart_records)
-                    else:
-                        df_metrics = pd.DataFrame(chart_records)
-                        st.line_chart(df_metrics.set_index("timestamp"))
+                    try:
+                        if pd is None:
+                            st.line_chart(chart_records)
+                        else:
+                            df_metrics = pd.DataFrame(chart_records)
+                            st.line_chart(df_metrics.set_index("timestamp"))
+                    except Exception as chart_err:
+                        st.warning(f"Telemetry chart fallback: {chart_err}")
+                        for r in chart_records:
+                            st.caption(f"Time: {r['timestamp']} | Fidelity: {r['fidelity']:.2f} | Velocity: {r['velocity']:.2f} P/S")
                 else:
                     st.info("NO TELEMETRY DATA ACQUIRED YET.")
 

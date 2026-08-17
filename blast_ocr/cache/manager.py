@@ -85,6 +85,27 @@ class OCRCache:
             fallback_data = str(filepath)
             return hashlib.sha256(fallback_data.encode()).hexdigest()
 
+    def get_cache_key(self, filepath: str, namespace: str = "") -> str:
+        """Cache key combining file content with an optional namespace.
+
+        FIX(F-07): The cache used to be keyed on file content alone, so a
+        cached result would be served back unchanged even after switching
+        OCR engines, model versions, or preprocessing settings (denoise,
+        contrast, deskew) -- silently poisoning any before/after comparison.
+        Callers that care about correctness across such changes should pass
+        a `namespace` string that fingerprints everything besides the raw
+        file bytes that can affect the result (see
+        blast_ocr.core.extractor.get_cache_namespace). Passing no namespace
+        preserves the old content-only key, which remains correct as long
+        as the caller only ever uses one fixed engine/config -- true for
+        the generic cache tests but not for production OCR calls.
+        """
+        file_hash = self.get_file_hash(filepath)
+        if not namespace:
+            return file_hash
+        combined = f"{file_hash}:{namespace}"
+        return hashlib.sha256(combined.encode("utf-8")).hexdigest()
+
     def get(self, cache_key: str) -> Optional[Dict]:
         """Retrieve cached result by direct key (hash)"""
         try:
@@ -150,28 +171,28 @@ class OCRCache:
             except Exception as e:
                 logger.warning(f"Cache write failed for key {cache_key}: {e}")
 
-    def get_cached_result(self, filepath: str) -> Optional[Dict]:
-        """Retrieve cached OCR result if exists (by hashing file)"""
+    def get_cached_result(self, filepath: str, namespace: str = "") -> Optional[Dict]:
+        """Retrieve cached OCR result if exists (by hashing file + namespace)"""
         try:
-            file_hash = self.get_file_hash(filepath)
-            return self.get(file_hash)
+            key = self.get_cache_key(filepath, namespace)
+            return self.get(key)
         except Exception as e:
             logger.warning(f"Cache read failed for {filepath}: {e}")
         return None
 
-    def save_to_cache(self, filepath: str, result: Dict):
-        """Save OCR result to cache (by hashing file)"""
+    def save_to_cache(self, filepath: str, result: Dict, namespace: str = ""):
+        """Save OCR result to cache (by hashing file + namespace)"""
         try:
-            file_hash = self.get_file_hash(filepath)
-            self.set(file_hash, result)
+            key = self.get_cache_key(filepath, namespace)
+            self.set(key, result)
         except Exception as e:
             logger.warning(f"Cache write failed for {filepath}: {e}")
 
-    def invalidate(self, filepath: str):
+    def invalidate(self, filepath: str, namespace: str = ""):
         """Remove cached result"""
         try:
-            file_hash = self.get_file_hash(filepath)
-            cache_file = self.cache_dir / f"{file_hash}.json"
+            key = self.get_cache_key(filepath, namespace)
+            cache_file = self.cache_dir / f"{key}.json"
             if cache_file.exists():
                 cache_file.unlink()
         except Exception as e:

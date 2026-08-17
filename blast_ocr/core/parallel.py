@@ -24,6 +24,7 @@ class ParallelOCRProcessor:
         page_paths: List[str],
         process_func: Callable,
         progress_callback: Callable = None,
+        job_config = None,
     ) -> List[Dict]:
         """
         Thread-based parallelism for page processing.
@@ -41,9 +42,9 @@ class ParallelOCRProcessor:
         total = len(page_paths)
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Submit all tasks
+            # Submit all tasks with immutable job_config to prevent cross-job engine contamination
             future_to_page = {
-                executor.submit(process_func, path, i + 1): (path, i + 1)
+                executor.submit(process_func, path, i + 1, job_config): (path, i + 1)
                 for i, path in enumerate(page_paths)
             }
 

@@ -1,6 +1,9 @@
 import os
+import shutil
 import tempfile
 import logging
+import time
+import datetime
 import psutil
 from typing import List, Dict, Callable, Optional
 from pathlib import Path
@@ -15,7 +18,7 @@ from blast_ocr.logging_config import setup_logging
 from blast_ocr.storage.database import OCRDatabase
 from blast_ocr.core.extractor import extract_from_pptx, save_output
 from blast_ocr.core.parallel import ParallelOCRProcessor
-from blast_ocr.core.worker import process_page_wrapper
+from blast_ocr.core.worker import process_page_wrapper, restore_page_image
 from blast_ocr.core.restoration import ForensicRestorer, explicit_gc
 
 # PDF
@@ -36,15 +39,16 @@ def _is_streamlit_cloud() -> bool:
     )
 
 
+from blast_ocr.core.models import JobConfig
+
 class BlastPipeline:
     """
     Main orchestration pipeline for B.L.A.S.T. OCR.
-    Refactored to be cleaner and more modular.
+    Refactored to be cleaner and more modular with production JobConfig.
     """
 
     def __init__(self, config_overrides: Dict = None):
         """Initialize pipeline with configuration"""
-        # FIX #3: Use deepcopy to avoid mutating global config
         self._config = deepcopy(config)
 
         if config_overrides:
@@ -52,14 +56,32 @@ class BlastPipeline:
                 if hasattr(self._config, k):
                     setattr(self._config, k, v)
 
+        # Build immutable per-job configuration safely
+        cfg_dict = {
+            "ocr_engine": getattr(self._config, "ocr_engine", "rapidocr"),
+            "enable_tier0_routing": getattr(self._config, "enable_tier0_routing", True),
+            "enable_book_intelligence": getattr(self._config, "enable_book_intelligence", True),
+            "secure_mode": getattr(self._config, "secure_mode", False),
+            "denoise_level": getattr(self._config, "denoise_level", 0),
+            "contrast_boost": getattr(self._config, "contrast_boost", 1.0),
+            "auto_deskew": getattr(self._config, "auto_deskew", True),
+            "max_workers": getattr(self._config, "max_workers", 2),
+            "timeout_per_page": getattr(self._config, "timeout_per_page", 60),
+            "min_confidence": getattr(self._config, "min_confidence", 0.6),
+            "ocr_gpu": getattr(self._config, "ocr_gpu", False),
+            "ocr_batch_size": getattr(self._config, "ocr_batch_size", 8),
+            "output_dir": getattr(self._config, "output_dir", None),
+        }
+        if config_overrides:
+            cfg_dict.update(config_overrides)
+        self.job_config = JobConfig.from_dict(cfg_dict)
+
         # Ensure logging is setup
         setup_logging(self._config.log_dir)
 
         self.db = OCRDatabase()
         self.parallel_processor = ParallelOCRProcessor()
 
-        # Streamlit Cloud stability: avoid eager heavyweight model init on app boot.
-        # Worker/extractor will initialize lazily on first actual OCR page execution.
         if _is_streamlit_cloud():
             self.parallel_processor.max_workers = 1
 
@@ -82,11 +104,7 @@ class BlastPipeline:
         self.close()
 
     def _post_process_page_result(self, r: Dict, job_id: Optional[int] = None) -> Dict:
-        """Unified layout regrouping, PII redaction, and database checkpoint saving."""
-        raw_text = r.get("text", "")
-        if isinstance(raw_text, list):
-            r["text"] = self._regroup_text_by_layout(raw_text)
-
+        """Unified PII redaction and database checkpoint saving."""
         if getattr(self._config, "secure_mode", False):
             r["text"] = ForensicRestorer.redact_pii(r.get("text", "") or "")
 
@@ -100,54 +118,6 @@ class BlastPipeline:
             )
         return r
 
-    def _apply_optional_redaction(self, text: str) -> str:
-        """Apply PII redaction only when secure mode is enabled."""
-        if getattr(self._config, "secure_mode", False):
-            return ForensicRestorer.redact_pii(text or "")
-        return text or ""
-
-    def _regroup_text_by_layout(self, ocr_results: List) -> str:
-        """
-        Organizes raw OCR fragments into a logical reading order.
-        Handles multi-column layouts and tables by grouping by Y-proximity.
-        Inspired by 'anthropics/pdf' and 'microsoft/azure-ai-document-intelligence'.
-        """
-        if not ocr_results:
-            return ""
-
-        # ocr_results is usually a list of [ [quad], text, conf ]
-        # Convert to objects with centroid Y and start X
-        lines = []
-        for res in ocr_results:
-            bbox, text, conf = res
-            y_coords = [p[1] for p in bbox]
-            x_coords = [p[0] for p in bbox]
-            y_avg = sum(y_coords) / len(y_coords)
-            x_min = min(x_coords)
-            lines.append({"y": y_avg, "x": x_min, "text": text})
-
-        # Sort by Y primary, X secondary
-        lines.sort(key=lambda l: (l["y"], l["x"]))
-
-        # Group by Y-proximity (epsilon = 10 pixels for standard 300dpi)
-        grouped_lines = []
-        if lines:
-            curr_row = [lines[0]]
-            for i in range(1, len(lines)):
-                if abs(lines[i]["y"] - lines[i - 1]["y"]) < 15:  # Row threshold
-                    curr_row.append(lines[i])
-                else:
-                    # Sort row by X and join
-                    curr_row.sort(key=lambda l: l["x"])
-                    grouped_lines.append("  ".join([l["text"] for l in curr_row]))
-                    curr_row = [lines[i]]
-
-            # Final row
-            curr_row.sort(key=lambda l: l["x"])
-            grouped_lines.append("  ".join([l["text"] for l in curr_row]))
-
-        return "\n".join(grouped_lines)
-
     def process_pdf(
         self, pdf_path: str, job_id: int = None, progress_callback: Callable = None
     ) -> List[Dict]:
@@ -155,6 +125,7 @@ class BlastPipeline:
         Stream and process PDF pages in batches to save memory.
         """
         logger.info(f"Processing PDF: {pdf_path}")
+        original_max_workers = self.parallel_processor.max_workers
 
         # 1. Get Page Count
         total_pages = None
@@ -167,10 +138,38 @@ class BlastPipeline:
                 total_pages = info.get("Pages")
                 if job_id and total_pages:
                     self.db.update_job_page_count(job_id, total_pages)
-            except Exception:
-                pass
+            except Exception as info_err:
+                logger.debug(f"pdfinfo_from_path failed: {info_err}")
 
-        # 2. Configure Rendering
+        # 2. Tier-0 Native Text Router
+        if self.job_config.enable_tier0_routing and total_pages:
+            try:
+                from blast_ocr.core.tier0_extractor import Tier0Extractor
+                tier0_results = []
+                native_hits = 0
+                for p_idx in range(total_pages):
+                    text, quality = Tier0Extractor.extract_native_page_text(pdf_path, p_idx)
+                    if quality >= 0.85:
+                        res = {
+                            "page": p_idx + 1,
+                            "text": text,
+                            "confidence": quality,
+                            "processing_time": 0.001,
+                            "engine": "tier0_native",
+                            "route": "native",
+                        }
+                        tier0_results.append(self._post_process_page_result(res, job_id))
+                        native_hits += 1
+                    else:
+                        tier0_results.append(None)
+
+                if native_hits == total_pages:
+                    logger.info(f"Tier-0 Router: All {total_pages} pages extracted natively.")
+                    return tier0_results
+            except Exception as t0_err:
+                logger.debug(f"Tier-0 extraction pass failed: {t0_err}")
+
+        # 3. Configure Rendering
         render_args = {
             "dpi": 300,
             "thread_count": min(4, os.cpu_count() or 4),
@@ -192,8 +191,6 @@ class BlastPipeline:
         batch_size = 10
         all_results = []
 
-        # BUG-TEMPDIR-WIN-01 Fix: Avoid context manager to safely implement retrying cleanup logic
-        import shutil
         import time
 
         temp_dir = tempfile.mkdtemp()
@@ -226,6 +223,7 @@ class BlastPipeline:
                         temp_dir,
                         start_idx,
                         job_id=job_id,
+                        job_config=self.job_config,
                         progress_callback=lambda p, t: (
                             progress_callback(start_idx - 1 + p, total_pages)
                             if progress_callback
@@ -249,6 +247,7 @@ class BlastPipeline:
                     temp_dir,
                     1,
                     job_id=job_id,
+                    job_config=self.job_config,
                     progress_callback=lambda p, t: (
                         progress_callback(p, len(pages)) if progress_callback else None
                     ),
@@ -288,6 +287,7 @@ class BlastPipeline:
         temp_dir: str,
         start_page: int,
         job_id: int = None,
+        job_config = None,
         progress_callback: Callable = None,
     ) -> List[Dict]:
         """Restore page images, run workers, and checkpoint to DB."""
@@ -303,11 +303,7 @@ class BlastPipeline:
                 page_item.save(raw_path, "PNG")
 
             # --- Forensic Restoration Layer ---
-            restored_img = ForensicRestorer.restore(raw_path, mode="standard")
-            cv2_path = os.path.join(temp_dir, f"page_{start_page + i:04d}_restored.png")
-            import cv2
-
-            cv2.imwrite(cv2_path, restored_img)
+            cv2_path = restore_page_image(raw_path, temp_dir, mode="standard")
             image_paths.append(cv2_path)
 
             # Clean up raw render immediately to save disk
@@ -320,27 +316,23 @@ class BlastPipeline:
                 pass
 
         results = self.parallel_processor.process_batch_threaded(
-            image_paths, process_page_wrapper, progress_callback=progress_callback
+            image_paths, process_page_wrapper, progress_callback=progress_callback, job_config=job_config
         )
 
         # --- Phase 3: Reflexion Pass (Self-Correction) ---
         final_results = []
         for i, r in enumerate(results):
             conf = r.get("confidence", 0.0)
-            if conf < 0.8 and r.get("text"):
+            if conf < self.job_config.min_confidence and r.get("text"):
                 logger.info(
                     f"Reflexion triggered for Page {r['page']} (Conf: {conf:.2f})"
                 )
 
                 # ... [Reflexion logic] ...
                 original_restored_path = image_paths[i]
-                reflexion_path = original_restored_path.replace(
-                    "_restored.png", "_reflexion.png"
+                reflexion_path = restore_page_image(
+                    original_restored_path, temp_dir, mode="reflexion"
                 )
-                reflexion_img = ForensicRestorer.restore(
-                    original_restored_path, mode="reflexion"
-                )
-                cv2.imwrite(reflexion_path, reflexion_img)
                 reflex_r = process_page_wrapper(reflexion_path, r["page"])
 
                 if reflex_r.get("confidence", 0.0) > conf:
@@ -372,6 +364,8 @@ class BlastPipeline:
         job_id: int = None,
     ) -> Dict:
         """Execute a full OCR job"""
+        from blast_ocr.security.gateway import IngestionGateway, SecurityValidationError
+
         source = Path(source_path)
         if not source.exists():
             return {"status": "error", "message": f"File not found: {source}"}
@@ -383,11 +377,32 @@ class BlastPipeline:
                 output_dir = "."
         os.makedirs(output_dir, exist_ok=True)
 
+        # Security ingestion boundary: validate extension/magic-bytes/size ceiling
+        # before any processing touches the file, and retain the SHA-256 fingerprint
+        # for the run manifest's provenance record. Ingested copy lives alongside the
+        # job's own outputs rather than in the shared system temp root.
+        ingestion_payload = None
+        if source.is_file():
+            ingest_dir = os.path.join(str(output_dir), "_ingest")
+            try:
+                ingestion_payload = IngestionGateway.validate_and_ingest(str(source), ingest_dir)
+            except SecurityValidationError as e:
+                return {"status": "failed", "error": str(e), "message": f"Security validation failed: {e}"}
+
         # Create Job ID if not provided
         if job_id is None:
             job_id = self.db.create_job(source.name, page_count=0)
 
-        self.db.update_job_status(job_id, "processing")
+        # Walk the real job lifecycle (JobStateMachine): the security/ingestion
+        # validation above already ran, and this pipeline processes jobs
+        # synchronously (no external queue yet), so VALIDATING/QUEUED are
+        # traversed immediately rather than held open.
+        from blast_ocr.core.models import JobState
+        self.db.update_job_status(job_id, JobState.VALIDATING)
+        self.db.update_job_status(job_id, JobState.QUEUED)
+        self.db.update_job_status(job_id, JobState.PROCESSING)
+
+        job_start_time = time.monotonic()
 
         try:
             results = []
@@ -409,18 +424,30 @@ class BlastPipeline:
                         f"No supported images found in directory: {source}"
                     )
 
-                results = self.parallel_processor.process_batch_threaded(
-                    image_paths,
-                    process_page_wrapper,
-                    progress_callback=progress_callback,
-                )
+                page_images = image_paths
+                restore_temp_dir = tempfile.mkdtemp()
+                try:
+                    restored_paths = [
+                        restore_page_image(p, restore_temp_dir, mode="standard")
+                        for p in image_paths
+                    ]
+                    results = self.parallel_processor.process_batch_threaded(
+                        restored_paths,
+                        process_page_wrapper,
+                        progress_callback=progress_callback,
+                        job_config=self.job_config,
+                    )
+                finally:
+                    shutil.rmtree(restore_temp_dir, ignore_errors=True)
 
                 results = [
                     self._post_process_page_result(r, job_id) for r in results
                 ]
             elif ext == ".pdf":
+                page_images = None
                 results = self.process_pdf(str(source), job_id, progress_callback)
             elif ext == ".pptx":
+                page_images = None
                 text = extract_from_pptx(str(source))
                 res = {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}
                 res = self._post_process_page_result(res, job_id)
@@ -428,7 +455,15 @@ class BlastPipeline:
                 if progress_callback:
                     progress_callback(1, 1)
             elif ext in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
-                res = process_page_wrapper(str(source), 1)
+                page_images = [str(source)]
+                restore_temp_dir = tempfile.mkdtemp()
+                try:
+                    restored_path = restore_page_image(
+                        str(source), restore_temp_dir, mode="standard"
+                    )
+                    res = process_page_wrapper(restored_path, 1)
+                finally:
+                    shutil.rmtree(restore_temp_dir, ignore_errors=True)
                 res = self._post_process_page_result(res, job_id)
                 results = [res]
                 if progress_callback:
@@ -436,9 +471,52 @@ class BlastPipeline:
             else:
                 raise ValueError(f"Unsupported file type: {ext}")
 
-            # Save & Complete
-            full_text = "\n\n---\n\n".join([r.get("text", "") for r in results])
-            md_path, docx_path = save_output(full_text, source.stem, output_dir)
+            self.db.update_job_status(job_id, JobState.POST_PROCESSING)
+
+            # Reconstruct Document model from page results
+            pages_list = []
+            for r in results:
+                pm_dict = r.get("page_model")
+                if pm_dict and isinstance(pm_dict, dict):
+                    try:
+                        from blast_ocr.core.document_model import Page
+                        pages_list.append(Page.model_validate(pm_dict))
+                    except Exception:
+                        pass
+
+            from blast_ocr.core.document_model import Document
+            doc_model = Document(title=source.stem, pages=pages_list) if pages_list else None
+
+            # Export Layout JSON for Layout Inspector
+            json_path = os.path.join(output_dir, f"{source.stem}_layout.json")
+            if doc_model:
+                try:
+                    import json
+                    with open(json_path, "w", encoding="utf-8") as jf:
+                        json.dump(doc_model.model_dump(), jf, indent=2)
+                except Exception as j_err:
+                    logger.warning(f"Could not write layout JSON: {j_err}")
+
+            # Apply Book Intelligence if configured and applicable
+            if doc_model and getattr(self._config, "enable_book_intelligence", True) and len(doc_model.pages) > 1:
+                try:
+                    from blast_ocr.core.book_intelligence import BookProcessor
+                    doc_model = BookProcessor.strip_headers_footers(doc_model)
+                    doc_model = BookProcessor.reflow_paragraphs(doc_model)
+                except Exception as b_err:
+                    logger.warning(f"BookProcessor intelligence transforms failed: {b_err}")
+
+            self.db.update_job_status(job_id, JobState.EXPORTING)
+
+            full_text = doc_model.full_text if (doc_model and doc_model.full_text.strip()) else "\n\n---\n\n".join([r.get("text", "") for r in results])
+            bundle = save_output(
+                full_text,
+                source.stem,
+                output_dir,
+                doc_model=doc_model,
+                page_images=page_images,
+                page_results=results,
+            )
 
             # --- REAL METRICS (psutil) ---
             process = psutil.Process(os.getpid())
@@ -460,15 +538,158 @@ class BlastPipeline:
 
             self.db.save_metric(job_id, peak_mem, avg_time, avg_conf, velocity)
 
-            self.db.update_job_status(job_id, "completed")
+            # --- Resolve output artifact paths ---
+            manifest_path = os.path.join(output_dir, f"{source.stem}_manifest.json")
+            if isinstance(bundle, tuple):
+                md_path, docx_path = bundle[0], (bundle[1] if len(bundle) > 1 else None)
+                output_map = {
+                    "md": md_path,
+                    "docx": docx_path,
+                    "txt": os.path.join(output_dir, f"{source.stem}.txt"),
+                    "epub": os.path.join(output_dir, f"{source.stem}.epub") if doc_model else None,
+                    "manifest": manifest_path,
+                    "json": json_path if doc_model else None,
+                }
+            elif hasattr(bundle, "to_dict"):
+                output_map = bundle.to_dict()
+                output_map["manifest"] = manifest_path
+                output_map["json"] = json_path if doc_model else None
+            elif isinstance(bundle, dict):
+                output_map = bundle
+                output_map["manifest"] = manifest_path
+                output_map["json"] = json_path if doc_model else None
+            else:
+                output_map = {
+                    "md": str(bundle[0]) if bundle else None,
+                    "docx": str(bundle[1]) if (bundle and len(bundle) > 1) else None,
+                    "manifest": manifest_path,
+                    "json": json_path if doc_model else None,
+                }
+
+            # --- RUN MANIFEST GENERATION (schema v1, blast_ocr.core.manifest.RunManifest) ---
+            from blast_ocr.core.manifest import RunManifest, ManifestOutputArtifact
+            import hashlib
+            import subprocess
+
+            def _sha256_file(p: str) -> str:
+                h = hashlib.sha256()
+                with open(p, "rb") as fh:
+                    while chunk := fh.read(65536):
+                        h.update(chunk)
+                return h.hexdigest()
+
+            try:
+                repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                git_commit = subprocess.check_output(
+                    ["git", "rev-parse", "--short", "HEAD"],
+                    cwd=repo_root,
+                    stderr=subprocess.DEVNULL,
+                ).decode().strip()
+            except Exception:
+                git_commit = "unknown"
+
+            native_pages = sum(1 for r in results if r.get("route") == "native")
+            ocr_pages = len(results) - native_pages
+
+            output_artifacts = []
+            for fmt, fpath in output_map.items():
+                if fpath and os.path.exists(fpath) and os.path.isfile(fpath):
+                    try:
+                        output_artifacts.append(ManifestOutputArtifact(
+                            artifact_type=fmt,
+                            filepath=str(fpath),
+                            sha256_hash=_sha256_file(fpath),
+                            size_bytes=os.path.getsize(fpath),
+                        ))
+                    except OSError:
+                        pass
+
+            manifest = RunManifest(
+                job_id=job_id,
+                input_filename=source.name,
+                input_sha256=ingestion_payload.file_hash_sha256 if ingestion_payload else "",
+                input_size_bytes=ingestion_payload.size_bytes if ingestion_payload else (source.stat().st_size if source.is_file() else 0),
+                input_page_count=len(results),
+                git_commit=git_commit,
+                ocr_engine=getattr(self.job_config, "ocr_engine", "rapidocr"),
+                native_pages_count=native_pages,
+                ocr_pages_count=ocr_pages,
+                peak_memory_mb=peak_mem,
+                avg_page_time_sec=avg_time,
+                avg_confidence=avg_conf,
+                velocity_pages_per_sec=velocity,
+                outputs=output_artifacts,
+            )
+            try:
+                manifest.save(manifest_path)
+            except Exception as m_err:
+                logger.warning(f"Could not write run manifest: {m_err}")
+
+            # Optional object-storage mirror (config.storage_backend="s3"): copy every
+            # output artifact (plus the manifest itself) into S3/MinIO under a
+            # per-job key, matching EXECUTION_PLAN.md Phase 8's "keep blobs out of
+            # DB; object storage: exports" guidance. No-op by default
+            # (storage_backend="local"), so this never adds a hard dependency for
+            # a single-user local run.
+            if getattr(self._config, "storage_backend", "local") == "s3":
+                try:
+                    from blast_ocr.storage.object_store import get_object_storage, artifact_key
+                    object_storage = get_object_storage(self._config)
+                    mirrored = {}
+                    for artifact in output_artifacts:
+                        key = artifact_key(job_id, artifact.filepath)
+                        mirrored[artifact.artifact_type] = object_storage.put(key, artifact.filepath)
+                    manifest_key = artifact_key(job_id, manifest_path)
+                    mirrored["manifest"] = object_storage.put(manifest_key, manifest_path)
+                    logger.info(f"Mirrored {len(mirrored)} artifacts to object storage for job {job_id}")
+                except Exception as os_err:
+                    logger.warning(f"Object storage mirror failed (outputs remain available locally): {os_err}")
+
+            had_page_errors = any(r.get("error") for r in results)
+            self.db.update_job_status(
+                job_id,
+                JobState.SUCCEEDED_WITH_WARNINGS if had_page_errors else JobState.SUCCEEDED,
+            )
+
+            from blast_ocr.telemetry import TelemetryTracker
+            TelemetryTracker.record_job_metrics(
+                job_id=job_id,
+                duration_sec=time.monotonic() - job_start_time,
+                pages_count=len(results),
+                success=True,
+                engine=getattr(self.job_config, "ocr_engine", "rapidocr"),
+            )
+
             return {
                 "status": "success",
+                "source_file": source.name,
                 "job_id": job_id,
                 "pages_processed": len(results),
-                "output_files": {"md": md_path, "docx": docx_path},
+                "generated_files": {k: v for k, v in output_map.items() if v},
+                "output_files": output_map,
+                "had_page_errors": had_page_errors,
+                "metadata": {
+                    "page_count": len(results),
+                    "processed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                },
             }
 
         except Exception as e:
-            logger.error(f"Job failed: {e}", exc_info=True)
-            self.db.update_job_status(job_id, "failed", error_message=str(e))
-            return {"status": "failed", "error": str(e)}
+            from blast_ocr.core.job_state import classify_exception
+            retryable = classify_exception(e)
+            logger.error(
+                f"Job failed ({'retryable' if retryable else 'non-retryable'}): {e}",
+                exc_info=True,
+            )
+            self.db.update_job_status(job_id, JobState.FAILED, error_message=str(e))
+
+            from blast_ocr.telemetry import TelemetryTracker
+            TelemetryTracker.record_job_metrics(
+                job_id=job_id,
+                duration_sec=time.monotonic() - job_start_time,
+                pages_count=0,
+                success=False,
+                engine=getattr(self.job_config, "ocr_engine", "rapidocr"),
+            )
+
+            return {"status": "failed", "error": str(e), "retryable": retryable}

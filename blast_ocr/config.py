@@ -29,11 +29,24 @@ class OCRConfig(BaseSettings):
     """Type-safe configuration with validation"""
 
     # OCR Engine
+    ocr_engine: str = Field(default="rapidocr", description="Engine choice: rapidocr, batched_rapidocr, or easyocr")
     ocr_languages: List[str] = Field(
         default_factory=lambda: ["en"], description="Languages to detect"
     )
     ocr_gpu: bool = Field(default=False, description="Use GPU acceleration")
     ocr_batch_size: int = Field(default=8, description="Pages to process in parallel")
+    ocr_execution_provider: str = Field(
+        default="auto",
+        description="Execution provider: auto, cuda, tensorrt, directml, cpu",
+    )
+    ocr_gpu_device_id: int = Field(default=0, description="GPU device ID")
+    ocr_det_batch_size: int = Field(default=4, description="Detection batch size")
+    ocr_rec_batch_size: int = Field(default=32, description="Recognition batch size")
+    ocr_det_limit_side_len: int = Field(default=960, description="Detection max side length")
+    ocr_det_limit_type: str = Field(default="max", description="Detection limit type: max or min")
+    ocr_enable_fp16: bool = Field(default=True, description="Enable FP16 optimization for GPU")
+    enable_tier0_routing: bool = Field(default=True, description="Enable native text extraction for born-digital PDFs")
+    enable_book_intelligence: bool = Field(default=True, description="Enable header/footer stripping and dehyphenation")
 
     # Performance
     max_workers: int = Field(default=2, description="Thread pool size")
@@ -81,6 +94,57 @@ class OCRConfig(BaseSettings):
     )
     auto_deskew: bool = Field(default=True, description="Enable auto-deskewing")
 
+    # Durable Queue (Execution Plan v2, Phase 5/8) -- "sync" (default) requires no
+    # extra infra and matches all prior behavior; "redis" enables out-of-process,
+    # durable job execution via blast_ocr.queue (RQ), see docs/adr/0010.
+    queue_backend: str = Field(default="sync", description="Job execution backend: sync or redis")
+    redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection URL for the queue backend")
+    queue_job_timeout: int = Field(default=1800, description="Max seconds an RQ job may run before being killed")
+
+    # Object Storage (Execution Plan v2, Phase 8) -- "local" (default) requires no
+    # extra infra; "s3" enables MinIO/S3-compatible artifact storage via
+    # blast_ocr.storage.object_store.
+    storage_backend: str = Field(default="local", description="Artifact storage backend: local or s3")
+    s3_endpoint_url: Optional[str] = Field(default=None, description="S3/MinIO endpoint URL (None = real AWS)")
+    s3_bucket: str = Field(default="blast-ocr-artifacts", description="Bucket for job outputs/originals")
+    s3_access_key: Optional[str] = Field(default=None, description="S3/MinIO access key")
+    s3_secret_key: Optional[str] = Field(default=None, description="S3/MinIO secret key")
+
+    # Streaming & Caching (Milestone 3 / R3)
+    streaming_chunk_size: int = Field(default=8, description="Pages per streaming window chunk (K=8..16)")
+    cache_l1_capacity: int = Field(default=100, description="L1 in-memory LRU cache capacity")
+    storage_concurrency: int = Field(default=4, description="Concurrency for background object uploader")
+    s3_multipart_threshold_mb: int = Field(default=8, description="Multipart upload threshold in MB")
+
+    # Observability (Execution Plan v2, Phase 9)
+    otel_exporter: str = Field(default="console", description="OpenTelemetry exporter: console or otlp")
+    otel_otlp_endpoint: Optional[str] = Field(default=None, description="OTLP collector endpoint (required if otel_exporter=otlp)")
+    prometheus_port: int = Field(default=9464, description="Port for the /metrics Prometheus endpoint")
+
+    @field_validator("queue_backend")
+    @classmethod
+    def check_queue_backend(cls, v):
+        name = v.lower().strip()
+        if name not in ("sync", "redis"):
+            raise ValueError(f"queue_backend must be 'sync' or 'redis', got '{v}'")
+        return name
+
+    @field_validator("storage_backend")
+    @classmethod
+    def check_storage_backend(cls, v):
+        name = v.lower().strip()
+        if name not in ("local", "s3"):
+            raise ValueError(f"storage_backend must be 'local' or 's3', got '{v}'")
+        return name
+
+    @field_validator("otel_exporter")
+    @classmethod
+    def check_otel_exporter(cls, v):
+        name = v.lower().strip()
+        if name not in ("console", "otlp", "none"):
+            raise ValueError(f"otel_exporter must be 'console', 'otlp', or 'none', got '{v}'")
+        return name
+
     @field_validator("max_workers", "timeout_per_page")
     @classmethod
     def check_positive(cls, v):
@@ -102,6 +166,15 @@ class OCRConfig(BaseSettings):
             raise ValueError("Must be 1-3")
         return v
 
+    @field_validator("ocr_engine")
+    @classmethod
+    def check_engine(cls, v):
+        name = v.lower().strip()
+        allowed = ("rapidocr", "batched_rapidocr", "easyocr", "tesseract", "ensemble")
+        if name not in allowed:
+            raise ValueError(f"ocr_engine must be one of {allowed}, got '{v}'")
+        return name
+
     @field_validator("ocr_languages")
     @classmethod
     def check_langs(cls, v):
@@ -113,26 +186,31 @@ class OCRConfig(BaseSettings):
 
 
 def _load_config() -> OCRConfig:
-    """Load configuration with a safe fallback for invalid env overrides."""
+    """Load configuration with safe individual key recovery for malformed env overrides."""
     try:
         return OCRConfig()
-    except Exception:
-        # Fallback path: strip BLAST_OCR_* env overrides and retry with defaults.
-        # This prevents hard startup failures in hosted environments when a
-        # mis-typed secret/env value is provided.
-        invalid_override_keys = [k for k in os.environ if k.startswith("BLAST_OCR_")]
-        if not invalid_override_keys:
+    except Exception as err:
+        blast_keys = sorted([k for k in os.environ if k.startswith("BLAST_OCR_")])
+        if not blast_keys:
             raise
 
-        for key in invalid_override_keys:
-            os.environ.pop(key, None)
+        bad_keys = []
+        for key in blast_keys:
+            saved_val = os.environ.pop(key)
+            try:
+                OCRConfig()
+                bad_keys.append(key)
+            except Exception:
+                os.environ[key] = saved_val
 
-        cfg = OCRConfig()
-        logging.getLogger(__name__).warning(
-            "Ignored invalid BLAST_OCR_* env overrides: %s",
-            ", ".join(sorted(invalid_override_keys)),
-        )
-        return cfg
+        if bad_keys:
+            logging.getLogger(__name__).warning(
+                "Removed invalid environment variable overrides: %s (error: %s)",
+                ", ".join(bad_keys),
+                err,
+            )
+            return OCRConfig()
+        raise err
 
 
 # Load config

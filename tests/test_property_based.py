@@ -16,7 +16,12 @@ from unittest.mock import patch, MagicMock
 
 # ── Property 1: sanitize_for_xml always returns a string ─────────────────
 @given(st.text())
-@settings(max_examples=1000, suppress_health_check=[HealthCheck.too_slow])
+# deadline=None: sanitize_for_xml is a single linear-time character-class
+# regex substitution (no backtracking risk), so a slow example here reflects
+# host scheduling/GC noise, not algorithmic complexity -- observed flaky
+# (754-1476ms) on this sandbox even in isolation. Same rationale as the
+# deadline=None already used below for the cache-roundtrip property test.
+@settings(max_examples=1000, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_sanitize_always_returns_string(text):
     from blast_ocr.core.extractor import sanitize_for_xml
 
@@ -28,7 +33,7 @@ def test_sanitize_always_returns_string(text):
 
 # ── Property 2: sanitize_for_xml output contains no null bytes ────────────
 @given(st.text())
-@settings(max_examples=1000)
+@settings(max_examples=1000, deadline=None)  # see rationale on the property above
 def test_sanitize_removes_null_bytes(text):
     from blast_ocr.core.extractor import sanitize_for_xml
 
@@ -48,7 +53,9 @@ def test_sanitize_removes_null_bytes(text):
 
 # ── Property 3: get_file_hash always returns 64-char hex string ───────────
 @given(st.binary(min_size=1, max_size=200_000))
-@settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow])
+# deadline=None: real file I/O (write + read + sha256), same rationale as
+# the cache-roundtrip property test below.
+@settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow], deadline=None)
 def test_file_hash_always_64_char_hex(content):
     from blast_ocr.cache.manager import OCRCache
 
@@ -90,7 +97,16 @@ def test_config_min_confidence_valid_range(value):
     confidence=st.floats(min_value=0.0, max_value=1.0, allow_nan=False),
     text=st.text(max_size=1000),
 )
-@settings(max_examples=200)
+@settings(
+    max_examples=200,
+    # This test does real file I/O (OCRCache.set fsyncs an atomic write).
+    # Hypothesis's default 200ms per-example deadline is meant to catch
+    # algorithmic complexity blowups in pure computation, not to benchmark
+    # I/O -- per Hypothesis's own docs, disable it for I/O-bound tests
+    # rather than tune a number that will still be host-dependent.
+    # Observed flaky (278-378ms) on this sandbox's virtualized disk.
+    deadline=None,
+)
 def test_cache_roundtrip_preserves_data(key, page, confidence, text):
     from blast_ocr.cache.manager import OCRCache
 

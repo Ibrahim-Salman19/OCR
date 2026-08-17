@@ -116,7 +116,7 @@ def test_handle_file_upload_success_outputs():
                     res = mock_state.current_results
                     assert res is not None
                     assert res["summary"][0]["STATUS"] == "SUCCESS"
-                    assert len(res["output_files"]) == 2  # md and docx
+                    assert len(res["output_files"]) == 5  # md, docx, txt, epub, manifest
                     assert res["output_files"][0][0] == "md"
 
 

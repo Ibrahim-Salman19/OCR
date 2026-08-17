@@ -1,0 +1,22 @@
+# Contents page: chapter titles right-aligned against page numbers.
+page: p008
+checks:
+  - type: contains
+    text: "Fundamental Rights"
+  - type: contains
+    text: "Pakistan, Hinduism and Communism"
+  - type: ordered_before
+    first: "Acknowledgements"
+    second: "Foreword"
+  - type: ordered_before
+    first: "Islam as a Vital Organ"
+    second: "The Duties of the State"
+  - type: ordered_before
+    first: "The Ideal Citizen"
+    second: "Pakistan, Hinduism and Communism"
+  - type: ordered_before
+    first: "Pakistan, Hinduism and Communism"
+    second: "Notes"
+  - type: ordered_before
+    first: "Notes"
+    second: "Index"

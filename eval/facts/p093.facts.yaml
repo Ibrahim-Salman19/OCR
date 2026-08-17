@@ -1,0 +1,10 @@
+page: p093
+checks:
+  - type: contains
+    text: "Muqqadima"
+  - type: ordered_before
+    first: "Chapter 1"
+    second: "Chapter 2"
+  - type: ordered_before
+    first: "Islam and Ahmadism"
+    second: "Chapter 2"

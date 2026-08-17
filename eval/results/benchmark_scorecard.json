@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "timestamp": "2026-08-17T15:05:22.093379",
+  "environment": {
+    "os": "linux",
+    "python": "3.10.12",
+    "cpu_count": 8,
+    "cpu_physical_count": 4,
+    "total_ram_gb": 7.64,
+    "cuda_available": false,
+    "gpu_name": "CPU",
+    "gpu_count": 0
+  },
+  "summary": {
+    "total_pages": 20,
+    "total_duration_sec": 0.209,
+    "throughput_pages_per_sec": 95.86,
+    "avg_page_latency_sec": 0.01,
+    "p50_latency_sec": 0.01,
+    "p95_latency_sec": 0.01,
+    "p99_latency_sec": 0.01,
+    "peak_ram_rss_mb": 87.81,
+    "memory_growth_slope_mb_per_page": -0.0,
+    "zero_leak_verified": true
+  },
+  "time_series": {
+    "timestamps": [
+      1786979121.9202754,
+      1786979121.9650183,
+      1786979122.0060093,
+      1786979122.0478563,
+      1786979122.088504
+    ],
+    "ram_rss_mb": [
+      87.80859375,
+      87.80859375,
+      87.80859375,
+      87.80859375,
+      87.80859375
+    ],
+    "cpu_util_pct": [
+      74.8,
+      61.1,
+      76.7,
+      51.4,
+      83.3
+    ]
+  }
+}

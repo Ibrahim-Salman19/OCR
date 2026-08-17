@@ -1,0 +1,30 @@
+# Pages 174-175. Page 175 is a GENUINE two-column index within a single
+# physical page -- the one real intra-page multi-column layout in this
+# book (distinct from the spread-splitting issue tested by p020).
+#
+# This is the sharpest test in the whole corpus: "Abu Bakr, 41" (top of
+# the LEFT column) and "Jefferson, Thomas, 43" (top of the RIGHT column)
+# sit at nearly the same pixel row. Any naive Y-then-X line grouping
+# (which is what the current dead _regroup_text_by_layout code would do
+# if it were reachable) will emit them adjacently and FAIL these checks.
+# Passing requires real column detection: the entire left column must
+# be ordered before the right column begins.
+page: p095
+checks:
+  - type: contains
+    text: "INDEX"
+  - type: ordered_before
+    first: "Kitab-al-Hind"
+    second: "INDEX"
+  - type: ordered_before
+    first: "Abu Bakr, 41"
+    second: "Al-Beruni"
+  - type: ordered_before
+    first: "Istihsan, 102"
+    second: "Jefferson, Thomas, 43"
+  - type: ordered_before
+    first: "Nietzsche, 90"
+    second: "Objectives Resolution"
+  - type: ordered_before
+    first: "Objectives Resolution"
+    second: "Qaza, 2, 7, 8, 9"

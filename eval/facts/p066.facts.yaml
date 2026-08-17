@@ -1,0 +1,15 @@
+# Pages 116-117: second chapter-opening example (Chapter 6). Confirms the
+# blank-verso pattern is systematic and the heading detector isn't
+# overfit to the single Chapter-1 example in p009.
+page: p066
+checks:
+  - type: contains
+    text: "Chapter 6"
+  - type: contains
+    text: "PAKISTAN, HINDUISM AND COMMUNISM"
+  - type: ordered_before
+    first: "committed to devoting their lives"
+    second: "Chapter 6"
+  - type: ordered_before
+    first: "Chapter 6"
+    second: "The Muslims claimed Pakistan firstly"

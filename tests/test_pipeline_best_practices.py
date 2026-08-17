@@ -33,7 +33,11 @@ def test_secure_mode_redacts_directory_results(tmp_path):
 
     source_dir = tmp_path / "images"
     source_dir.mkdir()
-    (source_dir / "a.png").write_bytes(b"placeholder")
+    # FIX(phase1): must be a real, readable image now that process_job's
+    # directory branch runs forensic restoration (ForensicRestorer.restore
+    # -> cv2.imread) on every file before OCR, not placeholder bytes.
+    real_img = np.full((40, 40, 3), 255, dtype=np.uint8)
+    cv2.imwrite(str(source_dir / "a.png"), real_img)
 
     pipeline = BlastPipeline()
     pipeline.db = _mock_db()
@@ -99,7 +103,10 @@ def test_secure_mode_redacts_pptx_route(tmp_path):
     from blast_ocr.pipeline import BlastPipeline
 
     pptx_path = tmp_path / "slides.pptx"
-    pptx_path.write_bytes(b"placeholder")
+    # PPTX magic bytes (PK zip signature) required to pass IngestionGateway's
+    # security validation, now wired into process_job(). extract_from_pptx is
+    # mocked below so the rest of the content doesn't need to be a real pptx.
+    pptx_path.write_bytes(b"PK\x03\x04placeholder")
 
     pipeline = BlastPipeline()
     pipeline.db = _mock_db()

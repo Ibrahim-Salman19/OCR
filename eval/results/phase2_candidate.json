@@ -1,0 +1,507 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-08-11T04:42:10.943348+00:00",
+  "git_sha": "99b9f142f158-dirty",
+  "engine": "easyocr",
+  "aggregate": {
+    "mean_cer": 0.233814916930063,
+    "mean_wer": 0.4967869139182463,
+    "mean_reading_order_tau": 0.9640599543825349,
+    "pages_with_tau_signal": 11,
+    "fact_pass_rate": 0.44680851063829785,
+    "fact_pass_count": 21,
+    "fact_total_count": 47,
+    "page_count": 14
+  },
+  "per_page": [
+    {
+      "page_id": "p002",
+      "cer": 0.15460526315789475,
+      "wer": 0.6,
+      "reading_order_tau": null,
+      "engine_confidence": 0.6209613913396776,
+      "warning": null,
+      "elapsed_sec": 90.339,
+      "hyp_chars": 307,
+      "gold_chars": 304,
+      "fact_checks": [],
+      "fact_pass_count": 0,
+      "fact_total_count": 0
+    },
+    {
+      "page_id": "p006",
+      "cer": 0.06060606060606061,
+      "wer": 0.19654427645788336,
+      "reading_order_tau": 0.9999999999999998,
+      "engine_confidence": 0.7114976416139247,
+      "warning": null,
+      "elapsed_sec": 94.68,
+      "hyp_chars": 2606,
+      "gold_chars": 2574,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"My broad findings are as follows\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "contains",
+          "description": "contains \"Singleness of God\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"and sub\" ordered_before \"consciously began to fight shy\"",
+          "passed": false,
+          "detail": "not found: \"consciously began to fight shy\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Man as an animal is moved by basic instincts\" ordered_before \"Singleness of God\"",
+          "passed": false,
+          "detail": "not found: \"Man as an animal is moved by basic instincts\""
+        },
+        {
+          "type": "absent",
+          "description": "absent \"lorem ipsum\" (max 0)",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "fact_pass_count": 3,
+      "fact_total_count": 5
+    },
+    {
+      "page_id": "p008",
+      "cer": 0.25559105431309903,
+      "wer": 0.4827586206896552,
+      "reading_order_tau": 1.0,
+      "engine_confidence": 0.8006003252152945,
+      "warning": null,
+      "elapsed_sec": 75.371,
+      "hyp_chars": 303,
+      "gold_chars": 313,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"Fundamental Rights\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "contains",
+          "description": "contains \"Pakistan, Hinduism and Communism\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Acknowledgements\" ordered_before \"Foreword\"",
+          "passed": false,
+          "detail": "not found: \"Acknowledgements\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Islam as a Vital Organ\" ordered_before \"The Duties of the State\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"The Ideal Citizen\" ordered_before \"Pakistan, Hinduism and Communism\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Pakistan, Hinduism and Communism\" ordered_before \"Notes\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Notes\" ordered_before \"Index\"",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "fact_pass_count": 6,
+      "fact_total_count": 7
+    },
+    {
+      "page_id": "p009",
+      "cer": 0.08212147134302823,
+      "wer": 0.2864864864864865,
+      "reading_order_tau": 0.9999999999999998,
+      "engine_confidence": 0.6744725939210402,
+      "warning": null,
+      "elapsed_sec": 79.585,
+      "hyp_chars": 1174,
+      "gold_chars": 1169,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"ISLAM AS A VITAL ORGAN\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "contains",
+          "description": "contains \"structural principles of the Unity of God\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Chapter 1\" ordered_before \"The primary essentials of Islam\"",
+          "passed": false,
+          "detail": "not found: \"Chapter 1\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Islam seeks human unification\" ordered_before \"In spite of the racial, linguistic and territorial\"",
+          "passed": false,
+          "detail": "not found: \"Islam seeks human unification\""
+        }
+      ],
+      "fact_pass_count": 0,
+      "fact_total_count": 4
+    },
+    {
+      "page_id": "p020",
+      "cer": 0.06103801169590643,
+      "wer": 0.22755741127348644,
+      "reading_order_tau": 0.9268817204301076,
+      "engine_confidence": 0.6912043586295933,
+      "warning": null,
+      "elapsed_sec": 131.626,
+      "hyp_chars": 2790,
+      "gold_chars": 2736,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"would owe their allegiance to the State\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "contains",
+          "description": "contains \"Caliph always appointed different persons\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"would not be allowed to take part in the political life\" ordered_before \"duties of the Imams of the Mosque. In Baghdad\"",
+          "passed": false,
+          "detail": "not found: \"duties of the Imams of the Mosque. In Baghdad\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"State-employee whereas the poor Imam is not\" ordered_before \"the British excluded Islam from\"",
+          "passed": false,
+          "detail": "not found: \"State-employee whereas the poor Imam is not\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"persons other than the Judges to perform the\" ordered_before \"duties of the Imams of the Mosque. In Baghdad\"",
+          "passed": false,
+          "detail": "not found: \"duties of the Imams of the Mosque. In Baghdad\""
+        }
+      ],
+      "fact_pass_count": 1,
+      "fact_total_count": 5
+    },
+    {
+      "page_id": "p035",
+      "cer": 0.07670353193007493,
+      "wer": 0.25902335456475584,
+      "reading_order_tau": 1.0,
+      "engine_confidence": 0.6652677692869085,
+      "warning": null,
+      "elapsed_sec": 226.59,
+      "hyp_chars": 2851,
+      "gold_chars": 2803,
+      "fact_checks": [],
+      "fact_pass_count": 0,
+      "fact_total_count": 0
+    },
+    {
+      "page_id": "p049",
+      "cer": 0.15360864531069085,
+      "wer": 0.3309178743961353,
+      "reading_order_tau": 1.0,
+      "engine_confidence": 0.6928453856335788,
+      "warning": null,
+      "elapsed_sec": 141.669,
+      "hyp_chars": 2652,
+      "gold_chars": 2591,
+      "fact_checks": [],
+      "fact_pass_count": 0,
+      "fact_total_count": 0
+    },
+    {
+      "page_id": "p066",
+      "cer": 0.06350364963503649,
+      "wer": 0.21145374449339208,
+      "reading_order_tau": 0.9999999999999999,
+      "engine_confidence": 0.6485954845907702,
+      "warning": null,
+      "elapsed_sec": 131.256,
+      "hyp_chars": 1399,
+      "gold_chars": 1370,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"Chapter 6\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "contains",
+          "description": "contains \"PAKISTAN, HINDUISM AND COMMUNISM\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"committed to devoting their lives\" ordered_before \"Chapter 6\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Chapter 6\" ordered_before \"The Muslims claimed Pakistan firstly\"",
+          "passed": false,
+          "detail": "not found: \"The Muslims claimed Pakistan firstly\""
+        }
+      ],
+      "fact_pass_count": 2,
+      "fact_total_count": 4
+    },
+    {
+      "page_id": "p069",
+      "cer": 0.08235294117647059,
+      "wer": 0.25925925925925924,
+      "reading_order_tau": 0.9999999999999998,
+      "engine_confidence": 0.7212610623709994,
+      "warning": null,
+      "elapsed_sec": 169.954,
+      "hyp_chars": 2793,
+      "gold_chars": 2720,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"joint-defence\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "contains",
+          "description": "contains \"North-West\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Red Chinese incursion from the East and North-East\" ordered_before \"Anyway, in order to dispel the fear\"",
+          "passed": false,
+          "detail": "not found: \"Anyway, in order to dispel the fear\""
+        },
+        {
+          "type": "absent",
+          "description": "absent \"North West-\" (max 0)",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "fact_pass_count": 2,
+      "fact_total_count": 4
+    },
+    {
+      "page_id": "p093",
+      "cer": 0.23448275862068965,
+      "wer": 0.743801652892562,
+      "reading_order_tau": 1.0,
+      "engine_confidence": 0.5282441177518045,
+      "warning": "low_confidence",
+      "elapsed_sec": 110.122,
+      "hyp_chars": 537,
+      "gold_chars": 580,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"Muqqadima\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Chapter 1\" ordered_before \"Chapter 2\"",
+          "passed": false,
+          "detail": "not found: \"Chapter 1\", \"Chapter 2\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Islam and Ahmadism\" ordered_before \"Chapter 2\"",
+          "passed": false,
+          "detail": "not found: \"Chapter 2\""
+        }
+      ],
+      "fact_pass_count": 0,
+      "fact_total_count": 3
+    },
+    {
+      "page_id": "p094",
+      "cer": 0.243343653250774,
+      "wer": 0.6893203883495146,
+      "reading_order_tau": 0.9555555555555554,
+      "engine_confidence": 0.5482583660074123,
+      "warning": "low_confidence",
+      "elapsed_sec": 110.285,
+      "hyp_chars": 1524,
+      "gold_chars": 1615,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"Nietzsche\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Chapter 3\" ordered_before \"Chapter 4\"",
+          "passed": false,
+          "detail": "not found: \"Chapter 4\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Chapter 4\" ordered_before \"Chapter 5\"",
+          "passed": false,
+          "detail": "not found: \"Chapter 4\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Chapter 5\" ordered_before \"Chapter 6\"",
+          "passed": false,
+          "detail": "not found: \"Chapter 6\""
+        }
+      ],
+      "fact_pass_count": 1,
+      "fact_total_count": 4
+    },
+    {
+      "page_id": "p095",
+      "cer": 0.5700575815738963,
+      "wer": 0.8838028169014085,
+      "reading_order_tau": 0.7222222222222222,
+      "engine_confidence": 0.5833575623322449,
+      "warning": "low_confidence",
+      "elapsed_sec": 138.627,
+      "hyp_chars": 1534,
+      "gold_chars": 1563,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"INDEX\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Kitab-al-Hind\" ordered_before \"INDEX\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Abu Bakr, 41\" ordered_before \"Al-Beruni\"",
+          "passed": false,
+          "detail": "not found: \"Abu Bakr, 41\", \"Al-Beruni\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Istihsan, 102\" ordered_before \"Jefferson, Thomas, 43\"",
+          "passed": false,
+          "detail": "not found: \"Jefferson, Thomas, 43\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Nietzsche, 90\" ordered_before \"Objectives Resolution\"",
+          "passed": false,
+          "detail": "not found: \"Nietzsche, 90\""
+        },
+        {
+          "type": "ordered_before",
+          "description": "\"Objectives Resolution\" ordered_before \"Qaza, 2, 7, 8, 9\"",
+          "passed": false,
+          "detail": "not found: \"Qaza, 2, 7, 8, 9\""
+        }
+      ],
+      "fact_pass_count": 2,
+      "fact_total_count": 6
+    },
+    {
+      "page_id": "p096",
+      "cer": 0.6744186046511628,
+      "wer": 0.9090909090909091,
+      "reading_order_tau": null,
+      "engine_confidence": 0.5947502723212256,
+      "warning": "low_confidence",
+      "elapsed_sec": 97.071,
+      "hyp_chars": 134,
+      "gold_chars": 129,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"Two-nation Theory\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "contains",
+          "description": "contains \"United Nations Charter\"",
+          "passed": false,
+          "detail": "not found in output"
+        },
+        {
+          "type": "absent",
+          "description": "absent \"the\" (max 5)",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "fact_pass_count": 2,
+      "fact_total_count": 3
+    },
+    {
+      "page_id": "p097",
+      "cer": 0.5609756097560976,
+      "wer": 0.875,
+      "reading_order_tau": null,
+      "engine_confidence": 0.26269904509041064,
+      "warning": "low_confidence",
+      "elapsed_sec": 42.13,
+      "hyp_chars": 44,
+      "gold_chars": 41,
+      "fact_checks": [
+        {
+          "type": "contains",
+          "description": "contains \"IQBAL\"",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "type": "absent",
+          "description": "absent \".\" (max 3)",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "fact_pass_count": 2,
+      "fact_total_count": 2
+    }
+  ]
+}

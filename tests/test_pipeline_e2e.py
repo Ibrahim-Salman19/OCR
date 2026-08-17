@@ -142,8 +142,8 @@ class TestGeminiSchemaCompliance:
             job_id = result["job_id"]
             db_record = pipeline.db.get_job(job_id)
             assert db_record is not None, f"Job {job_id} not found in DB"
-            assert db_record.status == "completed", (
-                f"Job status should be 'completed', got '{db_record.status}'"
+            assert db_record.status in ("succeeded", "succeeded_with_warnings"), (
+                f"Job status should be a JobState success value, got '{db_record.status}'"
             )
 
 

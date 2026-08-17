@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      # Hard-gated on blast_ocr/ (the shipped package, verified clean -- see
+      # docs/adr/0013). Root-level dev/debug scripts and tests/ still have
+      # pre-existing lint debt (unused imports etc.); advisory there until
+      # that's triaged separately, rather than blocking every PR on unrelated
+      # pre-existing findings on day one.
+      - run: ruff check blast_ocr/
+      - run: ruff check . || true
+
+  typecheck:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install mypy
+      - run: pip install -r requirements.txt
+      # mypy against a large pre-existing codebase starts non-blocking
+      # (report findings, don't fail the build) until the baseline is clean --
+      # see pyproject.toml's [tool.mypy] comment on incremental adoption.
+      - run: mypy blast_ocr/ || true
+
+  test:
+    name: Unit + integration tests
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      BLAST_OCR_REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: System dependencies (poppler for pdf2image)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils libgl1
+      - run: pip install -r requirements.txt -r requirements-production.txt -r requirements-dev.txt
+      - run: python -m pytest tests/ --cov=blast_ocr --cov-report=term-missing --cov-report=xml -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  security-scan:
+    name: Dependency + static security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pip-audit bandit
+      - name: pip-audit (known CVEs in dependencies)
+        run: |
+          pip-audit -r requirements.txt || true # advisory until the dependency baseline is triaged
+          pip-audit -r requirements-production.txt || true
+      - name: bandit (SAST for common Python security anti-patterns)
+        run: bandit -r blast_ocr/ -ll -x blast_ocr/storage/alembic -c pyproject.toml
+
+  eval-regression:
+    name: OCR quality regression gate
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils libgl1
+      - run: pip install -r requirements.txt
+      - run: pip install pytest
+      # Regression-gated against the committed eval/results/baseline.json
+      # scorecard; skipped (not failed) if eval/run.py hasn't produced a
+      # fresh scorecard for this run, per pytest.ini's eval_regression marker.
+      - run: python eval/run.py --engine rapidocr || true
+      - run: python -m pytest tests/test_eval_regression.py -v
+
+  docker-build:
+    name: Build container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: blast-ocr:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

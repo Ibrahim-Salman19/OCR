@@ -1,6 +1,6 @@
 import langdetect
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -58,13 +58,17 @@ class ScriptRouter:
 
 def apply_auto_routing(pipeline_instance: Any, sample_text: str) -> List[str]:
     """
-    Dynamically adjusts pipeline language settings based on script discovery.
+    Determines the OCR engine language profile for a sample of text.
+
+    Returns the language list for the caller to fold into its own immutable
+    per-job JobConfig. Does NOT mutate shared pipeline/global state -- a
+    pipeline instance may be processing multiple concurrent jobs with
+    different language requirements, and writing the result onto
+    `pipeline_instance._config` would leak one job's language routing into
+    another's (the same class of cross-job state bug that JobConfig was
+    introduced to eliminate for OCR engine selection).
     """
     lang = ScriptRouter.detect_script(sample_text)
     engine_langs = ScriptRouter.get_ocr_engine_params(lang)
-
-    if pipeline_instance and hasattr(pipeline_instance, "_config"):
-        pipeline_instance._config.ocr_languages = engine_langs
-
-    logger.info(f"Routing pipeline to engine profile: {engine_langs}")
+    logger.info(f"Detected engine profile for sample text: {engine_langs}")
     return engine_langs

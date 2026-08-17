@@ -1,0 +1,22 @@
+# Pages 24-25: both physical pages fully printed, standard body prose.
+# This is a direct, sharp test of the F-01 dead-code bug: a naive
+# Y-then-X grouping across the FULL spread image would interleave
+# page 24's lines with page 25's lines because they sit at the same
+# pixel row-height but on opposite physical pages. Correct behavior
+# requires column/half-page segmentation before line grouping, so
+# page 24 must be fully ordered before page 25 begins.
+page: p020
+checks:
+  - type: contains
+    text: "would owe their allegiance to the State"
+  - type: contains
+    text: "Caliph always appointed different persons"
+  - type: ordered_before
+    first: "would not be allowed to take part in the political life"
+    second: "duties of the Imams of the Mosque. In Baghdad"
+  - type: ordered_before
+    first: "State-employee whereas the poor Imam is not"
+    second: "the British excluded Islam from"
+  - type: ordered_before
+    first: "persons other than the Judges to perform the"
+    second: "duties of the Imams of the Mosque. In Baghdad"

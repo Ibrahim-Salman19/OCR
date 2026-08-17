@@ -45,35 +45,76 @@ def test_extractor_zero_dimension_image(extractor):
 
 
 # ── Test 2: Very large image (OOM territory) ──────────────────────────────
-def test_extractor_large_image_downscaled(extractor):
-    """max_dim=1800px must trigger downscaling for large images."""
-    # Create a 3000x4000 image (exceeds 1800px threshold)
+def test_extractor_oversized_image_hits_safety_backstop(extractor):
+    """FIX(phase1/F-02): the early per-page cap is now a generous backstop
+    (RobustOCRExtractor.MAX_LONG_EDGE_PX) against pathological inputs, not
+    a fixed 1800px threshold applied to every page -- that fixed cap was
+    itself the bug (see docs/adr/): it destroyed real resolution on normal
+    book-page scans before preprocess_image's glyph-height-targeted resize
+    ever got a chance to make an informed decision. This test asserts the
+    *current* contract: an image well beyond the safety ceiling is capped
+    to it before OCR runs at all."""
+    from blast_ocr.core.extractor import RobustOCRExtractor
+
     path = tempfile.mktemp(suffix=".png")
-    img = np.full((4000, 3000, 3), 255, dtype=np.uint8)
+    oversized = RobustOCRExtractor.MAX_LONG_EDGE_PX + 3000
+    img = np.full((oversized, int(oversized * 0.75), 3), 255, dtype=np.uint8)
     cv2.imwrite(path, img)
 
-    downscale_triggered = []
+    seen_shapes = []
     original_preprocess = extractor.preprocess_image
 
     def spy_preprocess(image_source, target_width=2000):
         if hasattr(image_source, "shape"):
-            h, w = image_source.shape[:2]
-            if max(h, w) > 1800:
-                downscale_triggered.append((h, w))
+            seen_shapes.append(image_source.shape[:2])
         return original_preprocess(image_source, target_width)
 
-    with patch.object(extractor, "preprocess_image", side_effect=spy_preprocess):
-        with patch.object(extractor.reader, "readtext", return_value=[]):
-            try:
+    try:
+        with patch.object(extractor, "preprocess_image", side_effect=spy_preprocess):
+            with patch.object(extractor.reader, "readtext", return_value=[]):
                 extractor.process_page(path, 1)
-            except Exception:
-                pass  # We only care about downscaling, not OCR result
+    finally:
+        os.unlink(path)
 
-    os.unlink(path)
-    # If downscale was not triggered, OOM risk exists
-    if not downscale_triggered:
-        # Check the actual code handles it
-        pass  # The test demonstrates the concern
+    assert seen_shapes, "preprocess_image was never called"
+    h, w = seen_shapes[0]
+    assert max(h, w) <= RobustOCRExtractor.MAX_LONG_EDGE_PX, (
+        f"Oversized image ({oversized}px) should be capped to "
+        f"MAX_LONG_EDGE_PX ({RobustOCRExtractor.MAX_LONG_EDGE_PX}) before "
+        f"preprocess_image runs, got shape {(h, w)}"
+    )
+
+
+def test_extractor_normal_book_page_is_not_preemptively_downscaled(extractor):
+    """FIX(phase1/F-02) regression guard: a normal book-page-sized render
+    (this project's own gold corpus measured 2900-3300px at 300 DPI) must
+    reach preprocess_image at full resolution, not be blindly capped the
+    way the old fixed-1800px threshold did -- the glyph-height-targeted
+    resize inside preprocess_image is what should make the scaling
+    decision, using the real source resolution."""
+    path = tempfile.mktemp(suffix=".png")
+    img = np.full((3000, 2400, 3), 255, dtype=np.uint8)
+    cv2.imwrite(path, img)
+
+    seen_shapes = []
+    original_preprocess = extractor.preprocess_image
+
+    def spy_preprocess(image_source, target_width=2000):
+        if hasattr(image_source, "shape"):
+            seen_shapes.append(image_source.shape[:2])
+        return original_preprocess(image_source, target_width)
+
+    try:
+        with patch.object(extractor, "preprocess_image", side_effect=spy_preprocess):
+            with patch.object(extractor.reader, "readtext", return_value=[]):
+                extractor.process_page(path, 1)
+    finally:
+        os.unlink(path)
+
+    assert seen_shapes and seen_shapes[0] == (3000, 2400), (
+        f"A normal book-page render should reach preprocess_image at its "
+        f"real resolution, got {seen_shapes}"
+    )
 
 
 # ── Test 3: Grayscale input (not BGR) ────────────────────────────────────

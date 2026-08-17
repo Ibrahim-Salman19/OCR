@@ -1,0 +1,16 @@
+# Pages 172-173: multiple "Chapter N" sub-headings on ONE physical page
+# (172 has the Ch.2 tail, then Ch.3, then Ch.4). Section ordering must
+# survive even though these are same-page, not cross-page, transitions.
+page: p094
+checks:
+  - type: contains
+    text: "Nietzsche"
+  - type: ordered_before
+    first: "Chapter 3"
+    second: "Chapter 4"
+  - type: ordered_before
+    first: "Chapter 4"
+    second: "Chapter 5"
+  - type: ordered_before
+    first: "Chapter 5"
+    second: "Chapter 6"

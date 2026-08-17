@@ -1,5 +1,0 @@
-
-Processing pages:   0%|          | 0/2 [00:00<?, ?it/s]2026-03-30 14:43:56,358 - blast_ocr.core.worker - INFO - Page 1: Cache hit
-2026-03-30 14:43:56,359 - blast_ocr.core.worker - INFO - Page 2: Cache hit
-
-Processing pages: 100%|##########| 2/2 [00:00<00:00, 415.96it/s]

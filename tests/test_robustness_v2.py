@@ -45,7 +45,7 @@ def test_db_sqli_protection():
         job = db.get_job(job_id)
         assert job is not None
         assert job.filename == malicious_name
-        assert job.status == "pending"
+        assert job.status == "received"  # JobState.RECEIVED (see ADR 0009)
     finally:
         db.close()
         if os.path.exists(db_file):
@@ -66,9 +66,14 @@ def test_pipeline_fuzz_corrupt_headers(content):
         result = pipeline.process_job(path)
         # Status should be failed, but process must NOT crash or hang
         assert result["status"] == "failed"
-        assert (
-            "extraction failed" in result.get("error", "").lower()
-            or "error" in result.get("error", "").lower()
+        # Garbage bytes are now often rejected earlier, at the IngestionGateway
+        # security boundary (magic-byte mismatch), rather than deeper inside PDF
+        # extraction -- both are valid "failed gracefully with a reason" outcomes.
+        error_text = result.get("error", "").lower()
+        assert error_text, "Failure must carry a non-empty error message"
+        assert any(
+            phrase in error_text
+            for phrase in ("extraction failed", "error", "magic bytes", "security validation")
         )
     finally:
         if os.path.exists(path):

@@ -1,0 +1,66 @@
+{
+  "title": "B.L.A.S.T. OCR Overview",
+  "uid": "blast-ocr-overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Jobs / min by status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum by (status) (rate(blast_jobs_total[1m])) * 60", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Job duration (p50 / p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(blast_job_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(blast_job_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Pages / min by engine + route",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum by (engine, route) (rate(blast_pages_total[1m])) * 60", "legendFormat": "{{engine}}/{{route}}" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "OCR confidence distribution (p50 / p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(blast_ocr_confidence_bucket[5m])) by (le, engine))", "legendFormat": "p50 {{engine}}" },
+        { "expr": "histogram_quantile(0.95, sum(rate(blast_ocr_confidence_bucket[5m])) by (le, engine))", "legendFormat": "p95 {{engine}}" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Page failures / min by engine",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "sum by (engine) (rate(blast_page_failures_total[1m])) * 60", "legendFormat": "{{engine}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Worker memory (RSS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "blast_worker_memory_bytes", "legendFormat": "rss" }
+      ]
+    }
+  ]
+}

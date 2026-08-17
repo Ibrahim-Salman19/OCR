@@ -33,9 +33,5 @@ if __name__ == "__main__":
     if _running_in_streamlit():
         _run_streamlit_ui()
     else:
-        parser = argparse.ArgumentParser(description="B.L.A.S.T. OCR Launcher")
-        parser.add_argument("source", help="Source file or folder")
-        parser.add_argument("--out", help="Output directory", default=None)
-        args = parser.parse_args()
-
-        main(args.source, args.out)
+        from blast_ocr.cli import run_cli
+        sys.exit(run_cli())

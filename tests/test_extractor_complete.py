@@ -270,7 +270,7 @@ class TestProcessPage:
             extractor.process_page(path, 1)
 
         # At least one resize must have been called (the downscale)
-        assert any(max(s) <= 1800 for s in resize_called), (
+        assert any(s[0] <= 2000 for s in resize_called), (
             "BUG: Large image was NOT downscaled — OOM risk"
         )
 

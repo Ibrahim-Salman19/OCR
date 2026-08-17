@@ -4,6 +4,7 @@ BUG-PREVENTION: Race conditions are silent and non-deterministic. These tests
 verify the mutex logic and worker singleton under true concurrency.
 """
 
+import tempfile
 import threading
 import time
 import pytest
@@ -54,7 +55,7 @@ class TestBatchThreadedBehavior:
         """
         from blast_ocr.core.parallel import ParallelOCRProcessor
 
-        def process_func(path, page_num):
+        def process_func(path, page_num, job_config=None):
             time.sleep(0.005 * (5 - (page_num % 5)))
             return {"page": page_num, "text": f"p{page_num}", "confidence": 0.9}
 
@@ -74,7 +75,7 @@ class TestBatchThreadedBehavior:
         """
         from blast_ocr.core.parallel import ParallelOCRProcessor
 
-        def crashing_func(path, page_num):
+        def crashing_func(path, page_num, job_config=None):
             if page_num == 3:
                 raise RuntimeError("page 3 exploded")
             return {"page": page_num, "text": "ok", "confidence": 0.9}
@@ -95,7 +96,7 @@ class TestBatchThreadedBehavior:
         """
         from blast_ocr.core.parallel import ParallelOCRProcessor
 
-        def good_func(path, page_num):
+        def good_func(path, page_num, job_config=None):
             return {"page": page_num, "text": "ok", "confidence": 0.9}
 
         def crashing_callback(current, total):
@@ -121,7 +122,7 @@ class TestBatchThreadedBehavior:
         def tracking_callback(current, total):
             records.append((current, total))
 
-        def good_func(path, page_num):
+        def good_func(path, page_num, job_config=None):
             return {"page": page_num, "text": "ok", "confidence": 0.9}
 
         processor = ParallelOCRProcessor(max_workers=1)
@@ -135,6 +136,113 @@ class TestBatchThreadedBehavior:
             assert current <= total, (
                 f"BUG: progress callback got current={current} > total={total}"
             )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Cross-Job Engine Isolation — the flagship EXECUTION_PLAN.md v2 section 1.1 bug:
+# "Job A -> RapidOCR, Job B -> EasyOCR. If both jobs overlap, Job A worker reads
+# the mutable global config and silently uses EasyOCR instead." JobConfig was
+# built to prevent this, but process_batch_threaded never actually forwarded it
+# to process_page_wrapper -- these tests are the regression guard.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestCrossJobEngineIsolation:
+    def test_process_batch_threaded_forwards_job_config_to_process_func(self):
+        """
+        BUG-PREVENTION (EXECUTION_PLAN.md v2 section 1.1): process_batch_threaded
+        must pass the per-batch job_config through to every worker call so engine
+        selection can be immutable-per-job instead of read from mutable global state.
+        """
+        from blast_ocr.core.parallel import ParallelOCRProcessor
+        from blast_ocr.core.models import JobConfig
+
+        received_configs = []
+
+        def process_func(path, page_num, job_config=None):
+            received_configs.append(job_config)
+            return {"page": page_num, "text": "ok", "confidence": 0.9}
+
+        job_config = JobConfig(ocr_engine="easyocr")
+        processor = ParallelOCRProcessor(max_workers=2)
+        processor.process_batch_threaded(
+            ["/fake/p1.png", "/fake/p2.png"], process_func, job_config=job_config
+        )
+
+        assert len(received_configs) == 2
+        assert all(cfg is job_config for cfg in received_configs), (
+            "BUG: job_config was not forwarded to every worker call -- engine "
+            "selection would silently fall back to global mutable config."
+        )
+
+    def test_two_concurrent_jobs_different_engines_no_cross_contamination(self):
+        """
+        BUG-PREVENTION (EXECUTION_PLAN.md v2 section 1.1, the motivating example):
+        simulate Job A (rapidocr) and Job B (easyocr) submitting pages concurrently
+        through the *same* worker module (shared module-level EngineRegistry) and
+        assert every page result reports the engine ITS OWN job requested, never
+        the other job's engine -- proving JobConfig actually isolates engine
+        selection at the real call site, not just in the dataclass.
+        """
+        from blast_ocr.core import worker as worker_module
+        from blast_ocr.core.models import JobConfig
+
+        requested_engines = []
+        lock = threading.Lock()
+
+        class FakeEngine:
+            def __init__(self, name):
+                self.name = name
+
+            def process_page(self, image_path, page_num):
+                # Simulate real work happening while another thread could run,
+                # maximizing the window for cross-contamination to manifest.
+                time.sleep(0.005)
+                return {
+                    "page": page_num,
+                    "text": f"engine={self.name}",
+                    "confidence": 0.9,
+                    "engine": self.name,
+                }
+
+        def fake_get_worker_engine(engine_name):
+            with lock:
+                requested_engines.append(engine_name)
+            return FakeEngine(engine_name)
+
+        with patch.object(worker_module, "get_worker_engine", side_effect=fake_get_worker_engine), \
+             patch.object(worker_module, "cache_manager") as mock_cache:
+            mock_cache.get_cache_key.side_effect = lambda path, ns: f"{path}|{ns}"
+            mock_cache.get.return_value = None
+
+            job_a_config = JobConfig(ocr_engine="rapidocr")
+            job_b_config = JobConfig(ocr_engine="easyocr")
+
+            results = {"a": [], "b": []}
+
+            def run_job(job_key, job_config, n_pages=10):
+                for page_num in range(1, n_pages + 1):
+                    r = worker_module.process_page_wrapper(
+                        f"/fake/{job_key}_page_{page_num}.png", page_num, job_config
+                    )
+                    results[job_key].append(r)
+
+            t_a = threading.Thread(target=run_job, args=("a", job_a_config))
+            t_b = threading.Thread(target=run_job, args=("b", job_b_config))
+            t_a.start()
+            t_b.start()
+            t_a.join(timeout=10)
+            t_b.join(timeout=10)
+
+        assert all(r["engine"] == "rapidocr" for r in results["a"]), (
+            f"BUG: Job A (rapidocr) got contaminated results: "
+            f"{[r['engine'] for r in results['a']]}"
+        )
+        assert all(r["engine"] == "easyocr" for r in results["b"]), (
+            f"BUG: Job B (easyocr) got contaminated results: "
+            f"{[r['engine'] for r in results['b']]}"
+        )
+        assert set(requested_engines) == {"rapidocr", "easyocr"}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -277,13 +385,20 @@ def test_cache_hit_skips_extractor_call():
     """
     BUG-PREVENTION: Cache hit must short-circuit the extractor call entirely.
     Without this, every pipeline re-run re-processes all 100 pages needlessly.
+
+    FIX(F-07): worker.py now builds the cache key from file content PLUS an
+    engine/preprocessing namespace (cache_manager.get_cache_key), then looks
+    it up via the generic cache_manager.get(), instead of the old
+    content-only get_cached_result(). Mocks below reflect that call shape.
     """
     from blast_ocr.core.worker import process_page_wrapper
 
     cached = {"page": 1, "text": "cached", "confidence": 0.95}
-    with patch("blast_ocr.core.worker.cache_manager") as mock_cache:
-        mock_cache.get_file_hash.return_value = "abc123"
-        mock_cache.get_cached_result.return_value = cached
+    with patch("blast_ocr.core.worker.cache_manager") as mock_cache, patch(
+        "blast_ocr.core.worker.get_cache_namespace", return_value="ns"
+    ):
+        mock_cache.get_cache_key.return_value = "abc123"
+        mock_cache.get.return_value = cached
         with patch("blast_ocr.core.worker.get_worker_extractor") as mock_get:
             result = process_page_wrapper("/fake/page.png", 1)
             mock_get.assert_not_called()
@@ -299,17 +414,43 @@ def test_cache_miss_calls_extractor_and_saves_result():
     from blast_ocr.core.worker import process_page_wrapper
 
     fresh = {"page": 1, "text": "fresh", "confidence": 0.9}
-    with patch("blast_ocr.core.worker.cache_manager") as mock_cache:
-        mock_cache.get_file_hash.return_value = "xyz789"
-        mock_cache.get_cached_result.return_value = None  # Cache miss
+    with patch("blast_ocr.core.worker.cache_manager") as mock_cache, patch(
+        "blast_ocr.core.worker.get_cache_namespace", return_value="ns"
+    ):
+        mock_cache.get_cache_key.return_value = "xyz789"
+        mock_cache.get.return_value = None  # Cache miss
         with patch("blast_ocr.core.worker.get_worker_extractor") as mock_get:
             mock_ext = MagicMock()
             mock_ext.process_page.return_value = fresh
             mock_get.return_value = mock_ext
             result = process_page_wrapper("/fake/page.png", 1)
-            mock_cache.set.assert_called_once()
+            mock_cache.set.assert_called_once_with("xyz789", fresh)
 
     assert result["text"] == "fresh"
+
+
+def test_cache_key_changes_with_preprocessing_namespace():
+    """
+    BUG-PREVENTION (F-07): Two calls with the same image but a different
+    engine/preprocessing namespace must produce different cache keys, and
+    a namespace change after a save must be a cache MISS, not a stale hit.
+    This is the actual bug: before the fix, the cache was keyed on file
+    content alone, so changing denoise/contrast/deskew/engine settings
+    silently served back a result computed under the old settings.
+    """
+    from blast_ocr.cache.manager import OCRCache
+
+    cache = OCRCache(cache_dir=tempfile.mkdtemp())
+    key_a = cache.get_cache_key("/fake/page.png", "engine=easyocr|denoise=0")
+    key_b = cache.get_cache_key("/fake/page.png", "engine=easyocr|denoise=10")
+    assert key_a != key_b, "Different preprocessing namespace must yield different key"
+
+    cache.set(key_a, {"text": "under old settings"})
+    assert cache.get(key_b) is None, (
+        "Changing preprocessing settings must be a cache miss, not reuse a "
+        "result computed under the previous settings"
+    )
+    assert cache.get(key_a) == {"text": "under old settings"}
 
 
 def test_processing_time_included_in_worker_result():
@@ -319,9 +460,11 @@ def test_processing_time_included_in_worker_result():
     """
     from blast_ocr.core.worker import process_page_wrapper
 
-    with patch("blast_ocr.core.worker.cache_manager") as mock_cache:
-        mock_cache.get_file_hash.return_value = "h1"
-        mock_cache.get_cached_result.return_value = None
+    with patch("blast_ocr.core.worker.cache_manager") as mock_cache, patch(
+        "blast_ocr.core.worker.get_cache_namespace", return_value="ns"
+    ):
+        mock_cache.get_cache_key.return_value = "h1"
+        mock_cache.get.return_value = None
         with patch("blast_ocr.core.worker.get_worker_extractor") as mock_get:
             mock_ext = MagicMock()
             mock_ext.process_page.return_value = {
@@ -343,9 +486,11 @@ def test_extractor_failure_returns_error_dict_not_exception():
     """
     from blast_ocr.core.worker import process_page_wrapper
 
-    with patch("blast_ocr.core.worker.cache_manager") as mock_cache:
-        mock_cache.get_file_hash.return_value = None
-        mock_cache.get_cached_result.return_value = None
+    with patch("blast_ocr.core.worker.cache_manager") as mock_cache, patch(
+        "blast_ocr.core.worker.get_cache_namespace", return_value="ns"
+    ):
+        mock_cache.get_cache_key.return_value = None
+        mock_cache.get.return_value = None
         with patch("blast_ocr.core.worker.get_worker_extractor") as mock_get:
             mock_ext = MagicMock()
             mock_ext.process_page.side_effect = RuntimeError("GPU OOM")

@@ -1,0 +1,13 @@
+# Page 176: mostly blank, small amount of real text plus a hand-drawn
+# circle annotation (non-text ink) around "Two-nation Theory, 118".
+# The pipeline must not hallucinate paragraph-length content from paper
+# texture or from the annotation stroke.
+page: p096
+checks:
+  - type: contains
+    text: "Two-nation Theory"
+  - type: contains
+    text: "United Nations Charter"
+  - type: absent
+    text: "the"
+    max_occurrences: 5

@@ -1,6 +1,7 @@
 import pytest
 from PIL import Image, ImageDraw
 from unittest.mock import MagicMock, patch
+from tests.e2e.conftest import mock_redis, patch_redis
 
 
 @pytest.fixture
@@ -63,3 +64,15 @@ def mock_easyocr_reader_for_tests(request):
         ]
         mock_reader_cls.return_value = mock_reader
         yield
+
+
+@pytest.fixture(autouse=True)
+def auto_patch_redis(request, mock_redis):
+    """Autouse patch for queue client to use isolated mock_redis in tests except test_queue.py."""
+    if request.node.fspath and "test_queue.py" in str(request.node.fspath):
+        yield
+        return
+    with patch("blast_ocr.queue.client.get_redis_connection", return_value=mock_redis), \
+         patch("redis.Redis.from_url", return_value=mock_redis), \
+         patch("redis.from_url", return_value=mock_redis):
+        yield mock_redis

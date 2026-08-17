@@ -50,8 +50,13 @@ blast_ocr.db
 poppler-25.12.0/
 VC_redist.x64.exe
 
-# Test artifacts
-test_output.txt
+# Test & Debug artifacts
 test_images/
 .firecrawl/
+*_failure.txt
+*_results.txt
+debug_*.py
+debug_*.png
+*_audit_results.txt
+clean_*.txt
 *.txt

@@ -1,0 +1,142 @@
+# B.L.A.S.T. OCR -- production-profile Docker Compose stack.
+#
+# `docker compose up app` alone runs the full app standalone (queue_backend=
+# sync, storage_backend=local, otel_exporter=console) -- no other service is
+# required. Add `--profile queue`, `--profile storage`, `--profile
+# observability` (or `--profile full` for all three) to layer in the durable
+# queue, object storage, and metrics/tracing stack described in
+# EXECUTION_PLAN.md Phase 5/8/9.
+
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+      - "9464:9464"
+    environment:
+      BLAST_OCR_QUEUE_BACKEND: ${BLAST_OCR_QUEUE_BACKEND:-sync}
+      BLAST_OCR_REDIS_URL: redis://redis:6379/0
+      BLAST_OCR_STORAGE_BACKEND: ${BLAST_OCR_STORAGE_BACKEND:-local}
+      BLAST_OCR_S3_ENDPOINT_URL: http://minio:9000
+      BLAST_OCR_S3_BUCKET: blast-ocr-artifacts
+      BLAST_OCR_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-blastadmin}
+      BLAST_OCR_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-blastadmin123}
+      BLAST_OCR_OTEL_EXPORTER: ${BLAST_OCR_OTEL_EXPORTER:-console}
+      BLAST_OCR_PROMETHEUS_PORT: "9464"
+    volumes:
+      - blast-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  api:
+    build: .
+    profiles: ["api", "full"]
+    entrypoint: ["python", "-m", "blast_ocr.api.server", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      BLAST_OCR_QUEUE_BACKEND: ${BLAST_OCR_QUEUE_BACKEND:-redis}
+      BLAST_OCR_REDIS_URL: redis://redis:6379/0
+      BLAST_OCR_STORAGE_BACKEND: ${BLAST_OCR_STORAGE_BACKEND:-local}
+      BLAST_OCR_S3_ENDPOINT_URL: http://minio:9000
+      BLAST_OCR_S3_BUCKET: blast-ocr-artifacts
+      BLAST_OCR_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-blastadmin}
+      BLAST_OCR_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-blastadmin123}
+      BLAST_OCR_PROMETHEUS_PORT: "9464"
+    volumes:
+      - blast-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  worker:
+    build: .
+    profiles: ["queue", "full"]
+    entrypoint: ["python", "-m", "blast_ocr.queue.worker"]
+    environment:
+      BLAST_OCR_QUEUE_BACKEND: redis
+      BLAST_OCR_REDIS_URL: redis://redis:6379/0
+      BLAST_OCR_STORAGE_BACKEND: ${BLAST_OCR_STORAGE_BACKEND:-local}
+      BLAST_OCR_S3_ENDPOINT_URL: http://minio:9000
+      BLAST_OCR_S3_BUCKET: blast-ocr-artifacts
+      BLAST_OCR_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-blastadmin}
+      BLAST_OCR_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-blastadmin123}
+    volumes:
+      # Shared with `app` so a queued job's uploaded-file temp path is
+      # readable by the worker process -- see docs/adr/0010's noted
+      # follow-up (a real multi-host deployment needs Phase 3's object
+      # storage for the *upload*, not just the outputs, before workers can
+      # run on separate hosts without this shared volume).
+      - blast-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["queue", "full"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
+  minio:
+    image: minio/minio
+    profiles: ["storage", "full"]
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-blastadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-blastadmin123}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - minio-data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["observability", "full"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles: ["observability", "full"]
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deploy/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+
+volumes:
+  blast-data:
+  redis-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:

@@ -1,5 +1,4 @@
 # B.L.A.S.T. OCR Package
-import sys
 import logging
 
 logger = logging.getLogger(__name__)

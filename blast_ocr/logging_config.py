@@ -24,11 +24,18 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
 
-        # Add custom fields
-        if hasattr(record, "page_number"):
-            log_data["page_number"] = getattr(record, "page_number")
-        if hasattr(record, "confidence"):
-            log_data["confidence"] = getattr(record, "confidence")
+        # Correlated job/page context fields (Execution Plan v2 Phase 9: "every
+        # log should support fields such as job_id/document_id/page/engine/
+        # route/duration_ms/event"). Populated via logger.info(..., extra={...})
+        # at call sites (see blast_ocr.telemetry.TelemetryTracker), never
+        # required -- absent fields are simply omitted rather than logged as
+        # null noise.
+        for field in (
+            "job_id", "document_id", "page_number", "page", "engine", "route",
+            "duration_ms", "confidence", "event",
+        ):
+            if hasattr(record, field):
+                log_data[field] = getattr(record, field)
 
         return json.dumps(log_data)
 

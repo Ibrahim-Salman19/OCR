@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-08-17T15:05:09Z",
+  "stress_suite": {
+    "1000_page_stress": {
+      "total_pages": 1000,
+      "chunk_size": 16,
+      "total_duration_sec": 3.28,
+      "throughput_pages_per_sec": 304.52,
+      "initial_rss_mb": 35.57,
+      "peak_rss_mb": 35.78,
+      "net_growth_mb": 0.21,
+      "max_rss_growth_limit_mb": 60.0,
+      "ols_slope_mb_per_page": 0.00023,
+      "leak_threshold_mb_per_page": 0.005,
+      "r_squared": 0.8042,
+      "zero_leak_passed": true,
+      "samples": 3
+    }
+  }
+}

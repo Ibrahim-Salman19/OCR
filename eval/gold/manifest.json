@@ -1,0 +1,24 @@
+{
+  "source_pdf": "data/mybook.pdf",
+  "book_title": "The Ideology of Pakistan and its Implementation",
+  "book_author": "Javid Iqbal",
+  "book_year": 1959,
+  "notes": "Each PDF page in this source file is a scanned two-page spread (blank/verso + recto, or recto+verso), not a single physical page. Gold files capture both physical pages in correct reading order (left page complete, then right page complete), separated by a [PAGE <label>] marker. This was discovered during corpus selection (see docs/EVAL_HARNESS.md) and directly informs Phase 2's spread-splitting requirement.",
+  "selection_date": "2026-08-10",
+  "pages": [
+    {"pdf_index": 2,  "file": "p002.gold.txt", "printed_pages": ["title"],      "why": "Front matter: cursive display type mixed with serif body type, sparse layout, decorative typography stress-test."},
+    {"pdf_index": 6,  "file": "p006.gold.txt", "printed_pages": ["x", "xi"],   "why": "Roman-numeral pagination; lettered (a)-(e) list; a word ('subconsciously') split by hyphen exactly at the page boundary -- real cross-page dehyphenation case for Phase 4."},
+    {"pdf_index": 8,  "file": "p008.gold.txt", "printed_pages": ["contents"], "why": "Structured table of contents: chapter titles right-aligned against page numbers, roman + arabic numerals mixed."},
+    {"pdf_index": 9,  "file": "p009.gold.txt", "printed_pages": ["1"],        "why": "Chapter opening: blank verso + chapter heading + first paragraph. Tests blank-page handling and heading detection."},
+    {"pdf_index": 20, "file": "p020.gold.txt", "printed_pages": ["24", "25"], "why": "Representative dense body prose, both facing pages fully printed -- the median case this book actually consists of."},
+    {"pdf_index": 35, "file": "p035.gold.txt", "printed_pages": ["54", "55"], "why": "Body prose with a footnote reference marker (superscript 1) and a parenthetical aside -- tests footnote-marker handling."},
+    {"pdf_index": 49, "file": "p049.gold.txt", "printed_pages": ["82", "83"], "why": "Body prose with two bold run-in subheadings -- tests heading-level detection within a body page (not just chapter openings)."},
+    {"pdf_index": 66, "file": "p066.gold.txt", "printed_pages": ["116", "117"], "why": "Second chapter-opening example (Chapter 6), confirms blank-verso pattern is systematic, not a one-off."},
+    {"pdf_index": 69, "file": "p069.gold.txt", "printed_pages": ["122", "123"], "why": "Body prose with footnote marker 7, a long block quotation, and multiple compound hyphenates (North-West, joint-defence) -- tests that legitimate hyphens are preserved while line-wrap hyphens are not."},
+    {"pdf_index": 93, "file": "p093.gold.txt", "printed_pages": ["171"],       "why": "Endnotes section: numbered citation list, blank verso. Distinct structural genre from body prose (list, not paragraphs)."},
+    {"pdf_index": 94, "file": "p094.gold.txt", "printed_pages": ["172", "173"], "why": "Endnotes continuation, both pages full -- multiple 'Chapter N' sub-headings within a single physical page, citation-dense text with quoted titles."},
+    {"pdf_index": 95, "file": "p095.gold.txt", "printed_pages": ["174", "175"], "why": "Endnotes tail (left page) + Index start (right page): the right page is a GENUINE two-column layout within one physical page -- the one real intra-page multi-column case in this book, distinct from the spread-splitting issue."},
+    {"pdf_index": 96, "file": "p096.gold.txt", "printed_pages": ["176"],       "why": "Index tail: mostly blank page containing a small amount of real text plus a hand-drawn circle annotation (non-text ink) -- tests that the pipeline doesn't hallucinate text from marginalia."},
+    {"pdf_index": 97, "file": "p097.gold.txt", "printed_pages": ["cover"],     "why": "Photographed back cover / spine: minimal real text (title + author + call number label) against a textured cloth background -- tests that the pipeline doesn't hallucinate paragraphs from texture noise."}
+  ]
+}

@@ -1,0 +1,15 @@
+# Chapter 1 opening: blank verso + heading + first paragraph.
+# Left physical page has ~zero extractable text -- pipeline must not
+# hallucinate paragraph content from a blank scan (paper texture, speckle).
+page: p009
+checks:
+  - type: contains
+    text: "ISLAM AS A VITAL ORGAN"
+  - type: contains
+    text: "structural principles of the Unity of God"
+  - type: ordered_before
+    first: "Chapter 1"
+    second: "The primary essentials of Islam"
+  - type: ordered_before
+    first: "Islam seeks human unification"
+    second: "In spite of the racial, linguistic and territorial"

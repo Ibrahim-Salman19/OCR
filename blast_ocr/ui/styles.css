@@ -1,65 +1,65 @@
 /**
- * B.L.A.S.T. OCR - Anti-Slop Design System v3
- * Design Read: OCR ops dashboard for technical builders.
- *              Dark-tech / Linear mission-control. Geist Mono + CSS tokens.
- * Dials: DESIGN_VARIANCE=7 | MOTION_INTENSITY=5 | VISUAL_DENSITY=5
- *
- * Rules enforced (design-taste-frontend):
- *  - ONE accent color (#f97316 orange) throughout. No blue leaking into CTAs/borders.
- *  - ONE corner-radius system: 6px panels, 4px inputs, pill badges.
- *  - ZERO em-dashes. ZERO emojis in structural chrome.
- *  - prefers-reduced-motion kills every transition and animation.
- *  - Dark mode only - no section theme flips.
+ * B.L.A.S.T. OCR - Sovereign Edition Design System
+ * Theme: Warm Obsidian, Onyx & Burnished Gold (Zero Blue / Anti-AI-Slop)
+ * Typography: Plus Jakarta Sans + JetBrains Mono
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 /* ============================================================
-   1. DESIGN TOKENS
+   1. DESIGN TOKENS (Warm Obsidian & Burnished Gold)
    ============================================================ */
 
 :root {
-    --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'Geist Mono', ui-monospace, 'Cascadia Code', monospace;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
 
-    --surface-base:    #0b0f1a;
-    --surface-raised:  #111827;
-    --surface-overlay: #1a2235;
+    /* Base Surfaces: Deep Warm Charcoal & Matte Onyx */
+    --surface-base:    #09090b;
+    --surface-raised:  #141417;
+    --surface-overlay: #1c1c21;
 
     --border-subtle:   rgba(255, 255, 255, 0.07);
-    --border-default:  rgba(255, 255, 255, 0.11);
-    --border-strong:   rgba(255, 255, 255, 0.18);
+    --border-default:  #27272a;
+    --border-strong:   #3f3f46;
 
-    /* ONE accent. Lock it. Never swap mid-page. */
-    --accent:          #f97316;
-    --accent-hover:    #ea580c;
-    --accent-active:   #c2410c;
-    --accent-subtle:   rgba(249, 115, 22, 0.10);
-    --accent-border:   rgba(249, 115, 22, 0.30);
+    /* Primary Accent: Burnished Gold & Sunset Amber (ZERO BLUE) */
+    --accent:          #f59e0b;
+    --accent-hover:    #d97706;
+    --accent-active:   #b45309;
+    --accent-subtle:   rgba(245, 158, 11, 0.12);
+    --accent-border:   rgba(245, 158, 11, 0.35);
+
+    --amber:           #fb923c;
+    --amber-subtle:    rgba(251, 146, 60, 0.12);
+    --amber-border:    rgba(251, 146, 60, 0.30);
 
     --green:           #10b981;
-    --green-subtle:    rgba(16, 185, 129, 0.10);
-    --green-border:    rgba(16, 185, 129, 0.25);
-    --blue:            #3b82f6;
-    --blue-subtle:     rgba(59, 130, 246, 0.10);
-    --blue-border:     rgba(59, 130, 246, 0.25);
+    --green-subtle:    rgba(16, 185, 129, 0.12);
+    --green-border:    rgba(16, 185, 129, 0.30);
+
     --red:             #ef4444;
-    --red-subtle:      rgba(239, 68, 68, 0.10);
-    --red-border:      rgba(239, 68, 68, 0.25);
+    --red-subtle:      rgba(239, 68, 68, 0.12);
+    --red-border:      rgba(239, 68, 68, 0.30);
 
-    --text-primary:    #f1f5f9;
-    --text-secondary:  #94a3b8;
-    --text-muted:      #64748b;
+    --text-primary:    #fafafa;
+    --text-secondary:  #d4d4d8;
+    --text-muted:      #a1a1aa;
 
-    /* Shape system - ONE family, applied everywhere */
+    /* Shape system */
     --radius-pill:  9999px;
-    --radius-panel: 6px;
-    --radius-input: 4px;
+    --radius-panel: 10px;
+    --radius-input: 6px;
 }
 
 /* ============================================================
-   2. FONT SCOPE
+   2. GLOBAL SCOPE & BACKGROUND
    ============================================================ */
+
+html, body, [data-testid="stAppViewContainer"] {
+    background-color: var(--surface-base) !important;
+    color: var(--text-primary) !important;
+}
 
 [data-testid="stMainBlockContainer"] *,
 [data-testid="stSidebar"] * {
@@ -80,76 +80,75 @@
 .seo-metadata { display: none !important; visibility: hidden; }
 
 /* ============================================================
-   3. HEADER - max 3 text elements. No version labels.
+   3. HEADER COMMAND BAR
    ============================================================ */
 
 .blast-header {
-    padding: 2rem 0 1.75rem;
+    padding: 2.5rem 0 2rem;
     margin-bottom: 2rem;
     border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Live status pill - used only for real semantic server state */
 .status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.7rem;
+    gap: 0.5rem;
+    padding: 0.35rem 0.9rem;
     border-radius: var(--radius-pill);
     font-family: var(--font-mono) !important;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    background: var(--green-subtle);
-    color: #34d399;
-    border: 1px solid var(--green-border);
-    margin-bottom: 0.875rem;
-    width: fit-content;
+    background: var(--accent-subtle);
+    color: #fbbf24;
+    border: 1px solid var(--accent-border);
+    margin-bottom: 1.1rem;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.18);
 }
 
 .status-dot {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 6px var(--green);
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    .status-dot { animation: dot-pulse 2.4s ease-in-out infinite; }
+    .status-dot { animation: dot-pulse 2.2s ease-in-out infinite; }
 }
 
 @keyframes dot-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.4; transform: scale(0.78); }
+    50%       { opacity: 0.35; transform: scale(0.75); }
 }
 
 .blast-title {
-    font-family: var(--font-mono) !important;
-    font-size: clamp(2.25rem, 4.5vw, 5rem);
+    font-family: var(--font-sans) !important;
+    font-size: clamp(2.5rem, 5vw, 5.5rem);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.05;
-    margin-bottom: 0.6rem;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    margin-bottom: 0.75rem;
     text-transform: uppercase;
-    background: linear-gradient(140deg, #f1f5f9 0%, #94a3b8 100%);
+    background: linear-gradient(135deg, #fafafa 0%, #d4d4d8 50%, #a1a1aa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .blast-subtitle {
-    font-size: clamp(0.875rem, 1.4vw, 1.125rem);
-    color: var(--text-secondary);
+    font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+    color: var(--text-muted);
     letter-spacing: 0.02em;
     font-weight: 400;
     line-height: 1.6;
-    max-width: 60ch;
+    max-width: 65ch;
 }
 
 /* ============================================================
-   4. TELEMETRY METRIC CARDS
+   4. METRICS & BENTO CARDS
    ============================================================ */
 
 [data-testid="stMetric"] {
@@ -157,26 +156,28 @@
     border: 1px solid var(--border-default);
     border-left: 3px solid var(--accent);
     border-radius: var(--radius-panel);
-    padding: 1.125rem 1.25rem;
+    padding: 1.25rem 1.35rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 @media (prefers-reduced-motion: no-preference) {
     [data-testid="stMetric"] {
-        transition: border-color 0.18s ease, transform 0.18s ease;
+        transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
     [data-testid="stMetric"]:hover {
-        border-color: var(--accent-border);
-        transform: translateY(-1px);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
     }
 }
 
 [data-testid="stMetricLabel"] p {
     color: var(--text-muted) !important;
-    font-size: 0.72rem !important;
+    font-size: 0.75rem !important;
     font-family: var(--font-mono) !important;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 [data-testid="stMetricValue"] {
@@ -187,47 +188,41 @@
     font-family: var(--font-mono) !important;
 }
 
-[data-testid="stMetricDelta"] {
-    font-family: var(--font-mono) !important;
-    font-size: 0.75rem !important;
-}
-
 /* ============================================================
-   5. PANELS
+   5. BENTO PANELS & CONTAINERS
    ============================================================ */
 
 .panel, .minimal-panel {
     background: var(--surface-raised);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-panel);
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.25rem;
-    overflow: visible;
-    word-wrap: break-word;
+    padding: 1.35rem 1.6rem;
+    margin-bottom: 1.35rem;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
 
 @media (prefers-reduced-motion: no-preference) {
     .panel, .minimal-panel {
-        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .panel:hover, .minimal-panel:hover {
         border-color: var(--accent-border);
-        box-shadow: 0 6px 20px -6px rgba(249, 115, 22, 0.10);
+        box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.12);
     }
 }
 
 .panel h3, .minimal-panel h3 {
     margin-top: 0;
     font-family: var(--font-mono) !important;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.10em;
-    margin-bottom: 1rem;
+    margin-bottom: 1.1rem;
     color: var(--text-secondary) !important;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
 /* ============================================================
@@ -235,19 +230,19 @@
    ============================================================ */
 
 [data-baseweb="tab-list"] {
-    gap: 0.25rem;
+    gap: 0.35rem;
     border-bottom: 1px solid var(--border-subtle);
     background: transparent !important;
 }
 
 [data-baseweb="tab"] {
     font-family: var(--font-mono) !important;
-    font-size: 0.78rem !important;
+    font-size: 0.8rem !important;
     font-weight: 600 !important;
     letter-spacing: 0.06em !important;
     text-transform: uppercase !important;
     border-radius: var(--radius-panel) var(--radius-panel) 0 0 !important;
-    padding: 0.65rem 1.125rem !important;
+    padding: 0.75rem 1.25rem !important;
     color: var(--text-muted) !important;
 }
 
@@ -258,7 +253,7 @@
 }
 
 [data-baseweb="tab"]:hover {
-    color: var(--text-secondary) !important;
+    color: var(--text-primary) !important;
     background: var(--surface-raised) !important;
 }
 
@@ -269,20 +264,20 @@
 }
 
 /* ============================================================
-   7. INPUT WIDGETS & CTAS
+   7. FILE UPLOADER & BUTTONS
    ============================================================ */
 
 [data-testid="stFileUploader"] {
-    background: var(--surface-base);
+    background: var(--surface-raised);
     border: 2px dashed var(--accent-border);
     border-radius: var(--radius-panel);
-    padding: 2rem;
+    padding: 2.25rem;
     cursor: pointer;
 }
 
 @media (prefers-reduced-motion: no-preference) {
     [data-testid="stFileUploader"] {
-        transition: border-color 0.18s ease, background 0.18s ease;
+        transition: border-color 0.2s ease, background 0.2s ease;
     }
 }
 
@@ -291,33 +286,35 @@
     background: var(--accent-subtle);
 }
 
-/* Buttons: single accent, no wrap, tactile :active scale */
+/* Tactile primary buttons with burnished gold glow (NO BLUE) */
 .stButton > button {
     width: 100%;
     background: var(--accent) !important;
-    color: #ffffff !important;
+    color: #09090b !important;
     border: none;
-    padding: 0.8125rem 1.5rem;
+    padding: 0.85rem 1.6rem;
     font-family: var(--font-mono) !important;
     font-weight: 700;
-    font-size: 0.8rem;
-    letter-spacing: 0.07em;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
     border-radius: var(--radius-panel);
     text-transform: uppercase;
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.30);
 }
 
 @media (prefers-reduced-motion: no-preference) {
     .stButton > button {
-        transition: background 0.13s ease, transform 0.1s ease, box-shadow 0.13s ease;
+        transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
     }
     .stButton > button:hover {
         background: var(--accent-hover) !important;
+        color: #ffffff !important;
         transform: translateY(-1px);
-        box-shadow: 0 5px 18px -4px rgba(249, 115, 22, 0.38);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
     }
     .stButton > button:active {
         transform: scale(0.98) translateY(0);
@@ -329,33 +326,31 @@
     background: var(--surface-overlay) !important;
     color: var(--text-secondary) !important;
     border: 1px solid var(--border-default) !important;
+    box-shadow: none;
 }
 
-[data-testid="stExpander"]  { overflow: visible !important; }
-[data-testid="stSelectbox"] { overflow: visible !important; }
-
-[data-testid="stExpander"] summary {
-    font-family: var(--font-mono) !important;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    cursor: pointer;
+/* Download buttons styling grid */
+.download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 
 /* ============================================================
-   8. SEMANTIC STATUS CARDS
+   8. STATUS CARDS & ACCESSIBLE CARDS (ZERO BLUE)
    ============================================================ */
 
 div[data-testid="stMarkdownContainer"] > div.info-box {
-    background: var(--blue-subtle);
-    border: 1px solid var(--blue-border);
-    border-left: 3px solid var(--blue);
-    color: #bfdbfe !important;
-    padding: 1rem 1.125rem;
+    background: var(--amber-subtle);
+    border: 1px solid var(--amber-border);
+    border-left: 3px solid var(--amber);
+    color: #fde68a !important;
+    padding: 1.1rem 1.25rem;
     border-radius: var(--radius-panel);
     font-family: var(--font-mono);
-    font-size: 0.83rem;
-    line-height: 1.6;
+    font-size: 0.85rem;
+    line-height: 1.65;
 }
 
 div[data-testid="stMarkdownContainer"] > div.success-box {
@@ -363,10 +358,10 @@ div[data-testid="stMarkdownContainer"] > div.success-box {
     border: 1px solid var(--green-border);
     border-left: 3px solid var(--green);
     color: #a7f3d0 !important;
-    padding: 1rem 1.125rem;
+    padding: 1.1rem 1.25rem;
     border-radius: var(--radius-panel);
     font-family: var(--font-mono);
-    font-size: 0.83rem;
+    font-size: 0.85rem;
 }
 
 div[data-testid="stMarkdownContainer"] > div.error-box {
@@ -374,105 +369,26 @@ div[data-testid="stMarkdownContainer"] > div.error-box {
     border: 1px solid var(--red-border);
     border-left: 3px solid var(--red);
     color: #fca5a5 !important;
-    padding: 1rem 1.125rem;
+    padding: 1.1rem 1.25rem;
     border-radius: var(--radius-panel);
     font-family: var(--font-mono);
-    font-size: 0.83rem;
+    font-size: 0.85rem;
 }
 
 /* ============================================================
-   9. EMPTY & SKELETON LOADING STATES
+   9. SCROLLBARS & ACCESSIBILITY FOCUS
    ============================================================ */
 
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    border: 1px dashed var(--border-default);
-    border-radius: var(--radius-panel);
-}
-
-.empty-state p {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-.skeleton {
-    background: linear-gradient(
-        90deg,
-        var(--surface-raised) 25%,
-        var(--surface-overlay) 50%,
-        var(--surface-raised) 75%
-    );
-    background-size: 200% 100%;
-    border-radius: var(--radius-panel);
-    height: 3rem;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .skeleton { animation: shimmer 1.8s infinite ease-in-out; }
-}
-
-@keyframes shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-/* ============================================================
-   10. DATA TABLES
-   ============================================================ */
-
-[data-testid="stDataFrame"] table {
-    font-family: var(--font-mono) !important;
-    font-size: 0.8rem !important;
-}
-
-[data-testid="stDataFrame"] thead th {
-    font-family: var(--font-mono) !important;
-    font-size: 0.72rem !important;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted) !important;
-    background: var(--surface-raised) !important;
-    border-bottom: 1px solid var(--border-default) !important;
-}
-
-/* ============================================================
-   11. SCROLLBARS
-   ============================================================ */
-
-::-webkit-scrollbar             { width: 6px; height: 6px; }
+::-webkit-scrollbar             { width: 7px; height: 7px; }
 ::-webkit-scrollbar-track       { background: transparent; }
-::-webkit-scrollbar-thumb       { background: var(--surface-overlay); border-radius: 3px; }
+::-webkit-scrollbar-thumb       { background: var(--surface-overlay); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
-
-/* ============================================================
-   12. FOCUS STATES - WCAG AA (4.5:1 on accent)
-   ============================================================ */
 
 *:focus-visible {
     outline: 2px solid var(--accent) !important;
     outline-offset: 2px !important;
     border-radius: var(--radius-input);
 }
-
-/* ============================================================
-   13. MOBILE COLLAPSE
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .blast-header  { padding: 1.25rem 0; }
-    .blast-title   { font-size: 1.875rem; }
-    .panel,
-    .minimal-panel { padding: 1rem; }
-}
-
-/* ============================================================
-   14. REDUCED MOTION - unconditional collapser
-   ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {

@@ -1,0 +1,17 @@
+# Page x-xi: roman-numeral foreword. The word "subconsciously" is split by the
+# physical page boundary ("sub-" ends page x, "consciously" opens page xi) --
+# a real cross-page hyphenation case, not a within-page line-wrap artifact.
+page: p006
+checks:
+  - type: contains
+    text: "My broad findings are as follows"
+  - type: contains
+    text: "Singleness of God"
+  - type: ordered_before
+    first: "and sub"
+    second: "consciously began to fight shy"
+  - type: ordered_before
+    first: "Man as an animal is moved by basic instincts"
+    second: "Singleness of God"
+  - type: absent
+    text: "lorem ipsum"

@@ -10,19 +10,31 @@ numpy<2.0.0; python_version < "3.14"
 numpy>=2.3.0,<3; python_version >= "3.14"
 
 # --- OCR ENGINE ---
-easyocr
+easyocr>=1.7.0
+rapidocr_onnxruntime>=1.3.0
+pypdfium2>=4.30.0
 pillow<11; python_version < "3.14"
 pillow>=12,<13; python_version >= "3.14"
-opencv-python-headless
-pdf2image
-langdetect
-lxml
+opencv-python-headless>=4.8.0
+pdf2image>=1.17.0
+langdetect>=1.0.9
+lxml>=5.0.0
 
 # --- UTILITIES ---
-pydantic-settings
-python-dotenv
-psutil
-python-pptx
-python-docx
-tqdm
-sqlalchemy
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+psutil>=5.9.0
+python-pptx>=0.6.21
+python-docx>=1.1.0
+tqdm>=4.66.0
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+
+# Production-optional (durable queue / object storage / observability) and
+# dev/test-only dependencies live in requirements-production.txt and
+# requirements-dev.txt respectively -- NOT in this file. This file must stay
+# installable exactly as-is on Streamlit Community Cloud and in the base
+# Docker image without pulling in anything that could conflict with the
+# pinned streamlit==1.32.0 above (see docs/adr/0013: opentelemetry-exporter-otlp
+# needs protobuf>=5, streamlit 1.32.0 needs protobuf<5 -- discovered via a
+# real `docker build` failing, not by inspection).

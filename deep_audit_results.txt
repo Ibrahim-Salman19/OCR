@@ -1,9 +1,0 @@
-C:\Users\hafiz\AppData\Local\Programs\Python\Python312\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.2) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
-  warnings.warn(
-============================= test session starts =============================
-platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0
-rootdir: C:\Users\hafiz\OneDrive - University of Engineering and Technology Taxila\Desktop\Ibrahim\Code\Projects\Python\OCR_Book
-plugins: anyio-4.12.1, hypothesis-6.151.9, langsmith-0.7.7, cov-7.0.0, mock-3.15.1, timeout-2.4.0, xdist-3.8.0
-collected 37 items
-
-tests\test_property_based.py F...FFF                                     [ 18%]

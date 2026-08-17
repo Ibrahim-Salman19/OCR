@@ -1,0 +1,10 @@
+# Back cover / spine, photographed against textured blue cloth binding.
+# Minimal real text; the pipeline must not hallucinate body-text
+# sentences from cloth-weave texture noise.
+page: p097
+checks:
+  - type: contains
+    text: "IQBAL"
+  - type: absent
+    text: "."
+    max_occurrences: 3

@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-08-16T06:16:03Z",
+  "system_info": {
+    "cpu_count": 8,
+    "cpu_physical_count": 4,
+    "total_ram_gb": 7.64,
+    "python_version": "3.10.12",
+    "gpu_available": false,
+    "gpu_name": "CPU/Fallback"
+  },
+  "benchmarks": {
+    "throughput": {
+      "batch_1": {
+        "batch_size": 1,
+        "total_elapsed_seconds": 18.0011,
+        "per_page_latency_seconds": 18.0011,
+        "throughput_pages_per_sec": 0.06,
+        "latencies_raw": [
+          19.5949,
+          16.4073
+        ],
+        "avg_cpu_percent": 99.1,
+        "peak_rss_mb": 1868.34
+      },
+      "batch_2": {
+        "batch_size": 2,
+        "total_elapsed_seconds": 31.6529,
+        "per_page_latency_seconds": 15.8265,
+        "throughput_pages_per_sec": 0.06,
+        "latencies_raw": [
+          29.0767,
+          34.2292
+        ],
+        "avg_cpu_percent": 99.2,
+        "peak_rss_mb": 2042.32
+      },
+      "batch_4": {
+        "batch_size": 4,
+        "total_elapsed_seconds": 59.5019,
+        "per_page_latency_seconds": 14.8755,
+        "throughput_pages_per_sec": 0.07,
+        "latencies_raw": [
+          60.6588,
+          58.345
+        ],
+        "avg_cpu_percent": 98.0,
+        "peak_rss_mb": 2534.74
+      },
+      "batch_8": {
+        "batch_size": 8,
+        "total_elapsed_seconds": 121.9156,
+        "per_page_latency_seconds": 15.2395,
+        "throughput_pages_per_sec": 0.07,
+        "latencies_raw": [
+          117.9911,
+          125.8401
+        ],
+        "avg_cpu_percent": 98.9,
+        "peak_rss_mb": 2937.8
+      }
+    },
+    "queue_stress": {
+      "num_jobs": 100,
+      "push_time_sec": 0.00654,
+      "pop_time_sec": 0.00877,
+      "push_ops_per_sec": 15298.01,
+      "pop_ops_per_sec": 11399.26,
+      "total_dequeued": 100
+    }
+  }
+}

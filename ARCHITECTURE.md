@@ -1,70 +1,87 @@
-# 🏗️ B.L.A.S.T. Architecture Guide
+# 🏗️ B.L.A.S.T. Architecture Guide (Production Edition)
 
-This document outlines the high-level design and internal mechanics of the **B.L.A.S.T.** OCR Engine.
+This document outlines the high-level design and internal mechanics of the **B.L.A.S.T.** Production OCR Engine.
 
 ## The A.N.T. Philosophy
 
-The system is built upon the **3-Layer A.N.T.** (Architect, Navigator, Tool) design pattern, which enforces strict separation of concerns:
+The system is built upon the **3-Layer A.N.T.** (Architect, Navigator, Tool) design pattern:
 
 ### Layer 1: Architect (The "Why")
-- **Responsibility**: Defines the protocols, schemas, and high-level logic.
-- **Location**: `architecture/` directory and `gemini.md` (Source of Truth).
-- **Role**: The brain involving decision-making logic and standard operating procedures (SOPs).
+- **Responsibility**: Defines protocols, schemas, data models, and SOPs.
+- **Location**: `architecture/`, `blast_ocr/core/models.py`, `blast_ocr/core/document_model.py`, and `gemini.md` (Source of Truth).
+- **Role**: The brain involving decision-making logic, immutable configuration isolation, and standard data schemas.
 
 ### Layer 2: Navigator (The "Where")
-- **Responsibility**: Routing, validation, and control flow.
-- **Location**: `blast_ocr/main.py`.
-- **Role**: The central nervous system. It receives input, decides which tools to engage, handles errors, and directs the output. It does *not* perform the heavy lifting itself.
+- **Responsibility**: Routing, validation, queue orchestration, and control flow.
+- **Location**: `blast_ocr/main.py`, `blast_ocr/pipeline.py`, `blast_ocr/cli.py`, and `blast_ocr/api/`.
+- **Role**: The central nervous system. It receives input (via CLI, Web GUI, or REST API), routes to appropriate tools, handles retries, and coordinates export.
 
 ### Layer 3: Tool (The "How")
-- **Responsibility**: Execution of specific, atomic tasks.
+- **Responsibility**: Atomic, deterministic execution modules.
 - **Location**: `blast_ocr/core/`.
-- **Role**: Pure functions and classes that do one thing well (e.g., `RobustOCRExtractor`, `SelfHealingOCR`). 
-- **Thread Safety**: Uses a module-level global lock (`_ocr_global_lock`) to serialize thread-unsafe OCR engine calls while allowing concurrent preprocessing.
-- **Session Isolation**: Utilizes `scoped_session` with `threading.get_ident` to ensure database transaction isolation across parallel workers.
+- **Core Modules**:
+  - `SearchablePDFGenerator`: Creates dual-layer vector/bitmap searchable PDFs with invisible selectable text.
+  - `TableExtractor`: Detects bordered and borderless tables into Markdown, HTML, and DOCX matrices.
+  - `BookDewarper`: Computes polynomial baseline curvature displacement meshes to flatten curved book spines.
+  - `ForensicRestorer`: Adaptive Gaussian denoising, CLAHE, and enterprise PII redaction.
+  - `LayoutEngine`: Recursive XY-Cut reading order sorting and line clustering.
+  - `BookProcessor`: Running header/footer fuzzy removal, cross-line dehyphenation, paragraph reflow, and EPUB export.
+  - `Engines`: Pluggable adapters (`RapidOCREngine`, `EasyOCREngine`, `TesseractEngine`, `ConsensusEnsembleEngine`).
 
 ---
 
-## 🔄 Data Flow
+## 🔄 Production Data Flow
 
 ```mermaid
 graph TD
-    User[User Input] -->|run.py / GUI| Navigator[Navigator (main.py)]
-    Navigator -->|Validate| InputCheck{Source Type?}
+    Client[Client: CLI / Web UI / REST API] --> Navigator[Navigator: Pipeline & API Router]
+    Navigator --> Ingestion[Ingestion & Format Detection]
     
-    InputCheck -->|PDF| PDFTool[pdf2image]
-    InputCheck -->|PPTX| PPTXTool[python-pptx]
-    InputCheck -->|Image| PreProc[Preprocessing]
+    Ingestion -->|Native Born-Digital PDF| Tier0[Tier-0 Native Extractor]
+    Ingestion -->|Scanned PDF / Images| PreProc[Preprocessing & Dewarping]
+    Ingestion -->|PPTX| PPTXTool[PPTX Slide Extractor]
     
-    PDFTool --> PreProc
+    PreProc -->|Curved Spine| Dewarp[BookDewarper]
+    Dewarp --> Denoise[ForensicRestorer: Denoise & CLAHE]
     
-    PreProc -->|Cleaned Image| Extractor[RobustOCRExtractor]
-    Extractor -->|Attempt 1| EasyOCR[EasyOCR Engine]
+    Denoise --> EngineSelect{Engine Selection}
+    EngineSelect -->|RapidOCR| Rapid[RapidOCR ONNX Engine]
+    EngineSelect -->|EasyOCR| Easy[EasyOCR PyTorch Engine]
+    EngineSelect -->|Tesseract| Tess[Tesseract Engine]
+    EngineSelect -->|Ensemble| Ens[Consensus Ensemble Engine]
     
-    EasyOCR -->|Failure| Healer[Self-Healing Module]
-    Healer -->|Retry/Fallback| Extractor
+    EngineSelect -->|Low Confidence| Healer[Self-Healing & Retry Layer]
+    Healer --> EngineSelect
     
-    EasyOCR -->|Success| Results[Raw Text]
+    Rapid --> Layout[Layout Engine: XY-Cut & Table Extractor]
+    Easy --> Layout
+    Tess --> Layout
+    Ens --> Layout
     
-    Results -->|Aggregate| Formatter[DOCX/MD Generator]
-    Formatter -->|Save| Storage[File System]
-    Navigator -->|Log| DB[(SQLite Database)]
+    Layout --> BookIntel[Book Intelligence: Header/Footer Strip & Dehyphenation]
+    BookIntel --> Redact[PII Redactor: SSN/Cards/Emails/Keys]
+    
+    Redact --> Exporter[Multi-Format Exporter]
+    Exporter --> SearchablePDF[Searchable Sandwich PDF]
+    Exporter --> Markdown[Markdown with Frontmatter]
+    Exporter --> DOCX[Word Document with Tables]
+    Exporter --> EPUB[EPUB 3.0]
+    Exporter --> JSON[Structured ALTO/BLAST JSON]
+    
+    Exporter --> DB[(Durable SQLite / Postgres DB)]
 ```
 
 ## 🧩 Module Dictionary
 
 | Module | Path | Description |
 |--------|------|-------------|
-| **Core Extractor** | `blast_ocr/core/extractor.py` | The main engine wrapper. Handles image loading, preprocessing, and calling the OCR library. |
-| **Healer** | `blast_ocr/core/healing.py` | Contains decorators and logic for automatic retries and error recovery. |
-| **Parallel** | `blast_ocr/core/parallel.py` | Manages thread pools for processing multi-page documents concurrently. |
-| **Database** | `blast_ocr/storage/database.py` | SQLAlchemy ORM models for tracking job history and performance metrics. |
-| **Cache** | `blast_ocr/cache/manager.py` | Hash-based caching system to prevent re-processing identical images. |
-
-## 🛡️ Exception Handling Strategy
-
-B.L.A.S.T. uses a hierarchical exception model defined in `blast_ocr/core/exceptions.py`.
-
-1. **Low-Level Exceptions**: Caught by Layer 3 tools (e.g., `ImageLoadError`, `OCREngineError`).
-2. ** healing**: The `SelfHealingOCR` decorator catches these, logs them, and triggers retries.
-3. **Application Exceptions**: If healing fails, the error propagates to Layer 2 (`main.py`), which logs the job as "Failed" in the DB and returns a clean JSON error response to the user, preventing a full crash.
+| **Core Extractor** | `blast_ocr/core/extractor.py` | Engine wrapper, glyph height estimation, image loading. |
+| **Searchable PDF** | `blast_ocr/core/searchable_pdf.py` | Dual-layer Sandwich PDF generation with PyMuPDF/ReportLab. |
+| **Table Extractor** | `blast_ocr/core/table_extractor.py` | Morphological table detection, cell grid parsing, Markdown/HTML/DOCX formatting. |
+| **Book Dewarp** | `blast_ocr/core/book_dewarp.py` | Cylindrical baseline curvature detection and remapping. |
+| **Book Intelligence** | `blast_ocr/core/book_intelligence.py` | Header/footer suppression, cross-line dehyphenation, EPUB export. |
+| **REST API** | `blast_ocr/api/` | Enterprise FastAPI server with OpenAPI docs, health, and metrics. |
+| **CLI Powerhouse** | `blast_ocr/cli.py` | Rich terminal interface with progress bars and JSON mode. |
+| **Engines** | `blast_ocr/core/engines/` | RapidOCR, EasyOCR, Tesseract, and Consensus Ensemble adapters. |
+| **Database** | `blast_ocr/storage/database.py` | SQLAlchemy ORM models and migrations for tracking jobs and metrics. |
+| **Cache** | `blast_ocr/cache/manager.py` | Hash-based caching preventing re-processing of identical images. |
