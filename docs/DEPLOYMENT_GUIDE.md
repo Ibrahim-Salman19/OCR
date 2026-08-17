@@ -40,13 +40,16 @@ This avoids Python 3.14 build-toolchain issues for packages that may not yet pub
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
+    libgomp1 \
+    tesseract-ocr \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 ```
 
 Notes:
 - `libglib2.0-0` provides `libgthread-2.0.so.0` required by OpenCV / GLib threading in headless/container environments.
-- Tesseract is optional in this project and is not required for the default RapidOCR/EasyOCR pipeline.
+- `libgomp1` provides OpenMP multi-threading acceleration for ONNX Runtime and PyTorch SIMD tensor operations.
+- `tesseract-ocr` provides native CLI and language data for the optional Tesseract engine and multi-engine ensemble consensus.
 
 ### 3. Execution
 ```bash

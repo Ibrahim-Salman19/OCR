@@ -1,5 +1,7 @@
 poppler-utils
 libgl1
 libglib2.0-0
+libgomp1
+tesseract-ocr
 libxml2-dev
 libxslt-dev
