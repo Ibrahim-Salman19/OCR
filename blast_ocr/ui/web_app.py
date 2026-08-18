@@ -1184,20 +1184,21 @@ def _process_sync_upload(
     options: EngineOptions,
     progress_callback: Any = None,
 ) -> tuple[dict[str, Any], list[tuple[str, str]], float, int]:
+    safe_stem = _safe_download_filename(Path(str(uploaded_file.name)).stem, max_length=100) or "document"
     suffix = Path(str(uploaded_file.name)).suffix.lower()
-    tmp_path: str | None = None
     job_out_dir = _new_job_output_dir(out_dir)
+    in_dir = job_out_dir / "_input"
+    in_dir.mkdir(parents=True, exist_ok=True)
+    staged_path = in_dir / f"{safe_stem}{suffix}"
     started = time.perf_counter()
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            tmp.write(uploaded_file.getbuffer())
-            tmp.flush()
-            tmp_path = tmp.name
+        with staged_path.open("wb") as fh:
+            fh.write(uploaded_file.getbuffer())
 
         _apply_engine_options(pipeline, options)
         raw = _call_with_supported_kwargs(
             pipeline.process_job,
-            source_path=tmp_path,
+            source_path=str(staged_path),
             output_dir=str(job_out_dir),
             job_config=asdict(options),
             config=asdict(options),
@@ -1208,11 +1209,13 @@ def _process_sync_upload(
         logger.exception("Synchronous OCR job failed for %s", uploaded_file.name)
         result = {"status": "failed", "error": str(exc)}
     finally:
-        if tmp_path:
-            try:
-                Path(tmp_path).unlink(missing_ok=True)
-            except OSError:
-                logger.debug("Temporary upload cleanup failed", exc_info=True)
+        try:
+            if staged_path.is_file():
+                staged_path.unlink(missing_ok=True)
+            if in_dir.is_dir():
+                in_dir.rmdir()
+        except OSError:
+            logger.debug("Staged upload cleanup failed", exc_info=True)
 
     duration = time.perf_counter() - started
     status = _safe_status(result.get("status"))
