@@ -1,866 +1,1343 @@
 /**
- * B.L.A.S.T. OCR - Sovereign Edition Design System
- * Theme: Warm Obsidian, Onyx & Burnished Gold (Zero Blue / Anti-AI-Slop)
- * Typography: Plus Jakarta Sans + JetBrains Mono
- * Standards: WCAG AAA/AA Accessible Contrast (4.5:1 min, 7:1+ preferred),
- *            44px touch targets, zero text overlapping, responsive fluid geometry.
+ * B.L.A.S.T. OCR — Sovereign Edition v2
+ * Production-hardened Streamlit design system
+ * Target baseline: Streamlit 1.58.x (August 2026)
+ *
+ * Principles:
+ * - Warm obsidian / matte onyx / burnished gold
+ * - No blue or purple in the application palette
+ * - WCAG 2.2-aware contrast, focus, target sizing, zoom, and motion handling
+ * - Native Streamlit theming first; internal DOM selectors only where needed
+ * - Responsive, overflow-safe, keyboard-safe, and touch-safe
+ *
+ * IMPORTANT:
+ * Pair this stylesheet with the companion .streamlit/config.toml so Streamlit's
+ * own widgets inherit the same palette and fonts through its supported theme API.
+ * Load this CSS with: st.html("path/to/blast_sovereign_v2.css")
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
-
 /* ============================================================
-   1. DESIGN TOKENS (Warm Obsidian & Burnished Gold)
+   1. DESIGN TOKENS
    ============================================================ */
 
 :root {
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Code', Menlo, monospace;
+    color-scheme: dark;
 
-    /* Base Surfaces: Deep Warm Charcoal & Matte Onyx */
-    --surface-base:    #09090b;
-    --surface-raised:  #141417;
-    --surface-overlay: #1c1c21;
-    --surface-card:    #18181b;
+    /* Typography — fonts should be loaded by Streamlit config.toml. */
+    --blast-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --blast-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Code', 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
 
-    --border-subtle:   rgba(255, 255, 255, 0.07);
-    --border-default:  #27272a;
-    --border-strong:   #3f3f46;
+    /* Surfaces */
+    --blast-surface-base:    #09090b;
+    --blast-surface-raised:  #141417;
+    --blast-surface-card:    #18181b;
+    --blast-surface-overlay: #1c1c21;
+    --blast-surface-hover:   #222228;
 
-    /* Primary Accent: Burnished Gold & Sunset Amber (ZERO BLUE / ZERO PURPLE) */
-    --accent:          #f59e0b;
-    --accent-hover:    #d97706;
-    --accent-active:   #b45309;
-    --accent-subtle:   rgba(245, 158, 11, 0.12);
-    --accent-border:   rgba(245, 158, 11, 0.35);
+    /* Borders */
+    --blast-border-subtle: rgba(255, 255, 255, 0.08);
+    --blast-border-default: #2f2f35;
+    --blast-border-strong:  #4a4a52;
 
-    --amber:           #fb923c;
-    --amber-subtle:    rgba(251, 146, 60, 0.12);
-    --amber-border:    rgba(251, 146, 60, 0.30);
+    /* Brand / interaction */
+    --blast-accent:        #f59e0b;
+    --blast-accent-hover:  #d97706;
+    /* Adjusted from #b45309: black text remains WCAG-AA compliant. */
+    --blast-accent-active: #c66a00;
+    --blast-accent-text:   #09090b;
+    --blast-accent-soft:   rgba(245, 158, 11, 0.12);
+    --blast-accent-medium: rgba(245, 158, 11, 0.20);
+    --blast-accent-border: rgba(245, 158, 11, 0.46);
 
-    --green:           #10b981;
-    --green-subtle:    rgba(16, 185, 129, 0.12);
-    --green-border:    rgba(16, 185, 129, 0.30);
+    /* Semantic */
+    --blast-warning:        #fb923c;
+    --blast-warning-text:   #fde68a;
+    --blast-warning-soft:   rgba(251, 146, 60, 0.12);
+    --blast-warning-border: rgba(251, 146, 60, 0.38);
 
-    --red:             #ef4444;
-    --red-subtle:      rgba(239, 68, 68, 0.12);
-    --red-border:      rgba(239, 68, 68, 0.30);
+    --blast-success:        #10b981;
+    --blast-success-text:   #a7f3d0;
+    --blast-success-soft:   rgba(16, 185, 129, 0.12);
+    --blast-success-border: rgba(16, 185, 129, 0.38);
 
-    --text-primary:    #fafafa;
-    --text-secondary:  #d4d4d8;
-    --text-muted:      #a1a1aa;
+    --blast-danger:        #ef4444;
+    --blast-danger-text:   #fecaca;
+    --blast-danger-soft:   rgba(239, 68, 68, 0.12);
+    --blast-danger-border: rgba(239, 68, 68, 0.40);
 
-    /* Shape system */
-    --radius-pill:  9999px;
-    --radius-panel: 10px;
-    --radius-card:  8px;
-    --radius-input: 6px;
+    /* Text */
+    --blast-text-primary:   #fafafa;
+    --blast-text-secondary: #d4d4d8;
+    --blast-text-muted:     #a1a1aa;
+    --blast-text-disabled:  #71717a;
+
+    /* Focus */
+    --blast-focus: #fcd34d;
+
+    /* Geometry */
+    --blast-radius-xs:    4px;
+    --blast-radius-input: 6px;
+    --blast-radius-card:  8px;
+    --blast-radius-panel: 10px;
+    --blast-radius-pill:  9999px;
+
+    /* Spacing */
+    --blast-space-1: 0.25rem;
+    --blast-space-2: 0.5rem;
+    --blast-space-3: 0.75rem;
+    --blast-space-4: 1rem;
+    --blast-space-5: 1.25rem;
+    --blast-space-6: 1.5rem;
+    --blast-space-8: 2rem;
 
     /* Shadows */
-    --shadow-sm:   0 1px 2px 0 rgba(0, 0, 0, 0.4);
-    --shadow-md:   0 4px 16px -2px rgba(0, 0, 0, 0.5);
-    --shadow-lg:   0 8px 32px -4px rgba(0, 0, 0, 0.6);
-    --shadow-glow: 0 0 20px rgba(245, 158, 11, 0.22);
+    --blast-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.42);
+    --blast-shadow-md: 0 6px 18px -4px rgba(0, 0, 0, 0.56);
+    --blast-shadow-lg: 0 14px 38px -10px rgba(0, 0, 0, 0.70);
+    --blast-shadow-glow: 0 0 0 1px rgba(245, 158, 11, 0.10), 0 8px 26px -8px rgba(245, 158, 11, 0.34);
+
+    /* Layout */
+    --blast-content-max: 1400px;
+    --blast-control-min: 44px;
 }
 
 /* ============================================================
-   2. GLOBAL SCOPE, TYPOGRAPHY & OVERLAP PROTECTION
+   2. BASE / RESET / DOCUMENT BEHAVIOR
    ============================================================ */
 
-html, body, [data-testid="stAppViewContainer"] {
-    background-color: var(--surface-base) !important;
-    color: var(--text-primary) !important;
+html {
+    box-sizing: border-box;
+    background: var(--blast-surface-base);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scrollbar-color: var(--blast-border-strong) transparent;
+    scrollbar-width: thin;
 }
 
-/* Restrict max-width strictly to main block, protecting sidebar drawer */
-[data-testid="stMainBlockContainer"] {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding-top: 1.5rem !important;
-    padding-bottom: 3rem !important;
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
 }
 
-[data-testid="stMainBlockContainer"],
-[data-testid="stSidebar"],
-[data-testid="stMainBlockContainer"] p,
-[data-testid="stMainBlockContainer"] span,
-[data-testid="stMainBlockContainer"] label,
-[data-testid="stMainBlockContainer"] div,
-[data-testid="stMainBlockContainer"] button,
-[data-testid="stMainBlockContainer"] input,
-[data-testid="stMainBlockContainer"] select,
-[data-testid="stMainBlockContainer"] textarea {
-    font-family: var(--font-sans);
+html,
+body,
+[data-testid="stAppViewContainer"],
+[data-testid="stApp"] {
+    background-color: var(--blast-surface-base) !important;
+    color: var(--blast-text-primary) !important;
+}
+
+body {
+    margin: 0;
+    font-family: var(--blast-font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Text Overlap Protection across all headings and paragraphs */
-p, span, label {
-    line-height: 1.5;
+[data-testid="stMainBlockContainer"] {
+    width: min(100%, var(--blast-content-max));
+    max-width: var(--blast-content-max);
+    margin-inline: auto;
+    padding-top: clamp(1rem, 2vw, 1.5rem) !important;
+    padding-right: clamp(1rem, 2.6vw, 2.25rem) !important;
+    padding-bottom: 3rem !important;
+    padding-left: clamp(1rem, 2.6vw, 2.25rem) !important;
+    min-width: 0;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    line-height: 1.25 !important;
-    margin-top: 0.4rem !important;
-    margin-bottom: 0.4rem !important;
+/* Scope typography to the Streamlit shell instead of globally mutating every span/div. */
+[data-testid="stAppViewContainer"] :where(p, li, label, input, textarea, button, select),
+[data-testid="stSidebar"] :where(p, li, label, input, textarea, button, select) {
+    font-family: var(--blast-font-sans);
 }
 
-[data-testid="stMainBlockContainer"] h1,
-[data-testid="stMainBlockContainer"] h2,
-[data-testid="stMainBlockContainer"] h3,
-[data-testid="stMainBlockContainer"] h4,
-.mono, code, pre,
+[data-testid="stAppViewContainer"] :where(p, li),
+[data-testid="stSidebar"] :where(p, li) {
+    line-height: 1.6;
+}
+
+[data-testid="stAppViewContainer"] :where(h1, h2, h3, h4, h5, h6) {
+    color: var(--blast-text-primary) !important;
+    font-family: var(--blast-font-sans) !important;
+    line-height: 1.18 !important;
+    letter-spacing: -0.018em;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
+[data-testid="stAppViewContainer"] :where(code, pre, kbd, samp),
+.mono,
 [data-testid="stMetricValue"],
 [data-testid="stMetricLabel"] p {
-    font-family: var(--font-mono) !important;
-    font-variant-numeric: tabular-nums !important;
-    font-feature-settings: "tnum" 1, "zero" 1 !important;
+    font-family: var(--blast-font-mono) !important;
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-feature-settings: "tnum" 1, "zero" 1;
 }
 
-.seo-metadata { display: none !important; visibility: hidden; }
+[data-testid="stMarkdownContainer"] :where(p, li, blockquote) {
+    color: var(--blast-text-secondary);
+}
+
+[data-testid="stMarkdownContainer"] :where(strong, b) {
+    color: var(--blast-text-primary);
+}
+
+[data-testid="stMarkdownContainer"] a {
+    color: #fbbf24;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+}
+
+[data-testid="stMarkdownContainer"] a:hover {
+    color: #fcd34d;
+}
+
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p,
+small {
+    color: var(--blast-text-muted) !important;
+}
+
+hr {
+    border: 0 !important;
+    border-top: 1px solid var(--blast-border-subtle) !important;
+    margin-block: 1.5rem !important;
+}
+
+::selection {
+    background: rgba(245, 158, 11, 0.32);
+    color: var(--blast-text-primary);
+}
+
+.seo-metadata {
+    display: none !important;
+    visibility: hidden !important;
+}
 
 /* ============================================================
-   3. HEADER COMMAND BAR & HERO (NO OVERLAPPING)
+   3. SIDEBAR / APP CHROME
+   ============================================================ */
+
+[data-testid="stSidebar"] > div:first-child,
+section[data-testid="stSidebar"] {
+    background: #0d0d10 !important;
+}
+
+[data-testid="stSidebar"] {
+    border-right: 1px solid var(--blast-border-subtle);
+}
+
+[data-testid="stSidebar"] :where(h1, h2, h3, h4) {
+    color: var(--blast-text-primary) !important;
+}
+
+/* Keep Streamlit's top chrome quiet without removing controls. */
+[data-testid="stHeader"] {
+    background: rgba(9, 9, 11, 0.88) !important;
+    border-bottom: 1px solid var(--blast-border-subtle);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* ============================================================
+   4. B.L.A.S.T. HERO / COMMAND HEADER
    ============================================================ */
 
 .blast-header {
-    padding: 1.25rem 0 1.25rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.7rem;
+    padding: 1.1rem 0 1.35rem;
+    margin-bottom: 1.35rem;
+    border-bottom: 1px solid var(--blast-border-subtle);
+    min-width: 0;
 }
 
 .blast-badge-row {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
     flex-wrap: wrap;
-    margin-bottom: 0.25rem;
-    line-height: 1.3;
+    gap: 0.6rem;
+    margin: 0;
 }
 
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.85rem;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-mono) !important;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: var(--accent-subtle);
-    color: #fbbf24;
-    border: 1px solid var(--accent-border);
-    box-shadow: 0 0 14px rgba(245, 158, 11, 0.15);
-    line-height: 1.2 !important;
-    white-space: nowrap;
-}
-
+.status-badge,
 .engine-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.75rem;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-mono) !important;
-    font-size: 0.70rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    justify-content: center;
+    gap: 0.48rem;
+    min-height: 30px;
+    padding: 0.35rem 0.78rem;
+    border-radius: var(--blast-radius-pill);
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.075em;
     text-transform: uppercase;
-    background: var(--surface-overlay);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-default);
-    line-height: 1.2 !important;
-    white-space: nowrap;
+}
+
+.status-badge {
+    color: #fbbf24;
+    background: var(--blast-accent-soft);
+    border: 1px solid var(--blast-accent-border);
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.12);
+}
+
+.engine-pill {
+    color: var(--blast-text-secondary);
+    background: var(--blast-surface-overlay);
+    border: 1px solid var(--blast-border-default);
 }
 
 .status-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
     border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    flex-shrink: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .status-dot { animation: dot-pulse 2.2s ease-in-out infinite; }
-}
-
-@keyframes dot-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.35; transform: scale(0.75); }
+    background: var(--blast-accent);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.78);
 }
 
 .blast-title {
-    font-family: var(--font-sans) !important;
-    font-size: clamp(1.8rem, 3.8vw, 3.2rem) !important;
+    margin: 0.12rem 0 !important;
+    color: var(--blast-text-primary) !important;
+    font-family: var(--blast-font-sans) !important;
+    font-size: clamp(2rem, 5vw, 3.45rem) !important;
     font-weight: 800 !important;
-    letter-spacing: -0.02em !important;
-    line-height: 1.2 !important;
-    margin: 0.25rem 0 !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.045em !important;
     text-transform: uppercase;
-    color: var(--text-primary) !important;
-    display: block;
+    text-wrap: balance;
 }
 
 .blast-subtitle {
-    font-size: clamp(0.85rem, 1.2vw, 1.0rem);
-    color: var(--text-muted);
-    letter-spacing: 0.01em;
-    font-weight: 400;
-    line-height: 1.55;
-    max-width: 75ch;
-    margin-top: 0.2rem;
+    max-width: 76ch;
+    margin: 0.15rem 0 0;
+    color: var(--blast-text-muted);
+    font-size: clamp(0.9rem, 1.15vw, 1rem);
+    font-weight: 450;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
 }
 
 /* ============================================================
-   4. METRICS & BENTO CARDS (OVERFLOW SAFE)
+   5. METRICS
    ============================================================ */
 
 [data-testid="stMetric"] {
-    background: var(--surface-raised);
-    border: 1px solid var(--border-default);
-    border-left: 3px solid var(--accent);
-    border-radius: var(--radius-panel);
-    padding: 0.95rem 1.15rem;
-    box-shadow: var(--shadow-sm);
-    min-height: 90px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    overflow: hidden;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    [data-testid="stMetric"] {
-        transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    [data-testid="stMetric"]:hover {
-        border-color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-glow);
-    }
+    min-width: 0;
+    min-height: 96px;
+    padding: 1rem 1.1rem;
+    background: var(--blast-surface-raised);
+    border: 1px solid var(--blast-border-default);
+    border-left: 3px solid var(--blast-accent);
+    border-radius: var(--blast-radius-panel);
+    box-shadow: var(--blast-shadow-sm);
 }
 
 [data-testid="stMetricLabel"] {
-    margin-bottom: 0.30rem !important;
-    line-height: 1.3 !important;
+    min-width: 0;
+    margin-bottom: 0.35rem !important;
 }
 
 [data-testid="stMetricLabel"] p {
-    color: var(--text-muted) !important;
-    font-size: 0.72rem !important;
-    font-family: var(--font-mono) !important;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
     margin: 0 !important;
-    line-height: 1.3 !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: var(--blast-text-muted) !important;
+    font-size: 0.72rem !important;
+    font-weight: 650;
+    line-height: 1.35 !important;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 [data-testid="stMetricValue"] {
-    color: var(--text-primary) !important;
-    font-size: clamp(1.15rem, 2.0vw, 1.85rem) !important;
-    font-weight: 800 !important;
-    line-height: 1.25 !important;
-    font-family: var(--font-mono) !important;
-    font-variant-numeric: tabular-nums !important;
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
+    min-width: 0;
     margin: 0 !important;
+    color: var(--blast-text-primary) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: clamp(1.2rem, 2.2vw, 1.9rem) !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere;
+}
+
+[data-testid="stMetricDelta"] {
+    margin-top: 0.3rem;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.76rem !important;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================
-   5. BENTO PANELS & CONTAINERS
+   6. PANELS / FORMS / BENTO SURFACES
    ============================================================ */
 
-.panel, .minimal-panel {
-    background: var(--surface-raised);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-panel);
-    padding: 1.15rem 1.35rem;
-    margin-bottom: 1.15rem;
-    box-shadow: var(--shadow-sm);
+.panel,
+.minimal-panel,
+[data-testid="stForm"] {
+    min-width: 0;
+    padding: clamp(1rem, 2vw, 1.35rem);
+    margin-bottom: 1.1rem;
+    background: var(--blast-surface-raised) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-panel) !important;
+    box-shadow: var(--blast-shadow-sm);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .panel, .minimal-panel {
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .panel:hover, .minimal-panel:hover {
-        border-color: var(--accent-border);
-        box-shadow: 0 6px 20px -2px rgba(245, 158, 11, 0.12);
-    }
-}
-
-.panel h3, .minimal-panel h3 {
-    margin-top: 0;
-    font-family: var(--font-mono) !important;
-    font-size: 0.78rem !important;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.75rem;
-    line-height: 1.4 !important;
-    color: var(--text-secondary) !important;
+.panel h3,
+.minimal-panel h3 {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.55rem;
+    margin: 0 0 0.8rem !important;
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0.075em !important;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
 }
 
 /* ============================================================
-   6. TAB NAVIGATION
+   7. TABS
    ============================================================ */
 
 [data-baseweb="tab-list"] {
-    gap: 0.35rem;
-    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    gap: 0.28rem;
+    max-width: 100%;
+    padding: 0 0 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
     background: transparent !important;
-    padding-bottom: 2px;
+    border-bottom: 1px solid var(--blast-border-subtle);
 }
 
-[data-baseweb="tab"] {
-    font-family: var(--font-mono) !important;
-    font-size: 0.78rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.06em !important;
-    text-transform: uppercase !important;
+[data-baseweb="tab"],
+[data-baseweb="tab-list"] [role="tab"] {
+    flex: 0 0 auto;
+    min-height: var(--blast-control-min);
+    padding: 0.65rem 1rem !important;
+    color: var(--blast-text-muted) !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: var(--blast-radius-card) var(--blast-radius-card) 0 0 !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.77rem !important;
+    font-weight: 650 !important;
     line-height: 1.3 !important;
-    border-radius: var(--radius-card) var(--radius-card) 0 0 !important;
-    padding: 0.7rem 1.2rem !important;
-    color: var(--text-muted) !important;
-    background: transparent !important;
-    border: none !important;
-    white-space: nowrap !important;
+    letter-spacing: 0.055em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    [data-baseweb="tab"] {
-        transition: color 0.15s ease, background 0.15s ease !important;
-    }
+[data-baseweb="tab"]:hover,
+[data-baseweb="tab-list"] [role="tab"]:hover {
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-raised) !important;
 }
 
-[data-baseweb="tab"]:hover {
-    color: var(--text-primary) !important;
-    background: var(--surface-raised) !important;
-}
-
-[data-baseweb="tab"][aria-selected="true"] {
-    background: var(--accent-subtle) !important;
-    color: var(--accent) !important;
-    border-bottom: 2px solid var(--accent) !important;
+[data-baseweb="tab"][aria-selected="true"],
+[data-baseweb="tab-list"] [role="tab"][aria-selected="true"] {
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
+    border-bottom-color: var(--blast-accent) !important;
 }
 
 /* ============================================================
-   7. FILE UPLOADER & BUTTONS (OVERLAP-FREE DROPZONE)
+   8. FILE UPLOADER
    ============================================================ */
 
-/* Outer File Uploader Container */
 [data-testid="stFileUploader"] {
-    background: transparent !important;
-    border: none !important;
+    min-width: 0;
+    margin-bottom: 1rem !important;
     padding: 0 !important;
-    margin-bottom: 1.0rem !important;
+    background: transparent !important;
+    border: 0 !important;
 }
 
+[data-testid="stFileUploader"] > label,
 [data-testid="stFileUploader"] label {
-    font-family: var(--font-mono) !important;
+    display: block;
+    margin-bottom: 0.55rem !important;
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
     font-size: 0.78rem !important;
     font-weight: 700 !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    color: var(--text-secondary) !important;
     line-height: 1.4 !important;
-    margin-bottom: 0.5rem !important;
-    display: block !important;
+    letter-spacing: 0.075em !important;
+    text-transform: uppercase;
 }
 
-/* Inner Dropzone Section - Clean flex column layout with generous spacing */
 [data-testid="stFileUploaderDropzone"] {
-    background: var(--surface-raised) !important;
-    border: 2px dashed var(--accent-border) !important;
-    border-radius: var(--radius-panel) !important;
-    padding: 1.75rem 1.5rem !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 0.85rem !important;
+    min-width: 0;
+    min-height: 150px !important;
+    padding: clamp(1.25rem, 4vw, 2rem) !important;
     text-align: center !important;
-    cursor: pointer !important;
-    min-height: 140px !important;
+    background: var(--blast-surface-raised) !important;
+    border: 2px dashed var(--blast-accent-border) !important;
+    border-radius: var(--blast-radius-panel) !important;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    [data-testid="stFileUploaderDropzone"] {
-        transition: border-color 0.2s ease, background 0.2s ease;
-    }
+[data-testid="stFileUploaderDropzone"]:hover,
+[data-testid="stFileUploaderDropzone"]:focus-within {
+    background: var(--blast-accent-soft) !important;
+    border-color: var(--blast-accent) !important;
 }
 
-[data-testid="stFileUploaderDropzone"]:hover {
-    border-color: var(--accent) !important;
-    background: var(--accent-subtle) !important;
-}
-
-/* Dropzone Instructions & SVG Arrow / Upload Icon */
 [data-testid="stFileUploaderDropzoneInstructions"] {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 0.4rem !important;
-    text-align: center !important;
+    min-width: 0;
     margin: 0 !important;
     padding: 0 !important;
+    text-align: center !important;
 }
 
-/* Ensure Dropzone Arrow/Upload SVG Icon has dedicated clearance and never overlaps */
 [data-testid="stFileUploaderDropzone"] svg,
 [data-testid="stFileUploaderDropzoneInstructions"] svg {
     width: 32px !important;
     height: 32px !important;
-    margin-bottom: 0.35rem !important;
-    flex-shrink: 0 !important;
-    stroke: var(--accent) !important;
-    fill: none !important;
-    display: inline-block !important;
+    flex: 0 0 auto;
+    margin: 0 0 0.25rem !important;
+    color: var(--blast-accent) !important;
+    stroke: currentColor;
 }
 
-/* Dropzone Text ("Drag and drop file here", "Limit 500MB") */
-[data-testid="stFileUploaderDropzoneInstructions"] span,
-[data-testid="stFileUploaderDropzoneInstructions"] div,
-[data-testid="stFileUploaderDropzoneInstructions"] p {
-    font-size: 0.80rem !important;
-    color: var(--text-secondary) !important;
-    line-height: 1.4 !important;
+[data-testid="stFileUploaderDropzoneInstructions"] :where(span, div, p) {
+    max-width: 100%;
     margin: 0 !important;
+    color: var(--blast-text-secondary) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+    overflow-wrap: anywhere;
 }
 
 [data-testid="stFileUploaderDropzoneInstructions"] small {
-    font-size: 0.70rem !important;
-    color: var(--text-muted) !important;
-    font-family: var(--font-mono) !important;
+    color: var(--blast-text-muted) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.71rem !important;
+    line-height: 1.45 !important;
 }
 
-/* Dropzone Browse Files Button - Isolated size so it NEVER stretches or overlaps icon/text */
+/* Browse button: 44px target, no overlap, no forced SVG fill. */
 [data-testid="stFileUploaderDropzone"] button,
 [data-testid="stFileUploaderDropzone"] [data-testid="baseButton-secondary"],
-[data-testid="stFileUploader"] button {
+[data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] {
     width: auto !important;
-    min-width: 140px !important;
-    max-width: 220px !important;
-    min-height: 38px !important;
-    height: 38px !important;
-    padding: 0.45rem 1.25rem !important;
-    margin: 0.5rem auto 0 auto !important;
-    background: var(--surface-overlay) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-input) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.76rem !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0.4rem !important;
-    position: relative !important;
+    min-width: min(100%, 148px) !important;
+    max-width: 100% !important;
+    min-height: var(--blast-control-min) !important;
+    height: auto !important;
+    margin: 0.35rem auto 0 !important;
+    padding: 0.62rem 1.2rem !important;
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-overlay) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-input) !important;
     box-shadow: none !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.76rem !important;
+    font-weight: 650 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
 }
 
-[data-testid="stFileUploaderDropzone"] button:hover,
-[data-testid="stFileUploaderDropzone"] [data-testid="baseButton-secondary"]:hover {
-    background: var(--accent-subtle) !important;
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    transform: translateY(-1px) !important;
+[data-testid="stFileUploaderDropzone"] button:hover {
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
+    border-color: var(--blast-accent) !important;
 }
 
-/* Uploaded Files Listing */
+/* Uploaded file row */
 [data-testid="stFileUploaderFileData"] {
-    background: var(--surface-overlay) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-input) !important;
-    padding: 0.65rem 0.85rem !important;
-    margin-top: 0.65rem !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 0.5rem !important;
+    gap: 0.65rem !important;
+    min-width: 0;
+    min-height: 56px;
+    margin-top: 0.65rem !important;
+    padding: 0.55rem 0.7rem 0.55rem 0.85rem !important;
+    background: var(--blast-surface-overlay) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-input) !important;
 }
 
-[data-testid="stFileUploaderFileData"] span {
-    font-family: var(--font-mono) !important;
+[data-testid="stFileUploaderFileData"] :where(span, div, p) {
+    min-width: 0;
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
     font-size: 0.75rem !important;
-    color: var(--text-secondary) !important;
+    overflow-wrap: anywhere;
 }
 
-/* Delete file button */
+/* Delete file target is now 44x44 instead of 28x28. */
 [data-testid="stFileUploaderFileData"] button {
-    min-height: 28px !important;
-    height: 28px !important;
-    width: 28px !important;
-    min-width: 28px !important;
-    padding: 0 !important;
+    width: var(--blast-control-min) !important;
+    min-width: var(--blast-control-min) !important;
+    height: var(--blast-control-min) !important;
+    min-height: var(--blast-control-min) !important;
+    flex: 0 0 var(--blast-control-min);
     margin: 0 !important;
+    padding: 0 !important;
+    color: var(--blast-text-muted) !important;
     background: transparent !important;
-    border: none !important;
-    color: var(--text-muted) !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--blast-radius-input) !important;
+    box-shadow: none !important;
 }
 
 [data-testid="stFileUploaderFileData"] button:hover {
-    color: var(--red) !important;
-}
-
-/* Primary Action Buttons - Text wrap safe & WCAG AA pass */
-.stButton > button {
-    width: 100%;
-    min-height: 44px;
-    background: var(--accent) !important;
-    color: #09090b !important;
-    border: none;
-    padding: 0.65rem 1.2rem;
-    font-family: var(--font-mono) !important;
-    font-weight: 700;
-    font-size: 0.80rem;
-    letter-spacing: 0.06em;
-    border-radius: var(--radius-card);
-    text-transform: uppercase;
-    cursor: pointer;
-    white-space: normal !important;
-    word-break: break-word !important;
-    line-height: 1.35 !important;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.30);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    text-align: center;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-    .stButton > button {
-        transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
-    }
-    .stButton > button:hover {
-        background: var(--accent-hover) !important;
-        color: #09090b !important;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
-    }
-    .stButton > button:active {
-        transform: scale(0.98) translateY(0);
-        background: var(--accent-active) !important;
-    }
-}
-
-.stButton > button[kind="secondary"] {
-    background: var(--surface-overlay) !important;
-    color: var(--text-secondary) !important;
-    border: 1px solid var(--border-default) !important;
-    box-shadow: none;
-}
-
-.stButton > button[kind="secondary"]:hover {
-    background: var(--surface-card) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-strong) !important;
-}
-
-/* Download Buttons Grid */
-.download-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.85rem;
-    margin-bottom: 0.85rem;
-}
-
-[data-testid="stDownloadButton"] > button {
-    min-height: 42px;
-    background: var(--surface-overlay) !important;
-    color: var(--text-secondary) !important;
-    border: 1px solid var(--border-default) !important;
-    font-family: var(--font-mono) !important;
-    font-weight: 600;
-    font-size: 0.76rem;
-    letter-spacing: 0.06em;
-    border-radius: var(--radius-input);
-    text-transform: uppercase;
-    box-shadow: none;
-    white-space: normal !important;
-    word-break: break-word !important;
-    line-height: 1.3 !important;
-}
-
-[data-testid="stDownloadButton"] > button:hover {
-    background: var(--accent-subtle) !important;
-    color: var(--accent) !important;
-    border-color: var(--accent-border) !important;
-    transform: translateY(-1px);
+    color: var(--blast-danger) !important;
+    background: var(--blast-danger-soft) !important;
+    border-color: var(--blast-danger-border) !important;
 }
 
 /* ============================================================
-   8. INPUTS, TOGGLES, RADIOS, SLIDERS, DATAFRAMES & ALERTS
+   9. BUTTON SYSTEM
    ============================================================ */
 
-/* Selectbox & MultiSelect - Generous padding to avoid arrow collision */
-[data-baseweb="select"] {
-    background-color: var(--surface-overlay) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-input) !important;
-    color: var(--text-primary) !important;
-    padding-right: 0.5rem !important;
+:where(
+    [data-testid="stButton"],
+    [data-testid="stFormSubmitButton"],
+    [data-testid="stLinkButton"],
+    [data-testid="stDownloadButton"]
+) button,
+.stButton > button {
+    min-height: var(--blast-control-min);
+    padding: 0.68rem 1rem;
+    border-radius: var(--blast-radius-card) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.79rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0.052em !important;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
 }
 
-[data-baseweb="select"]:hover {
-    border-color: var(--accent-border) !important;
+/* Primary buttons */
+:where(
+    button[kind="primary"],
+    button[data-testid="stBaseButton-primary"],
+    button[data-testid="baseButton-primary"]
+) {
+    color: var(--blast-accent-text) !important;
+    background: var(--blast-accent) !important;
+    border: 1px solid var(--blast-accent) !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.26) !important;
+}
+
+:where(
+    button[kind="primary"],
+    button[data-testid="stBaseButton-primary"],
+    button[data-testid="baseButton-primary"]
+):hover {
+    color: var(--blast-accent-text) !important;
+    background: var(--blast-accent-hover) !important;
+    border-color: var(--blast-accent-hover) !important;
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.34) !important;
+}
+
+:where(
+    button[kind="primary"],
+    button[data-testid="stBaseButton-primary"],
+    button[data-testid="baseButton-primary"]
+):active {
+    color: var(--blast-accent-text) !important;
+    background: var(--blast-accent-active) !important;
+    border-color: var(--blast-accent-active) !important;
+}
+
+/* Secondary / download buttons */
+:where(
+    button[kind="secondary"],
+    button[data-testid="stBaseButton-secondary"],
+    button[data-testid="baseButton-secondary"],
+    [data-testid="stDownloadButton"] button
+) {
+    color: var(--blast-text-secondary) !important;
+    background: var(--blast-surface-overlay) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    box-shadow: none !important;
+}
+
+:where(
+    button[kind="secondary"],
+    button[data-testid="stBaseButton-secondary"],
+    button[data-testid="baseButton-secondary"],
+    [data-testid="stDownloadButton"] button
+):hover {
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-hover) !important;
+    border-color: var(--blast-border-strong) !important;
+}
+
+/* Tertiary buttons */
+:where(
+    button[kind="tertiary"],
+    button[data-testid="stBaseButton-tertiary"],
+    button[data-testid="baseButton-tertiary"]
+) {
+    color: var(--blast-text-secondary) !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+:where(
+    button[kind="tertiary"],
+    button[data-testid="stBaseButton-tertiary"],
+    button[data-testid="baseButton-tertiary"]
+):hover {
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
+}
+
+button:disabled,
+button[aria-disabled="true"] {
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    gap: 0.75rem;
+    margin-block: 0.85rem;
+}
+
+[data-testid="stDownloadButton"] > button,
+[data-testid="stDownloadButton"] button {
+    width: 100%;
+    min-height: var(--blast-control-min);
+}
+
+[data-testid="stDownloadButton"] button:hover {
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
+    border-color: var(--blast-accent-border) !important;
+}
+
+/* ============================================================
+   10. INPUTS / SELECTS / TEXTAREAS
+   ============================================================ */
+
+/* Input shells — BaseWeb is internal, so keep these selectors narrow. */
+:where(
+    [data-baseweb="input"],
+    [data-baseweb="textarea"],
+    [data-baseweb="select"]
+) {
+    min-width: 0;
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-overlay) !important;
+    border-radius: var(--blast-radius-input) !important;
+}
+
+[data-baseweb="input"] > div,
+[data-baseweb="textarea"] > div,
+[data-baseweb="select"] > div {
+    min-height: var(--blast-control-min);
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-overlay) !important;
+    border-color: var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-input) !important;
+}
+
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-baseweb="input"] input,
+[data-baseweb="textarea"] textarea {
+    min-width: 0;
+    min-height: var(--blast-control-min);
+    color: var(--blast-text-primary) !important;
+    caret-color: var(--blast-accent);
+    background: transparent !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+}
+
+[data-testid="stTextArea"] textarea {
+    min-height: 112px;
+    resize: vertical;
+}
+
+:where(input, textarea)::placeholder {
+    color: #8b8b95 !important;
+    opacity: 1;
+}
+
+:where(
+    [data-baseweb="input"],
+    [data-baseweb="textarea"],
+    [data-baseweb="select"]
+):focus-within {
+    outline: 0;
+    box-shadow: 0 0 0 1px var(--blast-accent), 0 0 0 4px var(--blast-accent-soft) !important;
 }
 
 [data-baseweb="select"] svg {
-    flex-shrink: 0 !important;
-    margin-left: 0.5rem !important;
-    stroke: var(--text-muted) !important;
+    flex: 0 0 auto;
+    color: var(--blast-text-muted) !important;
 }
 
-[data-baseweb="popover"], [data-baseweb="menu"] {
-    background-color: var(--surface-overlay) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-card) !important;
-    box-shadow: var(--shadow-lg) !important;
+[data-baseweb="tag"] {
+    color: var(--blast-text-secondary) !important;
+    background: var(--blast-surface-card) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-input) !important;
+}
+
+/* Popovers and menus are portaled outside the main app container. */
+[data-baseweb="popover"],
+[data-baseweb="menu"] {
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-overlay) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-card) !important;
+    box-shadow: var(--blast-shadow-lg) !important;
 }
 
 [data-baseweb="menu"] li {
-    font-family: var(--font-mono) !important;
+    min-height: var(--blast-control-min);
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
     font-size: 0.78rem !important;
-    color: var(--text-secondary) !important;
     line-height: 1.35 !important;
 }
 
 [data-baseweb="menu"] li:hover,
 [data-baseweb="menu"] li[aria-selected="true"] {
-    background: var(--accent-subtle) !important;
-    color: var(--accent) !important;
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
 }
 
-/* Tag chips in multi-select */
-[data-baseweb="tag"] {
-    background: var(--surface-card) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-input) !important;
-}
+/* ============================================================
+   11. RADIO / CHECKBOX / TOGGLE / SLIDER
+   ============================================================ */
 
-/* Radio & Checkbox buttons */
 [data-testid="stRadio"] label,
-[data-testid="stCheckbox"] label {
-    font-family: var(--font-mono) !important;
-    font-size: 0.80rem !important;
+[data-testid="stCheckbox"] label,
+[data-testid="stToggle"] label {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--blast-control-min);
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.8rem !important;
     line-height: 1.4 !important;
-    color: var(--text-secondary) !important;
     cursor: pointer;
 }
 
-/* Modern Toggle Switch Override */
-[data-testid="stToggle"] [data-testid="stCheckbox"] {
-    cursor: pointer;
-}
-
-/* Sliders */
 [data-testid="stSlider"] [role="slider"] {
-    background-color: var(--accent) !important;
-    border: 2px solid #09090b !important;
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
+    min-width: 20px;
+    min-height: 20px;
+    background: var(--blast-accent) !important;
+    border: 2px solid var(--blast-surface-base) !important;
+    box-shadow: 0 0 0 1px var(--blast-accent-border), 0 0 10px rgba(245, 158, 11, 0.28) !important;
 }
 
-/* Textareas & Inputs */
-[data-testid="stTextArea"] textarea,
-[data-testid="stTextInput"] input {
-    background-color: var(--surface-overlay) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-input) !important;
-    color: var(--text-primary) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.82rem !important;
-    line-height: 1.5 !important;
-    padding: 0.75rem !important;
-}
+/* ============================================================
+   12. EXPANDERS / STATUS / POPOVERS
+   ============================================================ */
 
-[data-testid="stTextArea"] textarea:focus,
-[data-testid="stTextInput"] input:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px var(--accent-subtle) !important;
-}
-
-/* Dataframe Container */
-[data-testid="stDataFrame"] {
-    background: var(--surface-raised) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-card) !important;
-    overflow: hidden;
-}
-
-/* Expanders with Arrow Separation */
 [data-testid="stExpander"] {
-    background: var(--surface-raised) !important;
-    border: 1px solid var(--border-default) !important;
-    border-radius: var(--radius-panel) !important;
     margin-bottom: 0.75rem !important;
+    background: var(--blast-surface-raised) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-panel) !important;
+    overflow: clip;
 }
 
 [data-testid="stExpander"] summary {
-    font-family: var(--font-mono) !important;
-    font-size: 0.78rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.07em !important;
-    text-transform: uppercase !important;
-    color: var(--text-secondary) !important;
-    padding: 0.85rem 1.1rem !important;
-    line-height: 1.3 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 0.75rem !important;
+    min-height: var(--blast-control-min);
+    padding: 0.78rem 1rem !important;
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    letter-spacing: 0.065em !important;
+    text-transform: uppercase !important;
 }
 
 [data-testid="stExpander"] summary svg {
+    flex: 0 0 auto;
     margin-left: auto !important;
-    flex-shrink: 0 !important;
-    stroke: var(--accent) !important;
+    color: var(--blast-accent) !important;
+    stroke: currentColor;
 }
 
 [data-testid="stExpander"] summary:hover {
-    color: var(--accent) !important;
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
 }
 
-/* Progress bar */
-[data-testid="stProgress"] > div > div > div > div {
-    background: linear-gradient(90deg, #d97706, #f59e0b) !important;
-    border-radius: var(--radius-pill) !important;
+/* Dialog / modal surfaces */
+[data-testid="stDialog"] [role="dialog"],
+[role="dialog"] {
+    color: var(--blast-text-primary);
 }
 
-/* Native Streamlit Alert Overrides */
-[data-testid="stAlert"] {
-    background: var(--surface-raised) !important;
-    border: 1px solid var(--border-default) !important;
-    border-left: 3px solid var(--accent) !important;
-    border-radius: var(--radius-panel) !important;
-    color: var(--text-primary) !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.82rem !important;
-    line-height: 1.5 !important;
+/* Toasts */
+[data-testid="stToast"] {
+    color: var(--blast-text-primary) !important;
+    background: var(--blast-surface-overlay) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-panel) !important;
+    box-shadow: var(--blast-shadow-lg) !important;
 }
 
 /* ============================================================
-   9. STATUS CARDS & ACCESSIBLE FEEDBACK
+   13. PROGRESS / SPINNER
    ============================================================ */
 
-div[data-testid="stMarkdownContainer"] > div.info-box {
-    background: var(--amber-subtle);
-    border: 1px solid var(--amber-border);
-    border-left: 3px solid var(--amber);
-    color: #fde68a !important;
-    padding: 0.95rem 1.15rem;
-    border-radius: var(--radius-panel);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    line-height: 1.6;
+[data-testid="stProgress"] {
+    overflow: hidden;
+    border-radius: var(--blast-radius-pill);
 }
 
-div[data-testid="stMarkdownContainer"] > div.success-box {
-    background: var(--green-subtle);
-    border: 1px solid var(--green-border);
-    border-left: 3px solid var(--green);
-    color: #a7f3d0 !important;
-    padding: 0.95rem 1.15rem;
-    border-radius: var(--radius-panel);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    line-height: 1.6;
+[data-testid="stProgress"] > div > div > div > div {
+    background: var(--blast-accent) !important;
+    border-radius: var(--blast-radius-pill) !important;
 }
 
-div[data-testid="stMarkdownContainer"] > div.error-box {
-    background: var(--red-subtle);
-    border: 1px solid var(--red-border);
-    border-left: 3px solid var(--red);
-    color: #fca5a5 !important;
-    padding: 0.95rem 1.15rem;
-    border-radius: var(--radius-panel);
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    line-height: 1.6;
+[data-testid="stSpinner"] {
+    color: var(--blast-text-secondary) !important;
+    font-family: var(--blast-font-mono) !important;
 }
 
-/* Document stats pill row */
+[data-testid="stSpinner"] svg {
+    color: var(--blast-accent) !important;
+}
+
+/* ============================================================
+   14. DATAFRAMES / TABLES / CODE
+   ============================================================ */
+
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"] {
+    max-width: 100%;
+    overflow: hidden;
+    background: var(--blast-surface-raised) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-card) !important;
+}
+
+[data-testid="stTable"] {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+[data-testid="stMarkdownContainer"] :where(pre, code) {
+    max-width: 100%;
+}
+
+[data-testid="stMarkdownContainer"] pre,
+[data-testid="stCode"] pre,
+[data-testid="stJson"] pre {
+    overflow: auto;
+    color: var(--blast-text-secondary) !important;
+    background: #101013 !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-radius: var(--blast-radius-card) !important;
+}
+
+[data-testid="stMarkdownContainer"] :not(pre) > code {
+    padding: 0.12em 0.38em;
+    color: #fbbf24 !important;
+    background: var(--blast-accent-soft) !important;
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    border-radius: var(--blast-radius-xs);
+}
+
+/* ============================================================
+   15. ALERTS / FEEDBACK
+   ============================================================ */
+
+/* Preserve Streamlit's semantic alert colors. The companion theme remaps
+   Streamlit's "blue" information palette to burnished gold, so semantics
+   remain distinct without introducing blue into this product. */
+[data-testid="stAlert"] {
+    max-width: 100%;
+    border-radius: var(--blast-radius-panel) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.55 !important;
+    overflow-wrap: anywhere;
+}
+
+[data-testid="stAlert"] :where(pre, code) {
+    max-width: 100%;
+}
+
+[data-testid="stAlert"] pre {
+    overflow-x: auto;
+}
+
+/* App-defined semantic boxes */
+:where(.info-box, .warning-box, .success-box, .error-box) {
+    padding: 0.95rem 1.1rem;
+    border-radius: var(--blast-radius-panel);
+    font-family: var(--blast-font-mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.info-box,
+.warning-box {
+    color: var(--blast-warning-text) !important;
+    background: var(--blast-warning-soft);
+    border: 1px solid var(--blast-warning-border);
+    border-left: 3px solid var(--blast-warning);
+}
+
+.success-box {
+    color: var(--blast-success-text) !important;
+    background: var(--blast-success-soft);
+    border: 1px solid var(--blast-success-border);
+    border-left: 3px solid var(--blast-success);
+}
+
+.error-box {
+    color: var(--blast-danger-text) !important;
+    background: var(--blast-danger-soft);
+    border: 1px solid var(--blast-danger-border);
+    border-left: 3px solid var(--blast-danger);
+}
+
+/* ============================================================
+   16. DOCUMENT STATS / LAYOUT INSPECTOR
+   ============================================================ */
+
 .doc-stats-row {
     display: flex;
-    gap: 0.6rem;
     flex-wrap: wrap;
     align-items: center;
+    gap: 0.55rem;
     margin: 0.75rem 0;
-    line-height: 1.4;
 }
 
 .doc-stat-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: var(--surface-overlay);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-input);
+    min-height: 32px;
+    max-width: 100%;
     padding: 0.3rem 0.65rem;
-    font-family: var(--font-mono) !important;
+    color: var(--blast-text-secondary);
+    background: var(--blast-surface-overlay);
+    border: 1px solid var(--blast-border-default);
+    border-radius: var(--blast-radius-input);
+    font-family: var(--blast-font-mono) !important;
     font-size: 0.72rem !important;
-    line-height: 1.3 !important;
-    color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
+    line-height: 1.35 !important;
+    overflow-wrap: anywhere;
 }
 
 .doc-stat-pill strong {
-    color: var(--accent);
+    color: #fbbf24;
 }
 
-/* Layout Inspector Zoom/Pan Canvas */
 .layout-canvas-container {
     position: relative;
     width: 100%;
+    max-height: min(650px, 70vh);
     overflow: auto;
-    background: #09090b;
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-card);
+    overscroll-behavior: contain;
     padding: 0.5rem;
-    max-height: 650px;
+    background: var(--blast-surface-base);
+    border: 1px solid var(--blast-border-default);
+    border-radius: var(--blast-radius-card);
+    scrollbar-gutter: stable both-edges;
 }
 
 /* ============================================================
-   10. SCROLLBARS & ACCESSIBILITY FOCUS
+   17. FOCUS / KEYBOARD ACCESSIBILITY
    ============================================================ */
 
-::-webkit-scrollbar             { width: 6px; height: 6px; }
-::-webkit-scrollbar-track       { background: transparent; }
-::-webkit-scrollbar-thumb       { background: var(--surface-overlay); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+:where(
+    a[href],
+    button,
+    input,
+    textarea,
+    select,
+    summary,
+    [role="button"],
+    [role="tab"],
+    [role="slider"],
+    [role="option"],
+    [tabindex]:not([tabindex="-1"])
+):focus-visible {
+    outline: 3px solid var(--blast-focus) !important;
+    outline-offset: 3px !important;
+}
 
-*:focus-visible {
-    outline: 2px solid var(--accent) !important;
-    outline-offset: 2px !important;
-    border-radius: var(--radius-input);
+/* Avoid double focus rings on BaseWeb shells while keeping a clear shell ring. */
+:where(
+    [data-baseweb="input"],
+    [data-baseweb="textarea"],
+    [data-baseweb="select"]
+):focus-within :where(input, textarea):focus-visible {
+    outline: none !important;
+}
+
+/* ============================================================
+   18. MOTION / POINTER-SPECIFIC INTERACTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+    .status-dot {
+        animation: blast-dot-pulse 2.2s ease-in-out infinite;
+    }
+
+    :where(
+        [data-testid="stMetric"],
+        .panel,
+        .minimal-panel,
+        [data-testid="stFileUploaderDropzone"],
+        [data-baseweb="tab"],
+        [data-baseweb="tab-list"] [role="tab"],
+        button
+    ) {
+        transition:
+            color 140ms ease,
+            background-color 140ms ease,
+            border-color 140ms ease,
+            box-shadow 180ms ease,
+            transform 140ms ease;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    [data-testid="stMetric"]:hover {
+        border-color: var(--blast-accent-border);
+        transform: translateY(-2px);
+        box-shadow: var(--blast-shadow-glow);
+    }
+
+    .panel:hover,
+    .minimal-panel:hover {
+        border-color: var(--blast-accent-border) !important;
+        box-shadow: var(--blast-shadow-md);
+    }
+
+    :where(
+        [data-testid="stButton"],
+        [data-testid="stFormSubmitButton"],
+        [data-testid="stLinkButton"],
+        [data-testid="stDownloadButton"]
+    ) button:hover {
+        transform: translateY(-1px);
+    }
+}
+
+@keyframes blast-dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.38; transform: scale(0.78); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+        transition-delay: 0ms !important;
     }
+
+    :where(button, [data-testid="stMetric"], .panel, .minimal-panel):hover,
+    :where(button, [data-testid="stMetric"], .panel, .minimal-panel):active {
+        transform: none !important;
+    }
+
+    .status-dot {
+        animation: none !important;
+    }
+}
+
+/* ============================================================
+   19. HIGH CONTRAST / FORCED COLORS
+   ============================================================ */
+
+@media (prefers-contrast: more) {
+    :root {
+        --blast-border-subtle: #55555e;
+        --blast-border-default: #6b6b75;
+        --blast-border-strong: #a1a1aa;
+    }
+
+    :where(.panel, .minimal-panel, [data-testid="stMetric"], [data-testid="stExpander"]) {
+        box-shadow: none !important;
+    }
+}
+
+@media (forced-colors: active) {
+    html,
+    body,
+    [data-testid="stAppViewContainer"] {
+        forced-color-adjust: auto;
+    }
+
+    .status-dot {
+        box-shadow: none;
+        border: 1px solid CanvasText;
+    }
+
+    :where(
+        a[href],
+        button,
+        input,
+        textarea,
+        select,
+        summary,
+        [role="button"],
+        [role="tab"],
+        [role="slider"]
+    ):focus-visible {
+        outline: 2px solid Highlight !important;
+        outline-offset: 2px !important;
+    }
+}
+
+/* ============================================================
+   20. RESPONSIVE HARDENING
+   ============================================================ */
+
+@media (max-width: 768px) {
+    [data-testid="stMainBlockContainer"] {
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    .blast-header {
+        padding-top: 0.7rem;
+        margin-bottom: 1rem;
+    }
+
+    .blast-title {
+        font-size: clamp(1.8rem, 11vw, 2.6rem) !important;
+        letter-spacing: -0.035em !important;
+    }
+
+    .status-badge,
+    .engine-pill {
+        max-width: 100%;
+        white-space: normal;
+        text-align: center;
+    }
+
+    .panel,
+    .minimal-panel,
+    [data-testid="stForm"] {
+        padding: 1rem;
+    }
+
+    [data-baseweb="tab"],
+    [data-baseweb="tab-list"] [role="tab"] {
+        padding-inline: 0.8rem !important;
+        font-size: 0.73rem !important;
+    }
+
+    [data-testid="stFileUploaderDropzone"] {
+        min-height: 138px !important;
+        padding: 1.2rem 0.9rem !important;
+    }
+
+    .download-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .blast-badge-row {
+        align-items: stretch;
+    }
+
+    .status-badge,
+    .engine-pill {
+        width: 100%;
+    }
+
+    [data-testid="stMetric"] {
+        min-height: 88px;
+        padding: 0.9rem;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 1.28rem !important;
+    }
+
+    .doc-stat-pill {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* ============================================================
+   21. SCROLLBARS (WEBKIT / BLINK)
+   ============================================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--blast-border-default);
+    border: 2px solid transparent;
+    border-radius: var(--blast-radius-pill);
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--blast-border-strong);
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }

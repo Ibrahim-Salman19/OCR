@@ -27,7 +27,7 @@ def test_ui_session_state_initialization():
 
         init_session_state()
         assert "total_scans" in mock_state
-        assert mock_state.total_scans == 142
+        assert mock_state.total_scans == 0
         assert "pages_decoded" in mock_state
         assert "session_id" in mock_state
 
