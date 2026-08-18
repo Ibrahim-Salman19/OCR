@@ -1487,6 +1487,16 @@ def _render_current_results() -> None:
             '</div>',
             unsafe_allow_html=True,
         )
+        mcols = _pad_columns(st.columns(4, gap="small"), 4)
+        with mcols[0]:
+            st.metric("DOCUMENTS", f"{successful_files}/{len(summary)}")
+        with mcols[1]:
+            st.metric("PAGES DECODED", str(pages))
+        with mcols[2]:
+            st.metric("WALL LATENCY", f"{dur:.2f}s" if dur else "N/A")
+        with mcols[3]:
+            throughput = f"{pages / max(dur, 0.001):.1f} pps" if dur and pages else "N/A"
+            st.metric("THROUGHPUT", throughput)
     elif failed_files > 0 and successful_files == 0:
         st.markdown(
             '<div class="error-box" style="margin-bottom: 1rem;">'

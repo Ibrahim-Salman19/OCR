@@ -920,28 +920,78 @@ button[aria-disabled="true"] {
 [data-testid="stToast"] {
     color: var(--blast-text-primary) !important;
     background: var(--blast-surface-overlay) !important;
-    border: 1px solid var(--blast-border-default) !important;
+    border: 1px solid var(--blast-accent-border) !important;
+    border-left: 3px solid var(--blast-accent) !important;
     border-radius: var(--blast-radius-panel) !important;
     box-shadow: var(--blast-shadow-lg) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.82rem !important;
 }
 
 /* ============================================================
-   13. PROGRESS / SPINNER
+   13. PROGRESS / STATUS / SPINNER
    ============================================================ */
 
+/* Status Widget (st.status) */
+[data-testid="stStatusWidget"] {
+    background: var(--blast-surface-raised) !important;
+    border: 1px solid var(--blast-border-default) !important;
+    border-left: 3px solid var(--blast-accent) !important;
+    border-radius: var(--blast-radius-panel) !important;
+    color: var(--blast-text-primary) !important;
+    box-shadow: var(--blast-shadow-sm) !important;
+    margin-bottom: 1rem !important;
+}
+
+[data-testid="stStatusWidget"] summary {
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    color: var(--blast-text-primary) !important;
+}
+
+[data-testid="stStatusWidget"] summary svg {
+    color: var(--blast-accent) !important;
+}
+
+[data-testid="stStatusWidget"] [data-testid="stMarkdownContainer"] {
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.78rem !important;
+    color: var(--blast-text-secondary) !important;
+}
+
+/* Progress Bars */
 [data-testid="stProgress"] {
     overflow: hidden;
-    border-radius: var(--blast-radius-pill);
+    height: 10px !important;
+    background: var(--blast-surface-base) !important;
+    border: 1px solid var(--blast-border-subtle) !important;
+    border-radius: var(--blast-radius-pill) !important;
+    margin: 0.5rem 0 !important;
 }
 
 [data-testid="stProgress"] > div > div > div > div {
-    background: var(--blast-accent) !important;
+    background: linear-gradient(90deg, #d97706, #fbbf24) !important;
     border-radius: var(--blast-radius-pill) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.45) !important;
 }
 
+[data-testid="stProgress"] label,
+[data-testid="stProgress"] p {
+    color: var(--blast-text-muted) !important;
+    font-family: var(--blast-font-mono) !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.04em !important;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Spinner */
 [data-testid="stSpinner"] {
     color: var(--blast-text-secondary) !important;
     font-family: var(--blast-font-mono) !important;
+    font-size: 0.82rem !important;
+    padding: 0.5rem 0 !important;
 }
 
 [data-testid="stSpinner"] svg {
