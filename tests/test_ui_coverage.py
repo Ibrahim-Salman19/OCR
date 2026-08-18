@@ -240,3 +240,122 @@ def test_main_shows_model_download_initializing_message_on_cloud():
                             except RuntimeError as e:
                                 assert str(e) == "stopped"
     assert info_mock.called
+
+
+def test_handle_file_upload_multi_pdf_success():
+    """Verify that multiple PDF uploads are cleanly processed, recorded, and grouped."""
+    file1 = MagicMock()
+    file1.name = "invoice_2026.pdf"
+    file1.getbuffer.return_value = b"%PDF-1.4 test invoice"
+
+    file2 = MagicMock()
+    file2.name = "research_paper.pdf"
+    file2.getbuffer.return_value = b"%PDF-1.4 test research"
+
+    mock_pipeline = MagicMock()
+    mock_pipeline.process_job.return_value = {"status": "success", "pages_processed": 3}
+
+    mock_state = MockSessionState(
+        {"session_id": "test-multi-uuid", "output_dir": "test_out", "current_results": None}
+    )
+
+    with patch("streamlit.file_uploader", return_value=[file1, file2]):
+        with patch("streamlit.button", return_value=True):
+            with patch("streamlit.session_state", mock_state):
+                with patch("blast_ocr.ui.web_app.Path.exists", return_value=True):
+                    with patch("builtins.open", mock_open(read_data=b"test markdown content")):
+                        with patch("streamlit.download_button"):
+                            with patch("streamlit.dataframe"):
+                                with patch("streamlit.markdown"):
+                                    with patch("streamlit.tabs", return_value=[MagicMock(), MagicMock()]):
+                                        web_app.handle_file_upload(mock_pipeline, MagicMock())
+
+    res = mock_state.current_results
+    assert res is not None
+    assert len(res["summary"]) == 2
+    assert res["summary"][0]["FILE"] == "invoice_2026.pdf"
+    assert res["summary"][1]["FILE"] == "research_paper.pdf"
+    assert res["summary"][0]["STATUS"] == "SUCCESS"
+    assert res["summary"][1]["STATUS"] == "SUCCESS"
+    assert "documents" in res
+    assert len(res["documents"]) == 2
+    assert res["documents"][0]["filename"] == "invoice_2026.pdf"
+    assert res["documents"][1]["filename"] == "research_paper.pdf"
+
+
+def test_multi_document_results_rendering_and_preview_selection():
+    """Verify that multi-PDF results render master zip, per-document tabs, and preview selector."""
+    mock_state = MockSessionState(
+        {
+            "current_results": {
+                "summary": [
+                    {"FILE": "doc_alpha.pdf", "STATUS": "SUCCESS"},
+                    {"FILE": "doc_beta.pdf", "STATUS": "SUCCESS"},
+                ],
+                "output_files": [
+                    ("md", "/dummy/doc_alpha.md"),
+                    ("json", "/dummy/doc_alpha_layout.json"),
+                    ("md", "/dummy/doc_beta.md"),
+                    ("json", "/dummy/doc_beta_layout.json"),
+                ],
+                "documents": [
+                    {
+                        "filename": "doc_alpha.pdf",
+                        "status": "SUCCESS",
+                        "pages": 2,
+                        "duration": 0.5,
+                        "outputs": [("md", "/dummy/doc_alpha.md"), ("json", "/dummy/doc_alpha_layout.json")],
+                    },
+                    {
+                        "filename": "doc_beta.pdf",
+                        "status": "SUCCESS",
+                        "pages": 4,
+                        "duration": 1.2,
+                        "outputs": [("md", "/dummy/doc_beta.md"), ("json", "/dummy/doc_beta_layout.json")],
+                    },
+                ],
+            }
+        }
+    )
+
+    with patch("streamlit.session_state", mock_state):
+        with patch("streamlit.dataframe") as df_mock:
+            with patch("streamlit.markdown"):
+                with patch("streamlit.download_button") as dl_mock:
+                    with patch("streamlit.selectbox", return_value="doc_beta.pdf") as sb_mock:
+                        with patch("streamlit.tabs", return_value=[MagicMock(), MagicMock(), MagicMock()]) as tabs_mock:
+                            with patch("builtins.open", mock_open(read_data=b"# Document Title\nSample OCR text")):
+                                with patch("blast_ocr.ui.web_app.Path.exists", return_value=True):
+                                    with patch("blast_ocr.ui.web_app.Path.is_file", return_value=True):
+                                        with patch("blast_ocr.ui.web_app.Path.stat") as stat_mock:
+                                            stat_mock.return_value.st_size = 1024
+                                            web_app._render_current_results()
+                                            assert df_mock.called
+                                            assert dl_mock.called
+                                            assert tabs_mock.called
+                                            assert sb_mock.called
+
+
+def test_extract_document_groups_fallback():
+    """Verify that _extract_document_groups gracefully reconstructs documents from legacy structures."""
+    legacy_current = {
+        "summary": [
+            {"FILE": "doc1.pdf", "STATUS": "SUCCESS"},
+            {"FILE": "doc2.pdf", "STATUS": "SUCCESS"},
+        ],
+        "output_files": [
+            ("md", "/tmp/jobs/uuid1/doc1.md"),
+            ("docx", "/tmp/jobs/uuid1/doc1.docx"),
+            ("md", "/tmp/jobs/uuid2/doc2.md"),
+            ("docx", "/tmp/jobs/uuid2/doc2.docx"),
+        ],
+    }
+    with patch("blast_ocr.ui.web_app.Path.exists", return_value=True):
+        with patch("blast_ocr.ui.web_app.Path.is_file", return_value=True):
+            groups = web_app._extract_document_groups(legacy_current)
+            assert len(groups) == 2
+            assert groups[0]["filename"] == "doc1.pdf"
+            assert groups[1]["filename"] == "doc2.pdf"
+            assert len(groups[0]["outputs"]) == 2
+            assert len(groups[1]["outputs"]) == 2
+

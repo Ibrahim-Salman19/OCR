@@ -524,7 +524,10 @@ def _build_zip_bytes(output_files: Sequence[tuple[str, str]]) -> Any:
                 if path.suffix.lower() in {".pdf", ".docx", ".epub", ".zip"}
                 else zipfile.ZIP_DEFLATED
             )
-            archive.write(path, arcname=arcname, compress_type=compression)
+            try:
+                archive.write(path, arcname=arcname, compress_type=compression)
+            except Exception:
+                logger.debug("Failed to add file %s to zip bundle", path, exc_info=True)
     buffer.seek(0)
     return buffer
 
@@ -1342,6 +1345,7 @@ def handle_file_upload(
 
             summaries: list[dict[str, Any]] = []
             outputs: list[tuple[str, str]] = []
+            doc_records: list[dict[str, Any]] = []
             total_pages = 0
             total_started = time.perf_counter()
 
@@ -1366,6 +1370,16 @@ def handle_file_upload(
                             "ERROR": "UNAUTHORIZED EXTENSION: Rejected by security gateway",
                         }
                     )
+                    doc_records.append(
+                        {
+                            "filename": str(uploaded_file.name),
+                            "status": "FAILED",
+                            "error": "UNAUTHORIZED EXTENSION: Rejected by security gateway",
+                            "pages": 0,
+                            "duration": 0.0,
+                            "outputs": [],
+                        }
+                    )
                     continue
 
                 if use_queue:
@@ -1386,10 +1400,22 @@ def handle_file_upload(
                                 "JOB ID": str(job_id),
                             }
                         )
+                        doc_records.append(
+                            {
+                                "filename": str(uploaded_file.name),
+                                "status": "QUEUED",
+                                "error": "",
+                                "job_id": str(job_id),
+                                "pages": 0,
+                                "duration": 0.0,
+                                "outputs": [],
+                            }
+                        )
                         continue
                     except Exception as exc:
                         logger.exception("Queue enqueue failed")
                         summaries.append({"FILE": uploaded_file.name, "STATUS": "FAILED", "ERROR": f"Queue enqueue failed: {exc}"})
+                        doc_records.append({"filename": str(uploaded_file.name), "status": "FAILED", "error": f"Queue enqueue failed: {exc}", "pages": 0, "duration": 0.0, "outputs": []})
                         continue
 
                 if pipeline is None:
@@ -1399,6 +1425,7 @@ def handle_file_upload(
                     except Exception as exc:
                         logger.exception("Pipeline initialization failed")
                         summaries.append({"FILE": uploaded_file.name, "STATUS": "FAILED", "ERROR": f"Pipeline initialization failed: {exc}"})
+                        doc_records.append({"filename": str(uploaded_file.name), "status": "FAILED", "error": f"Pipeline initialization failed: {exc}", "pages": 0, "duration": 0.0, "outputs": []})
                         continue
 
                 def _on_progress(current_page: int, total_pages_in_file: int) -> None:
@@ -1427,6 +1454,16 @@ def handle_file_upload(
                         "ERROR": "" if success else _result_error_message(result),
                     }
                 )
+                doc_records.append(
+                    {
+                        "filename": str(uploaded_file.name),
+                        "status": "SUCCESS" if success else "FAILED",
+                        "error": "" if success else _result_error_message(result),
+                        "duration": duration,
+                        "pages": pages,
+                        "outputs": file_outputs,
+                    }
+                )
                 outputs.extend(file_outputs)
                 total_pages += pages
                 st.session_state.last_job_latency_seconds = duration
@@ -1438,7 +1475,11 @@ def handle_file_upload(
                 st.session_state.total_scans = int(st.session_state.get("total_scans", 0)) + successful_files
                 st.session_state.pages_decoded = int(st.session_state.get("pages_decoded", 0)) + total_pages
 
-            st.session_state.current_results = {"summary": summaries, "output_files": outputs}
+            st.session_state.current_results = {
+                "summary": summaries,
+                "output_files": outputs,
+                "documents": doc_records,
+            }
             st.session_state.last_execution_notification = {
                 "success_count": successful_files,
                 "total_count": len(uploaded_files),
@@ -1460,6 +1501,106 @@ def handle_file_upload(
         render_mission_control(db, active_job_id)
 
 
+def _extract_document_groups(current: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Extract or reconstruct per-document results and output mappings."""
+    docs = current.get("documents")
+    if isinstance(docs, list) and docs:
+        cleaned_docs: list[dict[str, Any]] = []
+        for doc in docs:
+            if not isinstance(doc, Mapping):
+                continue
+            raw_doc_outputs = doc.get("outputs", [])
+            doc_outputs = [
+                (str(fmt), str(path))
+                for fmt, path in raw_doc_outputs
+                if (Path(str(path)).is_file() or Path(str(path)).exists())
+            ]
+            if not doc_outputs and raw_doc_outputs:
+                doc_outputs = [(str(fmt), str(path)) for fmt, path in raw_doc_outputs]
+            cleaned_docs.append({
+                "filename": str(doc.get("filename", "document")),
+                "status": str(doc.get("status", "SUCCESS")),
+                "error": str(doc.get("error", "")),
+                "pages": _safe_int(doc.get("pages", 0), 0),
+                "duration": _safe_float(doc.get("duration", 0.0), 0.0),
+                "outputs": doc_outputs,
+            })
+        if cleaned_docs:
+            return cleaned_docs
+
+    summary = current.get("summary", [])
+    raw_outputs = current.get("output_files", [])
+    output_files = [
+        (str(fmt), str(path))
+        for fmt, path in raw_outputs
+        if (Path(str(path)).is_file() or Path(str(path)).exists())
+    ]
+    if not output_files and raw_outputs:
+        output_files = [(str(fmt), str(path)) for fmt, path in raw_outputs]
+
+    if not summary:
+        if output_files:
+            return [{
+                "filename": "document",
+                "status": "SUCCESS",
+                "error": "",
+                "pages": 0,
+                "duration": 0.0,
+                "outputs": output_files,
+            }]
+        return []
+
+    if len(summary) == 1:
+        item = summary[0] if isinstance(summary[0], Mapping) else {}
+        return [{
+            "filename": str(item.get("FILE", "document")),
+            "status": str(item.get("STATUS", "SUCCESS")),
+            "error": str(item.get("ERROR", "")),
+            "pages": 0,
+            "duration": 0.0,
+            "outputs": output_files,
+        }]
+
+    # Multiple items in summary without explicit 'documents' list
+    # Group output files by directory or by stem
+    dir_to_outputs: dict[Path, list[tuple[str, str]]] = {}
+    for fmt, path_str in output_files:
+        dir_to_outputs.setdefault(Path(path_str).parent, []).append((fmt, path_str))
+
+    groups: list[dict[str, Any]] = []
+    used_dirs: set[Path] = set()
+    for item in summary:
+        if not isinstance(item, Mapping):
+            continue
+        fname = str(item.get("FILE", "document"))
+        fstem = Path(fname).stem.lower()
+        status = str(item.get("STATUS", "SUCCESS"))
+        error = str(item.get("ERROR", ""))
+
+        matched_outputs: list[tuple[str, str]] = []
+        for fmt, p_str in output_files:
+            p_name = Path(p_str).name.lower()
+            if fstem in p_name:
+                matched_outputs.append((fmt, p_str))
+
+        if not matched_outputs:
+            for p_dir, dir_outputs in dir_to_outputs.items():
+                if p_dir not in used_dirs:
+                    matched_outputs = dir_outputs
+                    used_dirs.add(p_dir)
+                    break
+
+        groups.append({
+            "filename": fname,
+            "status": status,
+            "error": error,
+            "pages": 0,
+            "duration": 0.0,
+            "outputs": matched_outputs,
+        })
+    return groups
+
+
 def _render_current_results() -> None:
     if _active_job_ids():
         return
@@ -1468,7 +1609,8 @@ def _render_current_results() -> None:
         return
 
     summary = current.get("summary", [])
-    if not summary and not current.get("output_files"):
+    raw_outputs = current.get("output_files", [])
+    if not summary and not raw_outputs:
         return
 
     successful_files = sum(1 for item in summary if isinstance(item, Mapping) and item.get("STATUS") == "SUCCESS")
@@ -1479,14 +1621,24 @@ def _render_current_results() -> None:
         pages = last_exec.get("pages", 0)
         dur = last_exec.get("duration", 0.0)
         dur_str = f" in {dur:.2f}s" if dur else ""
-        st.markdown(
-            '<div class="success-box" style="margin-bottom: 1rem;">'
-            '<strong>MISSION ACCOMPLISHED</strong> — '
-            f'Successfully decoded <strong>{pages}</strong> page(s) across <strong>{successful_files}</strong> file(s){dur_str}. '
-            'Exported document artifacts and layout geometry models are compiled and ready below.'
-            '</div>',
-            unsafe_allow_html=True,
-        )
+        if failed_files == 0:
+            st.markdown(
+                '<div class="success-box" style="margin-bottom: 1rem;">'
+                '<strong>MISSION ACCOMPLISHED</strong> — '
+                f'Successfully decoded <strong>{pages}</strong> page(s) across <strong>{successful_files}</strong> file(s){dur_str}. '
+                'Exported document artifacts and layout geometry models are compiled and ready below.'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<div class="warning-box" style="margin-bottom: 1rem;">'
+                '<strong>PARTIAL BATCH COMPLETE</strong> — '
+                f'Successfully decoded <strong>{pages}</strong> page(s) across <strong>{successful_files}</strong> of {len(summary)} file(s){dur_str}. '
+                f'<strong>{failed_files}</strong> file(s) encountered errors. Review error details below.'
+                '</div>',
+                unsafe_allow_html=True,
+            )
         mcols = _pad_columns(st.columns(4, gap="small"), 4)
         with mcols[0]:
             st.metric("DOCUMENTS", f"{successful_files}/{len(summary)}")
@@ -1510,7 +1662,6 @@ def _render_current_results() -> None:
         st.markdown("#### PROCESSED ARTIFACTS")
         st.dataframe(_to_table(summary), use_container_width=True, hide_index=True)
 
-    raw_outputs = current.get("output_files", [])
     output_files = [
         (str(fmt), str(path))
         for fmt, path in raw_outputs
@@ -1521,51 +1672,159 @@ def _render_current_results() -> None:
     if not output_files:
         return
 
-    st.markdown("##### DOWNLOAD EXPORTED FORMATS")
-    cols = _pad_columns(st.columns(min(len(output_files), 5), gap="small"), len(output_files))
-    for index, (fmt, path) in enumerate(output_files):
-        with cols[index % len(cols)]:
-            try:
-                if Path(path).exists() and Path(path).is_file():
-                    file_bytes = Path(path).read_bytes()
-                else:
-                    with open(path, "rb") as fh:
-                        file_bytes = fh.read()
-            except Exception:
-                file_bytes = b""
-            st.download_button(
-                label=f"DOWNLOAD {fmt.upper()}",
-                data=file_bytes,
-                file_name=_safe_download_filename(Path(path).name),
-                mime=MIME_TYPES.get(fmt, "application/octet-stream"),
-                use_container_width=True,
-                key=f"download_{index}_{uuid.uuid5(uuid.NAMESPACE_URL, str(Path(path).resolve(strict=False))).hex[:12]}",
-            )
+    doc_groups = _extract_document_groups(current)
+    active_docs = [d for d in doc_groups if d.get("outputs")]
+    if not active_docs and output_files:
+        active_docs = [{
+            "filename": "batch_output",
+            "status": "SUCCESS",
+            "error": "",
+            "pages": 0,
+            "duration": 0.0,
+            "outputs": output_files,
+        }]
 
-    if len(output_files) > 1:
+    # Downloads section
+    if len(active_docs) > 1:
+        st.markdown("##### DOWNLOAD EXPORTED FORMATS")
         bundle_files = tuple(output_files)
         bundle_buffer = _build_zip_bytes(bundle_files)
         bundle_bytes = bundle_buffer.getvalue() if hasattr(bundle_buffer, "getvalue") else bundle_buffer.read()
         st.download_button(
-            label="DOWNLOAD COMPLETE ARTIFACT BUNDLE (.ZIP)",
+            label=f"DOWNLOAD COMPLETE BATCH ARCHIVE ({len(active_docs)} DOCUMENTS .ZIP)",
             data=bundle_bytes,
-            file_name="blast_ocr_mission_bundle.zip",
+            file_name="blast_ocr_batch_bundle.zip",
             mime="application/zip",
             use_container_width=True,
-            key="download_bundle",
+            key="download_all_bundle",
         )
 
-    text_candidates = [path for fmt, path in output_files if fmt in {"md", "txt"}]
-    if text_candidates:
-        _render_document_preview(Path(text_candidates[0]), output_files)
+        st.markdown("###### ARTIFACTS BY DOCUMENT")
+        doc_tabs = st.tabs([f"📄 {doc['filename']}" for doc in active_docs])
+        for doc_index, (tab, doc) in enumerate(zip(doc_tabs, active_docs)):
+            with tab:
+                doc_outputs = doc.get("outputs", [])
+                doc_name = doc.get("filename", f"doc_{doc_index}")
+
+                pill_parts = [f'<span class="doc-stat-pill">File: <strong>{html.escape(doc_name)}</strong></span>']
+                if doc.get("pages"):
+                    pill_parts.append(f'<span class="doc-stat-pill">Pages: <strong>{doc["pages"]}</strong></span>')
+                if doc.get("duration"):
+                    pill_parts.append(f'<span class="doc-stat-pill">Latency: <strong>{doc["duration"]:.2f}s</strong></span>')
+                pill_parts.append(f'<span class="doc-stat-pill">Formats: <strong>{len(doc_outputs)} ready</strong></span>')
+                st.markdown(f'<div class="doc-stats-row">{"".join(pill_parts)}</div>', unsafe_allow_html=True)
+
+                if doc_outputs:
+                    cols = _pad_columns(st.columns(min(len(doc_outputs), 5), gap="small"), len(doc_outputs))
+                    for index, (fmt, path) in enumerate(doc_outputs):
+                        with cols[index % len(cols)]:
+                            try:
+                                if Path(path).exists() and Path(path).is_file():
+                                    file_bytes = Path(path).read_bytes()
+                                else:
+                                    with open(path, "rb") as fh:
+                                        file_bytes = fh.read()
+                            except Exception:
+                                file_bytes = b""
+                            st.download_button(
+                                label=f"DOWNLOAD {fmt.upper()}",
+                                data=file_bytes,
+                                file_name=_safe_download_filename(Path(path).name),
+                                mime=MIME_TYPES.get(fmt, "application/octet-stream"),
+                                use_container_width=True,
+                                key=f"download_{doc_index}_{index}_{uuid.uuid5(uuid.NAMESPACE_URL, str(Path(path).resolve(strict=False))).hex[:12]}",
+                            )
+                    if len(doc_outputs) > 1:
+                        doc_bundle_buffer = _build_zip_bytes(tuple(doc_outputs))
+                        doc_bundle_bytes = doc_bundle_buffer.getvalue() if hasattr(doc_bundle_buffer, "getvalue") else doc_bundle_buffer.read()
+                        doc_zip_name = f"{Path(doc_name).stem}_artifacts.zip"
+                        st.download_button(
+                            label=f"DOWNLOAD {doc_name} BUNDLE (.ZIP)",
+                            data=doc_bundle_bytes,
+                            file_name=_safe_download_filename(doc_zip_name),
+                            mime="application/zip",
+                            use_container_width=True,
+                            key=f"download_doc_bundle_{doc_index}_{uuid.uuid5(uuid.NAMESPACE_URL, doc_name).hex[:12]}",
+                        )
+    else:
+        # Single document clean view
+        st.markdown("##### DOWNLOAD EXPORTED FORMATS")
+        cols = _pad_columns(st.columns(min(len(output_files), 5), gap="small"), len(output_files))
+        for index, (fmt, path) in enumerate(output_files):
+            with cols[index % len(cols)]:
+                try:
+                    if Path(path).exists() and Path(path).is_file():
+                        file_bytes = Path(path).read_bytes()
+                    else:
+                        with open(path, "rb") as fh:
+                            file_bytes = fh.read()
+                except Exception:
+                    file_bytes = b""
+                st.download_button(
+                    label=f"DOWNLOAD {fmt.upper()}",
+                    data=file_bytes,
+                    file_name=_safe_download_filename(Path(path).name),
+                    mime=MIME_TYPES.get(fmt, "application/octet-stream"),
+                    use_container_width=True,
+                    key=f"download_{index}_{uuid.uuid5(uuid.NAMESPACE_URL, str(Path(path).resolve(strict=False))).hex[:12]}",
+                )
+
+        if len(output_files) > 1:
+            bundle_files = tuple(output_files)
+            bundle_buffer = _build_zip_bytes(bundle_files)
+            bundle_bytes = bundle_buffer.getvalue() if hasattr(bundle_buffer, "getvalue") else bundle_buffer.read()
+            st.download_button(
+                label="DOWNLOAD COMPLETE ARTIFACT BUNDLE (.ZIP)",
+                data=bundle_bytes,
+                file_name="blast_ocr_mission_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+                key="download_bundle",
+            )
+
+    _render_document_preview_multi(active_docs, output_files)
 
 
-def _render_document_preview(preview_path: Path, output_files: Sequence[tuple[str, str]]) -> None:
+def _render_document_preview_multi(
+    doc_groups: Sequence[Mapping[str, Any]],
+    output_files: Sequence[tuple[str, str]],
+) -> None:
+    docs_with_preview: list[dict[str, Any]] = []
+    for doc in doc_groups:
+        outputs = doc.get("outputs", [])
+        if any(fmt in {"md", "txt"} for fmt, _ in outputs):
+            docs_with_preview.append(dict(doc))
+
+    if not docs_with_preview:
+        text_candidates = [path for fmt, path in output_files if fmt in {"md", "txt"}]
+        if not text_candidates:
+            return
+        docs_with_preview = [{
+            "filename": Path(text_candidates[0]).name,
+            "outputs": output_files,
+        }]
+
     with st.expander("INLINE DOCUMENT PREVIEW & INSPECTION", expanded=True):
+        if len(docs_with_preview) > 1:
+            doc_labels = [str(doc.get("filename", f"Document {i+1}")) for i, doc in enumerate(docs_with_preview)]
+            selected_label = st.selectbox(
+                "SELECT DOCUMENT TO PREVIEW",
+                doc_labels,
+                key="preview_doc_selector",
+            )
+            selected_doc = next((d for d in docs_with_preview if str(d.get("filename")) == selected_label), docs_with_preview[0])
+        else:
+            selected_doc = docs_with_preview[0]
+
+        doc_outputs = selected_doc.get("outputs", output_files)
+        text_candidates = [path for fmt, path in doc_outputs if fmt in {"md", "txt"}]
+        if not text_candidates:
+            st.caption("No text preview available for the selected document.")
+            return
+
+        preview_path = Path(text_candidates[0])
         try:
             full_size = preview_path.stat().st_size
-            # Read only what can actually be rendered. This bounds server memory for very
-            # large OCR outputs while still detecting whether the preview was truncated.
             with preview_path.open("r", encoding="utf-8", errors="replace") as handle:
                 sample = handle.read(PREVIEW_CHAR_LIMIT + 1)
         except OSError as exc:
@@ -1594,14 +1853,24 @@ def _render_document_preview(preview_path: Path, output_files: Sequence[tuple[st
             ["RENDERED MARKDOWN", "RAW TEXT", "JSON STRUCTURE"]
         )
         with rendered_tab:
-            # The OCR result is user-derived content. Keep unsafe HTML disabled.
             st.markdown(_markdown_without_embeds(preview), unsafe_allow_html=False)
         with raw_tab:
-            st.text_area("Document Content", value=preview, height=300, key="preview_raw_text")
+            st.text_area(
+                "Document Content",
+                value=preview,
+                height=300,
+                key=f"preview_raw_text_{selected_doc.get('filename', 'doc')}",
+            )
         with json_tab:
-            layout_jsons = [Path(path) for fmt, path in output_files if fmt == "json" and Path(path).is_file()]
+            layout_jsons = [Path(path) for fmt, path in doc_outputs if fmt == "json" and Path(path).is_file()]
             if not layout_jsons:
-                st.caption("No JSON document model exported.")
+                fstem = Path(str(selected_doc.get("filename", ""))).stem.lower()
+                layout_jsons = [
+                    Path(path) for fmt, path in output_files
+                    if fmt == "json" and Path(path).is_file() and fstem in Path(path).name.lower()
+                ]
+            if not layout_jsons:
+                st.caption("No JSON document model exported for this document.")
             else:
                 try:
                     if layout_jsons[0].stat().st_size > MAX_LAYOUT_JSON_MB * 1024 * 1024:
@@ -1611,6 +1880,11 @@ def _render_document_preview(preview_path: Path, output_files: Sequence[tuple[st
                             st.json(json.load(fh))
                 except (OSError, json.JSONDecodeError) as exc:
                     st.caption(f"JSON structure preview unavailable: {exc}")
+
+
+def _render_document_preview(preview_path: Path, output_files: Sequence[tuple[str, str]]) -> None:
+    """Compatibility wrapper for single-document preview callers."""
+    _render_document_preview_multi([{"filename": preview_path.name, "outputs": output_files}], output_files)
 
 
 # -----------------------------------------------------------------------------
@@ -1676,6 +1950,25 @@ def _finalize_queue_job(job_id: Any, job: Any, status: str, processed_pages: int
         if resolved not in existing_paths:
             existing.append((fmt, raw_path))
             existing_paths.add(resolved)
+
+    docs = current.setdefault("documents", [])
+    if not isinstance(docs, list):
+        docs = []
+        current["documents"] = docs
+    doc_match = next((d for d in docs if isinstance(d, dict) and d.get("filename") == filename), None)
+    if doc_match:
+        doc_match["status"] = "SUCCESS" if status in _SUCCESS_STATUSES else status.upper()
+        doc_match["error"] = "" if status in _SUCCESS_STATUSES else error_message
+        doc_match["pages"] = max(0, processed_pages)
+        doc_match["outputs"] = outputs
+    else:
+        docs.append({
+            "filename": filename,
+            "status": "SUCCESS" if status in _SUCCESS_STATUSES else status.upper(),
+            "error": "" if status in _SUCCESS_STATUSES else error_message,
+            "pages": max(0, processed_pages),
+            "outputs": outputs,
+        })
 
     if status in _SUCCESS_STATUSES:
         st.session_state.total_scans = int(st.session_state.get("total_scans", 0)) + 1
