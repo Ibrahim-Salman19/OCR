@@ -1179,6 +1179,7 @@ def _process_sync_upload(
     uploaded_file: Any,
     out_dir: Path,
     options: EngineOptions,
+    progress_callback: Any = None,
 ) -> tuple[dict[str, Any], list[tuple[str, str]], float, int]:
     suffix = Path(str(uploaded_file.name)).suffix.lower()
     tmp_path: str | None = None
@@ -1197,6 +1198,7 @@ def _process_sync_upload(
             output_dir=str(job_out_dir),
             job_config=asdict(options),
             config=asdict(options),
+            progress_callback=progress_callback,
         )
         result = dict(raw) if isinstance(raw, Mapping) else {"status": "failed", "error": "Pipeline returned a non-mapping result"}
     except Exception as exc:
@@ -1341,20 +1343,20 @@ def handle_file_upload(
             summaries: list[dict[str, Any]] = []
             outputs: list[tuple[str, str]] = []
             total_pages = 0
-            try:
-                batch_status = st.status(
-                    "Processing OCR batch…" if not use_queue else "Submitting durable queue job…",
-                    expanded=True,
-                )
-            except Exception:
-                batch_status = None
+            total_started = time.perf_counter()
+
+            # Immediate real-time execution feedback for the user
+            progress_bar = st.progress(0.0, text=f"Initializing OCR pipeline for {len(uploaded_files)} file(s)...")
+            status_text = st.empty()
 
             for file_index, uploaded_file in enumerate(uploaded_files, 1):
-                if batch_status and hasattr(batch_status, "write"):
-                    try:
-                        batch_status.write(f"[{file_index}/{len(uploaded_files)}] {uploaded_file.name}")
-                    except Exception:
-                        pass
+                engine_label = getattr(options, "ocr_engine", "rapidocr").upper()
+                lang_label = getattr(options, "language_profile", "en")
+                status_text.info(
+                    f"⚡ Processing **{uploaded_file.name}** `[{file_index}/{len(uploaded_files)}]` — "
+                    f"Routing to **{engine_label}** ({lang_label})..."
+                )
+
                 ext = Path(str(uploaded_file.name)).suffix.lower()
                 if ext not in allowed_extensions:
                     summaries.append(
@@ -1384,8 +1386,6 @@ def handle_file_upload(
                                 "JOB ID": str(job_id),
                             }
                         )
-                        # Durable queue owns execution from this point; never also
-                        # process the same payload synchronously in the UI process.
                         continue
                     except Exception as exc:
                         logger.exception("Queue enqueue failed")
@@ -1394,17 +1394,29 @@ def handle_file_upload(
 
                 if pipeline is None:
                     try:
-                        pipeline = _get_or_create_pipeline()
+                        with st.spinner("Loading neural OCR models into execution provider..."):
+                            pipeline = _get_or_create_pipeline()
                     except Exception as exc:
                         logger.exception("Pipeline initialization failed")
                         summaries.append({"FILE": uploaded_file.name, "STATUS": "FAILED", "ERROR": f"Pipeline initialization failed: {exc}"})
                         continue
+
+                def _on_progress(current_page: int, total_pages_in_file: int) -> None:
+                    file_base = (file_index - 1) / len(uploaded_files)
+                    file_share = 1.0 / len(uploaded_files)
+                    page_pct = (current_page / max(1, total_pages_in_file)) * file_share
+                    overall = min(1.0, max(0.0, file_base + page_pct))
+                    progress_bar.progress(
+                        overall,
+                        text=f"Decoding **{uploaded_file.name}** — Page {current_page}/{total_pages_in_file} ({overall:.0%})",
+                    )
 
                 result, file_outputs, duration, pages = _process_sync_upload(
                     pipeline=pipeline,
                     uploaded_file=uploaded_file,
                     out_dir=out_dir,
                     options=options,
+                    progress_callback=_on_progress,
                 )
                 status = _safe_status(result.get("status"))
                 success = status in _SUCCESS_STATUSES
@@ -1421,23 +1433,25 @@ def handle_file_upload(
                 _record_history(str(uploaded_file.name), result, duration, pages)
 
             successful_files = sum(1 for item in summaries if item.get("STATUS") == "SUCCESS")
+            total_duration = time.perf_counter() - total_started
             if successful_files:
                 st.session_state.total_scans = int(st.session_state.get("total_scans", 0)) + successful_files
                 st.session_state.pages_decoded = int(st.session_state.get("pages_decoded", 0)) + total_pages
 
             st.session_state.current_results = {"summary": summaries, "output_files": outputs}
-            failed_count = sum(1 for item in summaries if item.get("STATUS") == "FAILED")
-            queued_count = sum(1 for item in summaries if item.get("STATUS") == "QUEUED")
-            if batch_status and hasattr(batch_status, "update"):
-                try:
-                    if failed_count:
-                        batch_status.update(label=f"Batch finished with {failed_count} failure(s)", state="error", expanded=True)
-                    elif queued_count:
-                        batch_status.update(label="Queue submission accepted", state="complete", expanded=False)
-                    else:
-                        batch_status.update(label="OCR batch completed", state="complete", expanded=False)
-                except Exception:
-                    pass
+            st.session_state.last_execution_notification = {
+                "success_count": successful_files,
+                "total_count": len(uploaded_files),
+                "pages": total_pages,
+                "duration": total_duration,
+            }
+
+            progress_bar.progress(1.0, text=f"✅ Execution Complete: {successful_files}/{len(uploaded_files)} file(s) processed in {total_duration:.2f}s")
+            status_text.success(f"✅ Finished processing {len(uploaded_files)} file(s) in {total_duration:.2f}s!")
+            try:
+                st.toast(f"✅ Decoded {total_pages} page(s) across {successful_files} file(s)!", icon="📄")
+            except Exception:
+                pass
             _safe_rerun()
 
     _render_current_results()
@@ -1454,6 +1468,34 @@ def _render_current_results() -> None:
         return
 
     summary = current.get("summary", [])
+    if not summary and not current.get("output_files"):
+        return
+
+    successful_files = sum(1 for item in summary if isinstance(item, Mapping) and item.get("STATUS") == "SUCCESS")
+    failed_files = sum(1 for item in summary if isinstance(item, Mapping) and item.get("STATUS") == "FAILED")
+    last_exec = st.session_state.get("last_execution_notification")
+
+    if isinstance(last_exec, Mapping) and successful_files > 0:
+        pages = last_exec.get("pages", 0)
+        dur = last_exec.get("duration", 0.0)
+        dur_str = f" in {dur:.2f}s" if dur else ""
+        st.markdown(
+            '<div class="success-box" style="margin-bottom: 1rem;">'
+            '<strong>MISSION ACCOMPLISHED</strong> — '
+            f'Successfully decoded <strong>{pages}</strong> page(s) across <strong>{successful_files}</strong> file(s){dur_str}. '
+            'Exported document artifacts and layout geometry models are compiled and ready below.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    elif failed_files > 0 and successful_files == 0:
+        st.markdown(
+            '<div class="error-box" style="margin-bottom: 1rem;">'
+            f'<strong>MISSION FAILED</strong> — {failed_files} file(s) could not be processed. '
+            'Review error details in the table below.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
     if summary:
         st.markdown("#### PROCESSED ARTIFACTS")
         st.dataframe(_to_table(summary), use_container_width=True, hide_index=True)
