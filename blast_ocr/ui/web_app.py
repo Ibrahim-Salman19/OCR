@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import html
 import inspect
-import io
 import json
 import logging
 import math
@@ -1322,9 +1321,14 @@ def handle_file_upload(
             for message in batch_errors:
                 st.error(message)
 
-        total_mb = sum(max(0, _safe_int(getattr(f, "size", 0), 0)) for f in uploaded_files) / (1024 * 1024)
+        total_bytes = sum(max(0, _safe_int(getattr(f, "size", 0), 0)) for f in uploaded_files)
+        total_mb = total_bytes / (1024 * 1024)
+        if total_mb < 1.0:
+            size_str = f"{total_bytes / 1024:.1f} KB"
+        else:
+            size_str = f"{total_mb:.2f} MB"
         if not batch_errors:
-            st.success(f"VERIFIED FOR INGESTION: {len(uploaded_files)} file(s), {total_mb:.1f} MB total.")
+            st.success(f"VERIFIED FOR INGESTION: {len(uploaded_files)} file(s), {size_str} total.")
 
         if st.button(
             "EXECUTE OCR ENGINE",
@@ -2304,8 +2308,9 @@ def _resource_snapshot() -> tuple[float | None, float | None]:
 
         process = psutil.Process(os.getpid())
         memory_mb = process.memory_info().rss / (1024 * 1024)
-        # Non-blocking call; first sample may be 0, which is preferable to sleeping.
-        cpu_percent = psutil.cpu_percent(interval=None)
+        # interval=0.1 blocks briefly but returns a real reading unlike interval=None
+        # which always returns 0.0 on the first call (no prior sample exists).
+        cpu_percent = psutil.cpu_percent(interval=0.1)
         return memory_mb, cpu_percent
     except Exception:
         return None, None
@@ -2512,12 +2517,13 @@ def _render_header(settings: Any) -> None:
     db_degraded = bool(st.session_state.get("db_init_error"))
 
     engine_state = "PIPELINE READY" if pipeline_ready else "PIPELINE LAZY"
+    engine_pill_class = "engine-pill engine-pill--ready" if pipeline_ready else "engine-pill engine-pill--lazy"
     db_state = "DB FALLBACK" if db_degraded else "DB READY"
     st.markdown(
         '<div class="blast-header">'
         '<div class="blast-badge-row">'
         '<span class="status-badge"><span class="status-dot"></span> UI ONLINE</span>'
-        f'<span class="engine-pill">{html.escape(engine_state)}</span>'
+        f'<span class="{engine_pill_class}">{html.escape(engine_state)}</span>'
         f'<span class="engine-pill">{html.escape(capabilities.provider_label)}</span>'
         f'<span class="engine-pill">{html.escape(db_state)}</span>'
         '</div>'

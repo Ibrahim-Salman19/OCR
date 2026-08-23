@@ -1,0 +1,20 @@
+# Optional production infrastructure extras: durable queue (docs/adr/0010),
+# object storage (docs/adr/0011), observability (docs/adr/0012). None of these
+# are required to run BLAST -- the defaults (queue_backend="sync",
+# storage_backend="local", otel_exporter="console") need none of them.
+#
+# Install with: pip install -r requirements.txt -r requirements-production.txt
+#
+# Deliberately excludes opentelemetry-exporter-otlp: it requires protobuf>=5,
+# which conflicts with the pinned streamlit==1.32.0 in requirements.txt
+# (protobuf<5) -- found via a real `docker build` failure, see docs/adr/0013.
+# If you need OTLP export, either upgrade streamlit first and verify the
+# upgrade doesn't regress anything requirements.txt's pin was protecting
+# against, or run the OTLP exporter/collector as a separate process that
+# doesn't share this Python environment.
+
+rq>=2.0.0
+redis>=5.0.0
+boto3>=1.34.0
+opentelemetry-sdk>=1.24.0
+prometheus-client>=0.20.0

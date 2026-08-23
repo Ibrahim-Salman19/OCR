@@ -1,0 +1,13 @@
+# Dev/test-only dependencies. Not needed at runtime.
+#
+# Install with: pip install -r requirements.txt -r requirements-production.txt -r requirements-dev.txt
+
+pytest>=9.1.1
+pytest-cov>=7.1.0
+hypothesis>=6.165.2
+fakeredis>=2.20.0
+moto>=5.0.0
+ruff>=0.6.0
+mypy>=1.11.0
+bandit>=1.7.9
+pip-audit>=2.7.3

@@ -59,4 +59,6 @@ debug_*.py
 debug_*.png
 *_audit_results.txt
 clean_*.txt
-*.txt
+!requirements*.txt
+!llms*.txt
+!robots.txt

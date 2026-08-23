@@ -55,7 +55,8 @@ Examples:
     parser.add_argument("--workers", "-w", type=int, default=2, help="Number of parallel OCR worker threads (default: 2)")
     parser.add_argument("--json", action="store_true", help="Output machine-readable JSON summary to stdout")
     parser.add_argument("--serve", action="store_true", help="Launch FastAPI REST API server instead of batch processing")
-    parser.add_argument("--host", default="0.0.0.0", help="API host (used with --serve, default: 0.0.0.0)")
+    # 0.0.0.0 default is required for container port binding & Docker ingress
+    parser.add_argument("--host", default="0.0.0.0", help="API host (used with --serve, default: 0.0.0.0)")  # nosec B104
     parser.add_argument("--port", type=int, default=8000, help="API port (used with --serve, default: 8000)")
 
     args = parser.parse_args()
