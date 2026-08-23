@@ -72,7 +72,17 @@ def auto_patch_redis(request, mock_redis):
     if request.node.fspath and "test_queue.py" in str(request.node.fspath):
         yield
         return
-    with patch("blast_ocr.queue.client.get_redis_connection", return_value=mock_redis), \
-         patch("redis.Redis.from_url", return_value=mock_redis), \
-         patch("redis.from_url", return_value=mock_redis):
-        yield mock_redis
+    try:
+        import redis  # noqa: F401
+        has_redis = True
+    except ImportError:
+        has_redis = False
+
+    if has_redis:
+        with patch("blast_ocr.queue.client.get_redis_connection", return_value=mock_redis), \
+             patch("redis.Redis.from_url", return_value=mock_redis), \
+             patch("redis.from_url", return_value=mock_redis):
+            yield mock_redis
+    else:
+        with patch("blast_ocr.queue.client.get_redis_connection", return_value=mock_redis):
+            yield mock_redis
