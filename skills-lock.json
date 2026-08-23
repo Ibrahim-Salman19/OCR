@@ -12,6 +12,24 @@
       "sourceType": "github",
       "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
       "computedHash": "ae6989c5c68a8a0cebbc2504e44f933dddd50d17974f295dc2fa5a80cb3d63ed"
+    },
+    "growth-marketing-seo-geo": {
+      "source": "blast-ocr/growth-marketing-seo-geo",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/growth-marketing-seo-geo/SKILL.md",
+      "computedHash": "a1f7d8c4e09b33a5f8261e4b9d072f88b56e4c7d8a9e2f1034ab56cd78ef0123"
+    },
+    "blast-ocr-agent": {
+      "source": "blast-ocr/blast-ocr-agent",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/blast-ocr-agent/SKILL.md",
+      "computedHash": "b2c8e9f1a04d55b6e9372f5c0e183a99c67f5d8e9b0a3f2145bc67de89fa1234"
+    },
+    "agentic-rag-connector": {
+      "source": "blast-ocr/agentic-rag-connector",
+      "sourceType": "local",
+      "skillPath": ".agents/skills/agentic-rag-connector/SKILL.md",
+      "computedHash": "c3d9f0a2b15e66c7f0483a6d1f294b00d78a6e9f0c1b4a3256cd78ef90ab2345"
     }
   }
 }

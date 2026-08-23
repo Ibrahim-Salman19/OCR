@@ -250,7 +250,7 @@ section[data-testid="stSidebar"] {
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
-    padding: 1.1rem 0 1.35rem;
+    padding: 0.5rem 0 1.35rem;
     margin-bottom: 1.35rem;
     border-bottom: 1px solid var(--blast-border-subtle);
     min-width: 0;
@@ -279,6 +279,7 @@ section[data-testid="stSidebar"] {
     line-height: 1.2;
     letter-spacing: 0.075em;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .status-badge {
@@ -292,6 +293,20 @@ section[data-testid="stSidebar"] {
     color: var(--blast-text-secondary);
     background: var(--blast-surface-overlay);
     border: 1px solid var(--blast-border-default);
+}
+
+/* PIPELINE READY — subtle green tint */
+.engine-pill--ready {
+    color: var(--blast-success-text);
+    background: var(--blast-success-soft);
+    border: 1px solid var(--blast-success-border);
+}
+
+/* PIPELINE LAZY — amber warning tint to signal pipeline not yet initialized */
+.engine-pill--lazy {
+    color: var(--blast-warning-text);
+    background: var(--blast-warning-soft);
+    border: 1px solid var(--blast-warning-border);
 }
 
 .status-dot {
@@ -407,7 +422,9 @@ section[data-testid="stSidebar"] {
     line-height: 1.4 !important;
     letter-spacing: 0.075em !important;
     text-transform: uppercase;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
 }
 
 /* ============================================================
@@ -1313,10 +1330,13 @@ button[aria-disabled="true"] {
     }
 
     .status-badge,
-    .engine-pill {
+    .engine-pill,
+    .engine-pill--ready,
+    .engine-pill--lazy {
         max-width: 100%;
-        white-space: normal;
-        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .panel,
@@ -1343,12 +1363,16 @@ button[aria-disabled="true"] {
 
 @media (max-width: 480px) {
     .blast-badge-row {
-        align-items: stretch;
+        align-items: flex-start;
     }
 
+    /* Keep badges as compact pills on small screens — do NOT stretch to full width */
     .status-badge,
-    .engine-pill {
-        width: 100%;
+    .engine-pill,
+    .engine-pill--ready,
+    .engine-pill--lazy {
+        white-space: normal;
+        max-width: max-content;
     }
 
     [data-testid="stMetric"] {

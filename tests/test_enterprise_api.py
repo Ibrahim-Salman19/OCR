@@ -107,3 +107,32 @@ def test_api_job_toc_and_chunks(tmp_path):
         assert stream_resp.headers["content-type"].startswith("text/event-stream")
         first_line = next(stream_resp.iter_lines())
         assert first_line is not None
+
+
+def test_api_discovery_endpoints():
+    # Test llms.txt
+    resp_llms = client.get("/llms.txt")
+    assert resp_llms.status_code == 200
+    assert "B.L.A.S.T. OCR Engine" in resp_llms.text
+    assert resp_llms.headers["X-Agent-Discoverable"] == "true"
+
+    # Test llms-full.txt
+    resp_full = client.get("/llms-full.txt")
+    assert resp_full.status_code == 200
+    assert "Complete Technical Specification" in resp_full.text
+
+    # Test robots.txt
+    resp_robots = client.get("/robots.txt")
+    assert resp_robots.status_code == 200
+    assert "GPTBot" in resp_robots.text
+
+    # Test sitemap.xml
+    resp_sitemap = client.get("/sitemap.xml")
+    assert resp_sitemap.status_code == 200
+    assert "urlset" in resp_sitemap.text
+
+    # Test .well-known/ai-plugin.json
+    resp_plugin = client.get("/.well-known/ai-plugin.json")
+    assert resp_plugin.status_code == 200
+    assert resp_plugin.json()["name_for_model"] == "blast_ocr"
+
