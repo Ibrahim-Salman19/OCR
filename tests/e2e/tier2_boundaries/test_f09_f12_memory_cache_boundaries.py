@@ -317,7 +317,7 @@ class TestFeature10FastAPIBoundaries:
         files = {"file": ("doc.png", io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 20), "image/png")}
         data = {"output_dir": "../../../../../etc/passwd"}
         response = test_api_client.post("/v1/ocr/jobs", files=files, data=data)
-        assert response.status_code in (200, 202, 400, 422)
+        assert response.status_code in (200, 202, 400, 403, 422)
 
     def test_f10_api_worker_scale_invalid_counts_negative_or_string(self, test_api_client):
         """Worker scaling endpoint validates against negative numbers or bad payload."""

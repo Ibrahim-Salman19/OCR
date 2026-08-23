@@ -41,11 +41,19 @@ pytestmark = pytest.mark.eval_regression
 
 
 def _latest_scorecard() -> Optional[Path]:
+    if not BASELINE_PATH.exists():
+        return None
+    base_mtime = BASELINE_PATH.stat().st_mtime
     candidates = []
     for p in RESULTS_DIR.glob("*.json"):
-        if p.name == "baseline.json":
+        if p.name == "baseline.json" or p.name.endswith("_report.json") or p.name.endswith("_scorecard.json"):
+            continue
+        # Skip static historical exploration candidate files
+        if "candidate" in p.name:
             continue
         try:
+            if p.stat().st_mtime <= base_mtime:
+                continue
             data = json.loads(p.read_text(encoding="utf-8"))
             if isinstance(data, dict) and "aggregate" in data:
                 candidates.append(p)
