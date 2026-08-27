@@ -1,0 +1,54 @@
+# .github/workflows/keep_alive.yml
+#
+# Visits the Streamlit Community Cloud deployment every 6 hours with a
+# Playwright headless browser. If the app is on the hibernation screen,
+# the script clicks "Yes, get this app back up!" to wake it automatically.
+#
+# Setup:
+#   1. Go to Settings > Secrets and variables > Actions in this repo.
+#   2. Add a repository secret named STREAMLIT_APP_URL with the full URL
+#      of your deployed app, e.g.:
+#        https://ibrahim-salman19-ocr-streamlit-app-main.streamlit.app
+#   3. Push this file — the cron schedule activates automatically.
+#   4. You can also trigger it manually from the "Actions" tab at any time.
+
+name: Keep Streamlit App Awake
+
+on:
+  schedule:
+    # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+    # Streamlit hibernates after ~12 hours of inactivity, so 6-hour pings
+    # ensure the timer never resets long enough to trigger hibernation.
+    - cron: '0 */6 * * *'
+
+  # Allows manual trigger from the GitHub Actions "Run workflow" button
+  workflow_dispatch:
+
+# No write permissions needed — this job only reads the public URL
+permissions:
+  contents: read
+
+jobs:
+  wake-up:
+    name: Wake Streamlit App
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
+        run: |
+          pip install --quiet playwright
+          playwright install chromium --with-deps
+
+      - name: Run wake-up script
+        env:
+          STREAMLIT_APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+        run: python scripts/keep_awake.py
