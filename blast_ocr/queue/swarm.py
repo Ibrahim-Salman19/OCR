@@ -6,6 +6,7 @@ Manages scalable multi-process / multi-threaded worker pools with real-time
 heartbeat registration, dynamic scaling, error isolation, and graceful shutdown.
 """
 
+import json
 import logging
 import signal
 import sys
@@ -96,6 +97,14 @@ class SwarmWorker:
 
                 if item:
                     _, payload = item
+                    if isinstance(payload, (str, bytes)):
+                        try:
+                            payload = json.loads(payload)
+                        except Exception:
+                            payload = {"job_id": str(payload)}
+                    elif not isinstance(payload, dict):
+                        payload = {"job_id": str(payload)}
+
                     job_id = payload.get("job_id")
                     self.current_job = job_id
                     if self.heartbeat:

@@ -4,7 +4,6 @@ tests.test_layout_and_model
 Unit tests for B.L.A.S.T. OCR Phase 2 Document Model and Layout Engine.
 """
 
-import pytest
 from blast_ocr.core.document_model import (
     Document, Page, Block, Line, Span, BoundingBox, BlockType
 )

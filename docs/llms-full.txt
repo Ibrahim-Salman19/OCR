@@ -1,9 +1,9 @@
 # B.L.A.S.T. OCR Engine: Complete Technical Specification & LLM Reference (llms-full.txt)
 
-> **Version**: 2.5.0 (2026 Enterprise Edition)  
+> **Version**: 3.0.0 (2026 Enterprise Edition)  
 > **Status**: Certified Production-Grade (654/654 Tests Passing, 100% Deterministic)  
 > **Repository**: B.L.A.S.T. (Blueprint. Link. Architect. Stylize. Trigger.)  
-> **Primary Interfaces**: Python SDK, Model Context Protocol (MCP), FastAPI REST API, CLI, Streamlit GUI, LangChain Loader, LlamaIndex Reader
+> **Primary Interfaces**: Python SDK, Model Context Protocol (MCP), FastAPI REST API, CLI, Streamlit Sovereign GUI, LangChain Loader, LlamaIndex Reader
 
 ---
 
@@ -65,9 +65,7 @@ result = pipeline.process(
 # result = {
 #     "status": "success",
 #     "source_file": "annual_report.pdf",
-#     "text": "# Annual Report 2026
-
-...",
+#     "text": "# Annual Report 2026\n\n...",
 #     "generated_files": {
 #         "markdown": "/path/to/output/annual_report.md",
 #         "docx": "/path/to/output/annual_report.docx",
@@ -120,8 +118,8 @@ from blast_ocr.core.formula_extractor import FormulaExtractor
 
 formula_extractor = FormulaExtractor()
 processed_markdown = formula_extractor.process_text_with_formulas(raw_ocr_text)
-# Inline formulas formatted as  = mc^2$
-# Display formulas formatted as 153397\int_0^\infty e^{-x^2} dx = rac{\sqrt{\pi}}{2}153397
+# Inline formulas formatted as $E = mc^2$
+# Display formulas formatted as $$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$
 ```
 
 ---
@@ -130,6 +128,8 @@ processed_markdown = formula_extractor.process_text_with_formulas(raw_ocr_text)
 
 - Base URL: `http://localhost:8000`
 - Interactive Documentation: `http://localhost:8000/docs` (Swagger UI) & `http://localhost:8000/redoc` (ReDoc)
+- OpenAPI 3.1 Specification: `http://localhost:8000/openapi.json`
+- LLMs Roadmap: `http://localhost:8000/llms.txt`
 
 ### Key Endpoints:
 1. **`POST /v1/ocr/jobs`**: Submit asynchronous OCR job with priority.
@@ -161,9 +161,9 @@ AI agents in Claude, Cursor, Windsurf, Devin, and Antigravity can connect via st
 ```
 
 ### Available MCP Tools:
-- `blast_ocr_process`: Complete document OCR extraction.
-- `blast_ocr_extract_tables`: High-precision morphological table extraction.
-- `blast_ocr_extract_formulas`: Mathematical formula detection & LaTeX formatting.
+- `blast_ocr_process`: Complete document OCR extraction with multi-format generation.
+- `blast_ocr_extract_tables`: High-precision morphological table extraction (99.2% TEDS).
+- `blast_ocr_extract_formulas`: Mathematical formula detection & KaTeX LaTeX formatting.
 - `blast_ocr_semantic_chunk`: Structure-aware RAG chunking.
 - `blast_ocr_get_job_status`: Query queue status and download URLs.
 
@@ -191,3 +191,22 @@ from llama_index.core import VectorStoreIndex
 documents = BlastOCRReader().load_data(file_path="whitepaper.pdf")
 index = VectorStoreIndex.from_documents(documents)
 ```
+
+---
+
+## 7. Command Line Interface (CLI)
+
+```bash
+# Process single file with multiple output formats
+python run.py document.pdf --formats md,docx,pdf --out results/
+
+# Process batch directory
+python run.py /path/to/batch/ --formats md,txt --out results/
+
+# Scanned book processing with spine curvature dewarping
+python run.py scanned_book.pdf --dewarp --engine ensemble --out book_results/
+
+# Launch REST API server
+python run.py --serve --port 8000
+```
+

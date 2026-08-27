@@ -10,6 +10,20 @@ from pathlib import Path
 
 from blast_ocr.pipeline import BlastPipeline
 
+try:
+    from langchain_core.documents import Document as LCDocument
+except ImportError:
+    try:
+        from langchain.docstore.document import Document as LCDocument
+    except ImportError:
+        class LCDocument:  # type: ignore[no-redef]
+            def __init__(self, page_content: str, metadata: Dict[str, Any]):
+                self.page_content = page_content
+                self.metadata = metadata
+
+            def __repr__(self):
+                return f"Document(page_content={self.page_content[:50]!r}..., metadata={self.metadata})"
+
 
 class BlastOCRDocumentLoader:
     """
@@ -47,10 +61,9 @@ class BlastOCRDocumentLoader:
             overrides.update(config_overrides)
         self.config_overrides = overrides
 
-    def load(self) -> List[Any]:
+    def lazy_load(self):
         """
-        Executes OCR extraction and returns a list of LangChain Document objects
-        (or typed schema dictionaries if langchain_core is not installed).
+        Lazily yields LangChain Document objects.
         """
         pipeline = BlastPipeline(config_overrides=self.config_overrides)
         try:
@@ -58,28 +71,12 @@ class BlastOCRDocumentLoader:
         finally:
             pipeline.close()
 
-        documents = []
         source_name = Path(self.file_path).name
-
-        # Try to import LangChain's Document class if available
-        try:
-            from langchain_core.documents import Document as LCDocument
-        except ImportError:
-            try:
-                from langchain.docstore.document import Document as LCDocument
-            except ImportError:
-                class LCDocument:  # Fallback lightweight dataclass
-                    def __init__(self, page_content: str, metadata: Dict[str, Any]):
-                        self.page_content = page_content
-                        self.metadata = metadata
-
-                    def __repr__(self):
-                        return f"Document(page_content={self.page_content[:50]!r}..., metadata={self.metadata})"
 
         output_files = result.get("output_files", {})
         md_file = output_files.get("md")
-        full_text = ""
-        if md_file and Path(md_file).exists():
+        full_text = result.get("text") or result.get("full_text") or ""
+        if not full_text and md_file and Path(md_file).exists():
             full_text = Path(md_file).read_text(encoding="utf-8", errors="ignore")
 
         metadata = {
@@ -91,6 +88,10 @@ class BlastOCRDocumentLoader:
             "generated_files": result.get("generated_files", {}),
         }
 
-        doc = LCDocument(page_content=full_text, metadata=metadata)
-        documents.append(doc)
-        return documents
+        yield LCDocument(page_content=full_text, metadata=metadata)
+
+    def load(self) -> List[Any]:
+        """
+        Executes OCR extraction and returns a list of LangChain Document objects.
+        """
+        return list(self.lazy_load())

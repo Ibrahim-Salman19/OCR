@@ -248,7 +248,7 @@ class TestPipelineErrorPaths:
         from blast_ocr.config import config as global_config
 
         original_confidence = global_config.min_confidence
-        p = BlastPipeline(config_overrides={"min_confidence": 0.01})
+        BlastPipeline(config_overrides={"min_confidence": 0.01})
         assert global_config.min_confidence == original_confidence, (
             "BUG-FIX-3: Pipeline config override mutated the global config singleton"
         )

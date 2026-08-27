@@ -62,3 +62,11 @@ clean_*.txt
 !requirements*.txt
 !llms*.txt
 !robots.txt
+
+# Audit and eval artifacts
+.agents/auditor_*
+.agents/orchestrator_*
+.agents/test_quality_auditor_*
+.agents/victory_auditor_*
+eval/results/*.json
+!eval/results/baseline.json

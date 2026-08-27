@@ -37,7 +37,7 @@ def test_processed_img_deleted_after_ocr():
         img_path = f.name
 
     try:
-        gc_counts_before = gc.get_count()
+        gc.get_count()
         result = extractor.process_page(img_path, page_number=1)
         gc.collect()
 

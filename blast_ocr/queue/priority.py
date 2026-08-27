@@ -97,8 +97,12 @@ class PriorityQueueManager:
                     raw_payload = raw_payload.decode("utf-8")
                 try:
                     payload = json.loads(raw_payload)
+                    if isinstance(payload, (str, int)):
+                        payload = {"job_id": str(payload), "priority": priority}
+                    elif not isinstance(payload, dict):
+                        payload = {"job_id": str(payload), "priority": priority}
                 except Exception:
-                    payload = {"raw": str(raw_payload), "corrupt": True}
+                    payload = {"job_id": str(raw_payload), "raw": str(raw_payload), "priority": priority}
                 return priority, payload
 
         if timeout == 0:
@@ -116,8 +120,12 @@ class PriorityQueueManager:
                 raw_payload = raw_payload.decode("utf-8")
             try:
                 payload = json.loads(raw_payload)
+                if isinstance(payload, (str, int)):
+                    payload = {"job_id": str(payload), "priority": priority}
+                elif not isinstance(payload, dict):
+                    payload = {"job_id": str(payload), "priority": priority}
             except Exception:
-                payload = {"raw": str(raw_payload), "corrupt": True}
+                payload = {"job_id": str(raw_payload), "raw": str(raw_payload), "priority": priority}
             return priority, payload
         except Exception:
             return None

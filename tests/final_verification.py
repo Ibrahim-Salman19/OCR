@@ -48,7 +48,7 @@ def verify_dependencies():
 
     # 2. EasyOCR
     try:
-        import easyocr
+        import easyocr  # noqa: F401
 
         print("[PASS] EasyOCR importable")
     except ImportError:
@@ -56,8 +56,8 @@ def verify_dependencies():
 
     # 3. UI Libs
     try:
-        import streamlit
-        import pandas
+        import streamlit  # noqa: F401
+        import pandas  # noqa: F401
 
         print("[PASS] Streamlit & Pandas importable")
     except ImportError:

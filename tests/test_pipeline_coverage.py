@@ -78,14 +78,15 @@ def test_process_pdf_info_fails_fallback(pipeline):
 
 
 def test_process_pdf_convert_fails_skips_batch(pipeline):
-    """Covers line 111-114 (conversion fails, continue loop)."""
+    """Covers batch render failure fallback returning structured error records."""
     with patch("blast_ocr.pipeline.pdfinfo_from_path", return_value={"Pages": 5}):
         with patch(
             "blast_ocr.pipeline.convert_from_path",
             side_effect=Exception("Render error"),
         ):
             res = pipeline.process_pdf("dummy.pdf")
-            assert len(res) == 0  # Skipped the batch entirely
+            assert len(res) == 5
+            assert all(r.get("status") == "error" for r in res)
 
 
 def test_process_pdf_cleanup_permission_error(pipeline):
@@ -102,9 +103,7 @@ def test_process_pdf_cleanup_permission_error(pipeline):
                     return_value=[],
                 ):
                     # Mock shutil.rmtree to always throw PermissionError
-                    import shutil
 
-                    orig_rmtree = shutil.rmtree
 
                     def mock_rmtree(path, *args, **kwargs):
                         raise PermissionError("Locked dir")

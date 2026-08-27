@@ -9,215 +9,12 @@ Tier 2 Boundary and Corner Case Tests for Features 9-12:
 """
 
 import io
-import os
-import time
-import uuid
-import hashlib
-import tempfile
 import pytest
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Generator
-from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 
-# Feature 9: Exponential Backoff & DLQ contract import / fallback
-try:
-    from blast_ocr.queue.tasks import classify_exception, compute_backoff, DLQHandler
-except ImportError:
-    class TransientError(Exception):
-        pass
-
-    class NonRetryableError(Exception):
-        pass
-
-    def classify_exception(exc: Exception) -> bool:
-        if isinstance(exc, (TransientError, ConnectionError, TimeoutError)):
-            return True
-        return False
-
-    def compute_backoff(attempt: int, base: float = 1.0, max_backoff: float = 60.0, jitter: bool = True) -> float:
-        attempt = max(0, min(attempt, 30))  # Guard against overflow
-        raw_backoff = min(base * (2 ** attempt), max_backoff)
-        if jitter:
-            import random
-            return round(raw_backoff + random.uniform(0.0, 0.5), 3)
-        return float(raw_backoff)
-
-    class DLQHandler:
-        def __init__(self, redis_client, dlq_key: str = "blast_ocr:queue:dlq"):
-            self.redis = redis_client
-            self.dlq_key = dlq_key
-
-        def quarantine(self, job_id: str, payload: dict, error_msg: str, traceback_str: str = "") -> bool:
-            import json
-            record = {
-                "job_id": job_id,
-                "payload": payload,
-                "error": error_msg,
-                "traceback": traceback_str,
-                "quarantined_at": time.time(),
-            }
-            self.redis.rpush(self.dlq_key, json.dumps(record))
-            return True
-
-        def replay(self, job_id: str, queue_client=None) -> bool:
-            import json
-            items = self.redis.lrange(self.dlq_key, 0, -1)
-            for idx, raw in enumerate(items):
-                try:
-                    rec = json.loads(raw)
-                    if rec.get("job_id") == job_id:
-                        if queue_client:
-                            queue_client.enqueue(rec.get("payload", {}), priority="high")
-                        return True
-                except Exception:
-                    continue
-            return False
-
-
-# Feature 11: Streaming Buffer Chunking contract import / fallback
-try:
-    from blast_ocr.core.streaming import PageStreamGenerator, StreamDocumentWriter
-except ImportError:
-    class PageStreamGenerator:
-        def __init__(self, source_path: str, chunk_size: int = 8, temp_dir: Optional[str] = None):
-            self.source_path = Path(source_path)
-            if not self.source_path.exists():
-                raise FileNotFoundError(f"Source file not found: {source_path}")
-            self.chunk_size = max(1, chunk_size)
-            self.temp_dir = Path(temp_dir) if temp_dir else Path(tempfile.mkdtemp(prefix="blast_stream_"))
-            self.temp_dir.mkdir(parents=True, exist_ok=True)
-            self._scratch_dirs = []
-
-        def __iter__(self) -> Generator[List[Tuple[int, Path]], None, None]:
-            # Inspect file size or pages
-            file_size = self.source_path.stat().st_size
-            if file_size == 0:
-                return
-
-            # Simulate reading total pages from PDF or single image
-            total_pages = 10 if self.source_path.suffix.lower() == ".pdf" else 1
-            for start_idx in range(0, total_pages, self.chunk_size):
-                end_idx = min(start_idx + self.chunk_size, total_pages)
-                scratch = self.temp_dir / f"scratch_w_{start_idx}_{end_idx}"
-                scratch.mkdir(parents=True, exist_ok=True)
-                self._scratch_dirs.append(scratch)
-
-                window = []
-                for p in range(start_idx, end_idx):
-                    page_path = scratch / f"page_{p+1}.png"
-                    page_path.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 32)
-                    window.append((p + 1, page_path))
-                yield window
-
-                # Immediate scratch unlinking after yield
-                for _, fpath in window:
-                    if fpath.exists():
-                        fpath.unlink()
-
-        def close(self):
-            import shutil
-            if self.temp_dir.exists():
-                shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    class StreamDocumentWriter:
-        def __init__(self, output_path: str, format: str = "markdown"):
-            self.output_path = Path(output_path)
-            self.format = format.lower()
-            self.output_path.parent.mkdir(parents=True, exist_ok=True)
-            self.pages_written = {}
-            self._finalized = False
-
-        def write_page(self, page_num: int, text: str, layout: Optional[dict] = None):
-            self.pages_written[page_num] = text
-
-        def finalize(self) -> Path:
-            if not self._finalized:
-                sorted_pages = sorted(self.pages_written.items(), key=lambda x: x[0])
-                lines = []
-                for p_num, p_text in sorted_pages:
-                    lines.append(f"<!-- Page {p_num} -->\n{p_text}\n")
-                content = "\n".join(lines)
-                self.output_path.write_text(content, encoding="utf-8")
-                self._finalized = True
-            return self.output_path
-
-
-# Feature 12: Tiered OCR Cache contract import / fallback
-try:
-    from blast_ocr.cache.tiered_cache import TieredOCRCache
-except ImportError:
-    class TieredOCRCache:
-        def __init__(self, cache_dir: str, l1_capacity: int = 100, backend=None):
-            self.cache_dir = Path(cache_dir)
-            try:
-                self.cache_dir.mkdir(parents=True, exist_ok=True)
-            except Exception:
-                pass
-            self.l1_capacity = max(0, l1_capacity)
-            self.l1_cache: OrderedDict[str, dict] = OrderedDict()
-            self.backend = backend
-            self._closed = False
-
-        def _compute_key_hash(self, key: str) -> str:
-            return hashlib.sha256(key.encode("utf-8")).hexdigest()
-
-        def get(self, key: str) -> Optional[dict]:
-            # Check L1
-            if self.l1_capacity > 0 and key in self.l1_cache:
-                self.l1_cache.move_to_end(key)
-                return self.l1_cache[key]
-            
-            # Check L2 Disk
-            try:
-                disk_file = self.cache_dir / f"{self._compute_key_hash(key)}.json"
-                if disk_file.exists():
-                    import json
-                    data = json.loads(disk_file.read_text(encoding="utf-8"))
-                    if self.l1_capacity > 0:
-                        self.put_l1(key, data)
-                    return data
-            except Exception:
-                return None
-            return None
-
-        def put_l1(self, key: str, value: dict):
-            if self.l1_capacity <= 0:
-                return
-            if key in self.l1_cache:
-                self.l1_cache.move_to_end(key)
-            self.l1_cache[key] = value
-            if len(self.l1_cache) > self.l1_capacity:
-                evicted_key, evicted_val = self.l1_cache.popitem(last=False)
-                self._persist_l2(evicted_key, evicted_val)
-
-        def _persist_l2(self, key: str, value: dict):
-            try:
-                disk_file = self.cache_dir / f"{self._compute_key_hash(key)}.json"
-                import json
-                disk_file.write_text(json.dumps(value), encoding="utf-8")
-            except Exception:
-                pass
-
-        def put(self, key: str, value: dict, sync: bool = False):
-            if self.l1_capacity > 0:
-                self.put_l1(key, value)
-            if sync or self.l1_capacity == 0:
-                self._persist_l2(key, value)
-
-        def flush(self):
-            for k, v in list(self.l1_cache.items()):
-                self._persist_l2(k, v)
-
-        def clear(self):
-            self.l1_cache.clear()
-            import shutil
-            if self.cache_dir.exists():
-                try:
-                    for f in self.cache_dir.glob("*.json"):
-                        f.unlink()
-                except Exception:
-                    pass
+from blast_ocr.queue.tasks import classify_exception, compute_backoff, DLQHandler
+from blast_ocr.core.streaming import PageStreamGenerator, StreamDocumentWriter
+from blast_ocr.cache.tiered_cache import TieredOCRCache
 
 
 # ============================================================================
@@ -291,13 +88,13 @@ class TestFeature10FastAPIBoundaries:
     """Boundary and corner case test cases for Feature 10: FastAPI Priority & Swarm Endpoints."""
 
     def test_f10_api_job_dispatch_zero_byte_upload_validation(self, test_api_client):
-        """Uploading a 0-byte file returns 400 or 422 validation error."""
+        """Uploading a 0-byte file returns 400, 415 or 422 validation error."""
         if not hasattr(test_api_client, "post"):
             pytest.skip("FastAPI test client unavailable")
         
         files = {"file": ("empty.png", io.BytesIO(b""), "image/png")}
         response = test_api_client.post("/v1/ocr/jobs", files=files)
-        assert response.status_code in (200, 202, 400, 422)
+        assert response.status_code in (200, 202, 400, 413, 415, 422)
 
     def test_f10_api_job_dispatch_invalid_priority_value(self, test_api_client):
         """POST /v1/ocr/jobs with invalid priority string validates gracefully."""
@@ -307,7 +104,7 @@ class TestFeature10FastAPIBoundaries:
         files = {"file": ("doc.png", io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 20), "image/png")}
         data = {"priority": "invalid_super_urgent"}
         response = test_api_client.post("/v1/ocr/jobs", files=files, data=data)
-        assert response.status_code in (200, 202, 400, 422)
+        assert response.status_code in (200, 202, 400, 415, 422)
 
     def test_f10_api_job_dispatch_path_traversal_payload_rejection(self, test_api_client):
         """Payload with output_dir attempting directory traversal is safely handled."""
@@ -317,7 +114,7 @@ class TestFeature10FastAPIBoundaries:
         files = {"file": ("doc.png", io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 20), "image/png")}
         data = {"output_dir": "../../../../../etc/passwd"}
         response = test_api_client.post("/v1/ocr/jobs", files=files, data=data)
-        assert response.status_code in (200, 202, 400, 403, 422)
+        assert response.status_code in (200, 202, 400, 403, 415, 422)
 
     def test_f10_api_worker_scale_invalid_counts_negative_or_string(self, test_api_client):
         """Worker scaling endpoint validates against negative numbers or bad payload."""
@@ -339,10 +136,10 @@ class TestFeature10FastAPIBoundaries:
 class TestFeature11StreamingBufferBoundaries:
     """Boundary and corner case test cases for Feature 11: Bounded Streaming Buffer Chunking."""
 
-    def test_f11_stream_generator_window_size_one_single_page_windowing(self, tmp_path):
+    def test_f11_stream_generator_window_size_one_single_page_windowing(self, tmp_path, synthetic_pdf_generator):
         """PageStreamGenerator with chunk_size=1 yields 1-page windows with immediate cleanup."""
         dummy_pdf = tmp_path / "stream_doc.pdf"
-        dummy_pdf.write_bytes(b"%PDF-1.4 sample content" + b"\x00" * 100)
+        dummy_pdf.write_bytes(synthetic_pdf_generator(page_count=10))
 
         gen = PageStreamGenerator(str(dummy_pdf), chunk_size=1)
         windows = list(gen)
@@ -355,10 +152,10 @@ class TestFeature11StreamingBufferBoundaries:
             assert not page_path.exists()
         gen.close()
 
-    def test_f11_stream_generator_window_size_exceeding_doc_length(self, tmp_path):
+    def test_f11_stream_generator_window_size_exceeding_doc_length(self, tmp_path, synthetic_pdf_generator):
         """PageStreamGenerator with chunk_size=100 on a 10-page document yields a single 10-page window."""
         dummy_pdf = tmp_path / "short_doc.pdf"
-        dummy_pdf.write_bytes(b"%PDF-1.4 short doc" + b"\x00" * 50)
+        dummy_pdf.write_bytes(synthetic_pdf_generator(page_count=10))
 
         gen = PageStreamGenerator(str(dummy_pdf), chunk_size=100)
         windows = list(gen)

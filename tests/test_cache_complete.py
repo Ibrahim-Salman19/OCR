@@ -91,7 +91,7 @@ def test_cache_handles_corrupted_json(cache, tmp_path):
 
     # get() should return None, not raise
     try:
-        result = cache.get("corrupted_hash")
+        cache.get("corrupted_hash")
         # Should either return None or raise gracefully — not crash
     except Exception as e:
         # If it raises, the caller (process_page_wrapper) will crash

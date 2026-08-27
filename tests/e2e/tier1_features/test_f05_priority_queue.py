@@ -4,82 +4,10 @@ Opaque-box test suite verifying 3-tier priority levels (high, default, low),
 strict priority ordering via atomic BRPOP, payload serialization, and queue metrics.
 """
 
-import json
 import time
 import pytest
-from unittest.mock import patch
 
-try:
-    from blast_ocr.queue.priority import PriorityQueueManager, PriorityLevel
-except ImportError:
-    # Reference contract implementation for test isolation
-    class PriorityLevel:
-        HIGH = "high"
-        DEFAULT = "default"
-        LOW = "low"
-        ALL = [HIGH, DEFAULT, LOW]
-
-    class PriorityQueueManager:
-        QUEUE_PREFIX = "blast_ocr:queue:"
-
-        def __init__(self, redis_client):
-            self.redis = redis_client
-
-        @classmethod
-        def queue_key(cls, priority: str) -> str:
-            if priority not in PriorityLevel.ALL:
-                raise ValueError(f"Invalid priority '{priority}'. Must be one of {PriorityLevel.ALL}")
-            return f"{cls.QUEUE_PREFIX}{priority}"
-
-        def enqueue(self, job_id: str, source_path: str, priority: str = PriorityLevel.DEFAULT, config_overrides: dict = None) -> dict:
-            key = self.queue_key(priority)
-            payload = {
-                "job_id": str(job_id),
-                "source_path": str(source_path),
-                "priority": priority,
-                "enqueued_at": time.time(),
-                "retry_count": 0,
-                "config_overrides": config_overrides or {},
-            }
-            self.redis.lpush(key, json.dumps(payload))
-            return payload
-
-        def dequeue(self, timeout: int = 1) -> tuple:
-            """
-            Dequeues next job strictly adhering to HIGH -> DEFAULT -> LOW priority order.
-            Returns (priority, job_payload_dict) or None if queues are empty.
-            """
-            keys = [self.queue_key(p) for p in PriorityLevel.ALL]
-            if timeout == 0:
-                # Non-blocking scan across priority tiers
-                for k in keys:
-                    raw_payload = self.redis.rpop(k)
-                    if raw_payload is not None:
-                        priority = k.replace(self.QUEUE_PREFIX, "")
-                        try:
-                            payload = json.loads(raw_payload) if isinstance(raw_payload, str) else json.loads(raw_payload.decode("utf-8"))
-                        except Exception:
-                            payload = {"raw": str(raw_payload), "corrupt": True}
-                        return priority, payload
-                return None
-
-            result = self.redis.brpop(keys, timeout=timeout)
-            if not result:
-                return None
-            matched_key, raw_payload = result
-            priority = matched_key.replace(self.QUEUE_PREFIX, "")
-            try:
-                payload = json.loads(raw_payload) if isinstance(raw_payload, str) else json.loads(raw_payload.decode("utf-8"))
-            except Exception:
-                payload = {"raw": str(raw_payload), "corrupt": True}
-            return priority, payload
-
-        def get_queue_depth(self, priority: str) -> int:
-            key = self.queue_key(priority)
-            return self.redis.llen(key)
-
-        def get_all_queue_depths(self) -> dict:
-            return {p: self.get_queue_depth(p) for p in PriorityLevel.ALL}
+from blast_ocr.queue.priority import PriorityQueueManager, PriorityLevel
 
 
 class TestPriorityQueueScheduling:

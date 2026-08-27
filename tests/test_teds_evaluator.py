@@ -4,8 +4,7 @@ tests/test_teds_evaluator.py
 Unit tests for TEDSEvaluator module.
 """
 
-import pytest
-from eval.teds_evaluator import TEDSEvaluator, parse_html_table_to_tree, TableNode
+from eval.teds_evaluator import TEDSEvaluator, parse_html_table_to_tree
 from eval.metrics import compute_teds
 
 

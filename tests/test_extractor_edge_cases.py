@@ -301,7 +301,6 @@ def test_tempdir_cleanup_handles_permission_error():
     import tempfile
     from unittest.mock import patch
 
-    permission_errors = []
 
     def raising_rmtree(path, **kwargs):
         raise PermissionError(f"[WinError 32] File is locked: {path}")
@@ -311,7 +310,7 @@ def test_tempdir_cleanup_handles_permission_error():
             from blast_ocr.pipeline import BlastPipeline
 
             pipeline = BlastPipeline()
-            result = pipeline.process_job("dummy.pdf", output_dir=tempfile.mkdtemp())
+            pipeline.process_job("dummy.pdf", output_dir=tempfile.mkdtemp())
             # Should not crash with unhandled PermissionError
         except PermissionError as e:
             pytest.fail(

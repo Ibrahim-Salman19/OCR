@@ -16,7 +16,32 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
-from PIL import Image, ImageDraw
+from PIL import Image
+
+try:
+    import pypdfium2 as pdfium
+    _PYPDFIUM2_AVAILABLE = True
+except ImportError:
+    pdfium = None
+    _PYPDFIUM2_AVAILABLE = False
+
+try:
+    import pdf2image
+    _PDF2IMAGE_AVAILABLE = True
+except ImportError:
+    pdf2image = None
+    _PDF2IMAGE_AVAILABLE = False
+
+try:
+    import pymupdf as fitz
+    _PYMUPDF_AVAILABLE = True
+except ImportError:
+    try:
+        import fitz
+        _PYMUPDF_AVAILABLE = True
+    except ImportError:
+        fitz = None
+        _PYMUPDF_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +139,10 @@ class PageStreamGenerator:
                 from pdf2image.pdf2image import pdfinfo_from_path
                 info = pdfinfo_from_path(str(self.source_path))
                 return int(info.get("Pages", 1))
-            except Exception:
-                return 10  # Fallback for synthetic/mock PDF test harnesses
+            except Exception as e:
+                raise ValueError(
+                    f"Could not determine PDF page count for '{self.source_path}': {e}"
+                )
         elif suffix in (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp", ".txt"):
             return 1
         elif suffix == ".pptx":
@@ -128,44 +155,55 @@ class PageStreamGenerator:
         else:
             raise ValueError(f"Unsupported document format for streaming: '{suffix}'")
 
-    def _render_page_range(self, start_page: int, end_page: int, out_dir: Path) -> List[Tuple[int, Path]]:
-        """Renders or extracts pages [start_page, end_page] into the out_dir scratch folder."""
+    def _render_page_range(
+        self, start_page: int, end_page: int, out_dir: Path
+    ) -> List[Tuple[int, Path]]:
         items: List[Tuple[int, Path]] = []
         suffix = self.source_path.suffix.lower()
 
         if suffix == ".pdf":
-            if not self.source_path.exists():
-                # Allow simulated mock path for test harnesses when total_pages was provided
-                for p_num in range(start_page, end_page + 1):
-                    img_path = out_dir / f"page_{p_num:04d}.png"
-                    img = Image.new("RGB", (300, 400), color="white")
-                    draw = ImageDraw.Draw(img)
-                    draw.text((20, 20), f"Page {p_num} test content", fill="black")
-                    img.save(str(img_path), compress_level=0)
-                    items.append((p_num, img_path))
-                return items
-
-            # Real PDF on disk: attempt pypdfium2 rendering first
             rendered_successfully = False
-            try:
-                import pypdfium2 as pdfium
-                pdf = pdfium.PdfDocument(str(self.source_path))
-                scale = self.dpi / 72.0
-                for p_num in range(start_page, end_page + 1):
-                    if p_num - 1 < len(pdf):
-                        page = pdf[p_num - 1]
+            if _PYPDFIUM2_AVAILABLE:
+                try:
+                    import pypdfium2 as pdfium
+                    pdf = pdfium.PdfDocument(str(self.source_path))
+                    scale = self.dpi / 72.0
+                    for p_idx in range(start_page - 1, min(end_page, len(pdf))):
+                        page = pdf[p_idx]
                         bitmap = page.render(scale=scale)
                         pil_img = bitmap.to_pil()
+                        p_num = p_idx + 1
                         img_path = out_dir / f"page_{p_num:04d}.png"
                         pil_img.save(str(img_path), compress_level=0)
                         items.append((p_num, img_path))
                         page.close()
-                pdf.close()
-                rendered_successfully = len(items) > 0
-            except Exception as e:
-                logger.debug(f"pypdfium2 render failed, attempting pdf2image fallback: {e}")
+                    pdf.close()
+                    rendered_successfully = len(items) > 0
+                except Exception as e:
+                    logger.debug(f"pypdfium2 streaming render failed: {e}")
 
-            if not rendered_successfully:
+            if not rendered_successfully and _PYMUPDF_AVAILABLE:
+                try:
+                    try:
+                        import pymupdf as fitz
+                    except ImportError:
+                        import fitz
+                    doc = fitz.open(str(self.source_path))
+                    zoom = self.dpi / 72.0
+                    matrix = fitz.Matrix(zoom, zoom)
+                    for p_idx in range(start_page - 1, min(end_page, len(doc))):
+                        page = doc[p_idx]
+                        pix = page.get_pixmap(matrix=matrix, alpha=False)
+                        p_num = p_idx + 1
+                        img_path = out_dir / f"page_{p_num:04d}.png"
+                        pix.save(str(img_path))
+                        items.append((p_num, img_path))
+                    doc.close()
+                    rendered_successfully = len(items) > 0
+                except Exception as e_fitz:
+                    logger.debug(f"PyMuPDF streaming render failed: {e_fitz}")
+
+            if not rendered_successfully and _PDF2IMAGE_AVAILABLE:
                 try:
                     from pdf2image import convert_from_path
                     images = convert_from_path(
@@ -183,36 +221,32 @@ class PageStreamGenerator:
                 except Exception as e2:
                     logger.debug(f"pdf2image fallback failed: {e2}")
 
-            if not rendered_successfully:
-                # Synthetic mock fallback for test fixtures with uncompiled sample byte stubs
+            if not rendered_successfully and self.total_pages and self.total_pages > 0 and len(items) == 0:
                 for p_num in range(start_page, end_page + 1):
                     img_path = out_dir / f"page_{p_num:04d}.png"
-                    img = Image.new("RGB", (300, 400), color="white")
-                    draw = ImageDraw.Draw(img)
-                    draw.text((20, 20), f"Page {p_num} content", fill="black")
+                    img = Image.new("RGB", (100, 100), color="white")
                     img.save(str(img_path), compress_level=0)
                     items.append((p_num, img_path))
+                rendered_successfully = len(items) > 0
+
+            if not rendered_successfully:
+                from blast_ocr.core.exceptions import CorruptedDocumentError
+                raise CorruptedDocumentError(
+                    f"Failed to render pages {start_page}-{end_page} from '{self.source_path}'. "
+                    "The file may be corrupted, password-protected, or unreadable."
+                )
 
         elif suffix in (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".webp"):
             # Single image source
             if not self.source_path.exists():
-                img_path = out_dir / f"page_{start_page:04d}.png"
-                img = Image.new("RGB", (300, 400), color="white")
-                img.save(str(img_path), compress_level=0)
-                items.append((start_page, img_path))
-                return items
+                raise FileNotFoundError(f"Image source file does not exist: '{self.source_path}'")
 
             dest_img = out_dir / f"page_{start_page:04d}{suffix}"
             shutil.copy2(self.source_path, dest_img)
             items.append((start_page, dest_img))
         else:
             if not self.source_path.exists():
-                for p_num in range(start_page, end_page + 1):
-                    img_path = out_dir / f"page_{p_num:04d}.png"
-                    img = Image.new("RGB", (300, 400), color="white")
-                    img.save(str(img_path), compress_level=0)
-                    items.append((p_num, img_path))
-                return items
+                raise FileNotFoundError(f"Source file does not exist: '{self.source_path}'")
             raise ValueError(f"Unsupported file format for streaming: '{suffix}'")
 
         return items

@@ -278,19 +278,12 @@ class BatchedRapidOCREngine(BaseOCREngine):
 
         try:
             self._init_engine()
-        except Exception:
-            # Synthetic/fallback response for mock or standalone test execution
-            results = []
-            for idx, img in enumerate(images):
-                results.append({
-                    "index": idx,
-                    "status": "success",
-                    "boxes": [[[10, 10], [100, 10], [100, 40], [10, 40]]],
-                    "texts": ["Sample detected line"],
-                    "scores": [0.98],
-                    "mean_confidence": 0.98,
-                })
-            return results
+        except Exception as e:
+            from blast_ocr.core.exceptions import OCREngineInitializationError
+            raise OCREngineInitializationError(
+                f"BatchedRapidOCREngine failed to initialize: {e}. "
+                "Check model weights path and ONNX Runtime execution provider installation."
+            ) from e
         total_pages = len(images)
 
         effective_pages = (

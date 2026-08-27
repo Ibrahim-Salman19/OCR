@@ -1,5 +1,5 @@
 # B.L.A.S.T. OCR Engine - Robots & AI Agent Directives
-# Optimized for Search Engine Optimization (SEO) & Generative Engine Optimization (GEO)
+# Optimized for Search Engine Optimization (SEO), Generative Engine Optimization (GEO) & Answer Engine Optimization (AEO)
 
 User-agent: *
 Allow: /
@@ -14,12 +14,22 @@ Allow: /v1/metrics
 Allow: /docs
 Allow: /redoc
 Allow: /openapi.json
+Allow: /mcp.json
 
-# Explicit Permissions for AI Search & Agent Crawlers
+# Explicit Permissions for AI Search & Agent Citation Crawlers
+User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: GPTBot
 Allow: /
 
 User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Claude-SearchBot
 Allow: /
 
 User-agent: ClaudeBot
@@ -31,7 +41,7 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-User-agent: PerplexityBot
+User-agent: GoogleOther
 Allow: /
 
 User-agent: Applebot-Extended
@@ -40,14 +50,24 @@ Allow: /
 User-agent: Amazonbot
 Allow: /
 
-User-agent: CCBot
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Cohere-ai
 Allow: /
 
 User-agent: Diffbot
 Allow: /
 
-User-agent: OAI-SearchBot
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: DuckAssistBot
 Allow: /
 
 # Canonical Sitemaps & Discovery Layers
 Sitemap: https://blast-ocr.dev/sitemap.xml
+

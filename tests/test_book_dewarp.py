@@ -6,7 +6,6 @@ Unit tests for BookDewarper module.
 
 import numpy as np
 import cv2
-import pytest
 
 from blast_ocr.core.book_dewarp import BookDewarper
 

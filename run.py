@@ -4,12 +4,9 @@ Root Entry Point
 
 import sys
 import os
-import argparse
 
 # Add root to path so blast_ocr can be imported
 sys.path.append(os.path.dirname(__file__))
-
-from blast_ocr.main import main
 
 
 def _running_in_streamlit() -> bool:
@@ -29,9 +26,14 @@ def _run_streamlit_ui() -> None:
     ui_main()
 
 
-if __name__ == "__main__":
+def main():
+    """Main execution dispatcher."""
     if _running_in_streamlit():
         _run_streamlit_ui()
     else:
         from blast_ocr.cli import run_cli
         sys.exit(run_cli())
+
+
+if __name__ == "__main__":
+    main()

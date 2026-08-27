@@ -11,84 +11,11 @@ Covers:
 """
 
 import json
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 import pytest
 
 from blast_ocr.telemetry import TelemetryTracker, _get_prometheus_metrics
-
-
-# ============================================================================
-# Interface / Reference Implementation for Feature 16 Specification
-# ============================================================================
-
-class BenchmarkScorecard:
-    """
-    Constructs and serializes structured JSON benchmark scorecards.
-    """
-
-    @staticmethod
-    def build_scorecard(
-        total_pages: int,
-        total_duration_sec: float,
-        throughput_pages_per_sec: float,
-        latency_stats: Dict[str, float],
-        peak_rss_mb: float,
-        leak_slope: float,
-        zero_leak_verified: bool,
-        time_series: Optional[Dict[str, List[Any]]] = None,
-    ) -> Dict[str, Any]:
-        return {
-            "schema_version": 2,
-            "timestamp": datetime.utcnow().isoformat(),
-            "environment": {
-                "os": "linux",
-                "python": "3.10",
-                "cpu_count": 8,
-                "cuda_available": False,
-            },
-            "summary": {
-                "total_pages": total_pages,
-                "total_duration_sec": round(total_duration_sec, 3),
-                "throughput_pages_per_sec": round(throughput_pages_per_sec, 2),
-                "avg_page_latency_sec": round(latency_stats.get("mean", 0.0), 3),
-                "p50_latency_sec": round(latency_stats.get("p50", 0.0), 3),
-                "p95_latency_sec": round(latency_stats.get("p95", 0.0), 3),
-                "p99_latency_sec": round(latency_stats.get("p99", 0.0), 3),
-                "peak_ram_rss_mb": round(peak_rss_mb, 2),
-                "memory_growth_slope_mb_per_page": round(leak_slope, 5),
-                "zero_leak_verified": zero_leak_verified,
-            },
-            "time_series": time_series or {
-                "timestamps": [],
-                "ram_rss_mb": [],
-                "cpu_util_pct": [],
-            },
-        }
-
-
-class MetricsAggregator:
-    """
-    Aggregates resource time-series metrics and latency samples into summary statistics.
-    """
-
-    @staticmethod
-    def aggregate(
-        page_latencies: List[float],
-        rss_samples_mb: List[float],
-        cpu_samples_pct: List[float],
-        total_duration_sec: float,
-    ) -> Dict[str, Any]:
-        total_pages = len(page_latencies)
-        tp = (total_pages / total_duration_sec) if total_duration_sec > 0 else 0.0
-        
-        return {
-            "total_pages": total_pages,
-            "throughput_pages_per_sec": round(tp, 2),
-            "peak_rss_mb": max(rss_samples_mb) if rss_samples_mb else 0.0,
-            "mean_cpu_pct": round(sum(cpu_samples_pct) / len(cpu_samples_pct), 1) if cpu_samples_pct else 0.0,
-        }
+from eval.benchmark_load import BenchmarkScorecard, MetricsAggregator
 
 
 # ============================================================================

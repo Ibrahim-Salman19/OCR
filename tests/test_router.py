@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 from blast_ocr.core.router import ScriptRouter, apply_auto_routing
 

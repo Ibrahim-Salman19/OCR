@@ -131,8 +131,15 @@ class ZombieReaper:
             worker_alive = bool(
                 self.redis.exists(f"blast_ocr:workers:{worker_id}")
                 or self.redis.exists(f"blast_ocr:worker:{worker_id}")
+                or self.redis.exists(f"blast_ocr:heartbeat:{worker_id}")
             )
             lease_expired = (now - leased_at) > self.lease_timeout
+
+            if worker_alive and lease_expired:
+                # Worker is still actively running; extend lease instead of false-positive reaping
+                data["leased_at"] = now
+                self.redis.set(lk, json.dumps(data), ex=int(self.lease_timeout * 3))
+                continue
 
             if not worker_alive or lease_expired:
                 seen_job_ids.add(job_id)

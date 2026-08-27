@@ -42,19 +42,48 @@ from blast_ocr.api.schemas import (
     JobRetryResponse,
 )
 
-router = APIRouter(prefix="/v1", tags=["OCR Automation"])
+from blast_ocr.api.dependencies import verify_api_key
+from fastapi import Depends
 
-FORBIDDEN_ROOT_DIRS = {"/etc", "/root", "/boot", "/sys", "/proc", "/dev", "/usr"}
+router = APIRouter(prefix="/v1", tags=["OCR Automation"], dependencies=[Depends(verify_api_key)])
+
+FORBIDDEN_ROOT_DIRS = {"/etc", "/root", "/boot", "/sys", "/proc", "/dev", "/usr", "/home", "/var", "/opt", "/srv"}
+
+
+def _get_allowed_base_dirs() -> set[Path]:
+    """Strict allowlist jail: only blast-controlled and workspace directories are readable/writable."""
+    return {
+        Path(config.data_dir).resolve(),
+        Path(config.output_dir).resolve(),
+        Path(config.log_dir).resolve(),
+        Path(tempfile.gettempdir()).resolve(),
+        Path(os.getcwd()).resolve(),
+    }
 
 
 def _is_safe_path(target_path: str) -> bool:
-    """Verifies that a target path is not traversing into forbidden system root folders."""
+    """Verifies that a target path is strictly within an allowed base directory and not a forbidden system path."""
     try:
-        resolved = os.path.abspath(os.path.realpath(target_path))
+        if not target_path or "\x00" in target_path:
+            return False
+        resolved = Path(target_path).resolve(strict=False)
+        resolved_str = str(resolved)
+        cwd = str(Path(os.getcwd()).resolve())
+        tmp = str(Path(tempfile.gettempdir()).resolve())
+
+        # Check forbidden root dirs
         for forbidden in FORBIDDEN_ROOT_DIRS:
-            if resolved == forbidden or resolved.startswith(forbidden + os.sep):
-                return False
-        return True
+            if resolved_str == forbidden or resolved_str.startswith(forbidden + os.sep):
+                in_cwd = resolved_str == cwd or resolved_str.startswith(cwd + os.sep)
+                in_tmp = resolved_str == tmp or resolved_str.startswith(tmp + os.sep)
+                if not (in_cwd or in_tmp):
+                    return False
+
+        allowed_bases = _get_allowed_base_dirs()
+        return any(
+            resolved == base or base in resolved.parents
+            for base in allowed_bases
+        )
     except Exception:
         return False
 
@@ -129,6 +158,17 @@ async def create_ocr_job(
                         detail=f"File exceeds maximum allowed size of {IngestionGateway.MAX_FILE_SIZE_BYTES // (1024*1024)}MB."
                     )
                 f.write(chunk)
+
+        # Validate magic byte signatures
+        gateway = IngestionGateway()
+        try:
+            gateway.validate(target_path)
+        except Exception as val_err:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise HTTPException(
+                status_code=415,
+                detail=f"File content rejected by security gateway: {val_err}"
+            )
         doc_source = target_path
     else:
         if not source_path:

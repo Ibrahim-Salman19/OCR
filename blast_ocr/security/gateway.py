@@ -12,6 +12,7 @@ Protects OCR execution pipeline against untrusted file uploads by enforcing:
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Union
 import os
 import uuid
 import logging
@@ -50,6 +51,37 @@ class IngestionGateway:
     """Security boundary for validating and sanitizing uploaded documents."""
 
     MAX_FILE_SIZE_BYTES: int = 200 * 1024 * 1024  # 200MB limit
+
+    @classmethod
+    def validate(cls, source_path: Union[str, Path]) -> None:
+        """Validates source file extension, existence, size, and magic bytes."""
+        src = Path(source_path)
+        if not src.exists():
+            raise SecurityValidationError(f"Source file does not exist: {source_path}")
+
+        ext = src.suffix.lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise SecurityValidationError(
+                f"File extension '{ext}' is not in allowed security whitelist: {sorted(ALLOWED_EXTENSIONS)}"
+            )
+
+        file_size = src.stat().st_size
+        if file_size == 0:
+            raise SecurityValidationError("File is empty (0 bytes)")
+
+        if file_size > cls.MAX_FILE_SIZE_BYTES:
+            raise SecurityValidationError(
+                f"File size {file_size} bytes exceeds maximum ceiling of {cls.MAX_FILE_SIZE_BYTES} bytes"
+            )
+
+        if ext in MAGIC_BYTES:
+            with open(src, "rb") as f:
+                header = f.read(16)
+            matched = any(header.startswith(sig) for sig in MAGIC_BYTES[ext])
+            if not matched:
+                raise SecurityValidationError(
+                    f"File header magic bytes do not match expected signature for extension '{ext}'"
+                )
 
     @classmethod
     def validate_and_ingest(

@@ -7,24 +7,25 @@ FastAPI test client, mock S3/local storage backends, and ONNX Runtime mocks.
 """
 
 import io
-import os
-import json
 import time
 import uuid
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from unittest.mock import MagicMock, patch
 
 import pytest
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz
     HAS_FITZ = True
 except ImportError:
-    HAS_FITZ = False
+    try:
+        import fitz  # PyMuPDF
+        HAS_FITZ = True
+    except ImportError:
+        HAS_FITZ = False
 
 try:
     import fakeredis

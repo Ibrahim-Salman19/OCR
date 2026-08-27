@@ -59,18 +59,20 @@ def test_sanitize_removes_null_bytes(text):
 def test_file_hash_always_64_char_hex(content):
     from blast_ocr.cache.manager import OCRCache
 
-    cache = OCRCache(cache_dir=tempfile.mkdtemp())
+    with tempfile.TemporaryDirectory() as cache_tmp:
+        cache = OCRCache(cache_dir=cache_tmp)
 
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        f.write(content)
-        path = f.name
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(content)
+            path = f.name
 
-    try:
-        h = cache.get_file_hash(path)
-        assert len(h) == 64, f"Hash not 64 chars: {len(h)}"
-        assert all(c in "0123456789abcdef" for c in h), f"Non-hex chars in hash: {h}"
-    finally:
-        os.unlink(path)
+        try:
+            h = cache.get_file_hash(path)
+            assert len(h) == 64, f"Hash not 64 chars: {len(h)}"
+            assert all(c in "0123456789abcdef" for c in h), f"Non-hex chars in hash: {h}"
+        finally:
+            if os.path.exists(path):
+                os.unlink(path)
 
 
 # ── Property 4: OCRConfig min_confidence always between 0.0 and 1.0 ───────
@@ -110,16 +112,17 @@ def test_config_min_confidence_valid_range(value):
 def test_cache_roundtrip_preserves_data(key, page, confidence, text):
     from blast_ocr.cache.manager import OCRCache
 
-    cache = OCRCache(cache_dir=tempfile.mkdtemp())
+    with tempfile.TemporaryDirectory() as cache_tmp:
+        cache = OCRCache(cache_dir=cache_tmp)
 
-    data = {"page": page, "confidence": confidence, "text": text}
-    cache.set(key, data)
-    result = cache.get(key)
+        data = {"page": page, "confidence": confidence, "text": text}
+        cache.set(key, data)
+        result = cache.get(key)
 
-    if result is not None:
-        assert result["page"] == page
-        assert result["text"] == text
-        assert abs(result["confidence"] - confidence) < 1e-10
+        if result is not None:
+            assert result["page"] == page
+            assert result["text"] == text
+            assert abs(result["confidence"] - confidence) < 1e-10
 
 
 # ── Property 6: BlastPipeline.process_job never returns None ─────────────

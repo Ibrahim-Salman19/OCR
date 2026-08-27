@@ -10,11 +10,14 @@ import threading
 logger = logging.getLogger(__name__)
 
 
+import tempfile
+
+
 def _default_cache_dir() -> str:
-    """Return a writable cache directory. Uses /tmp on Linux (Streamlit Cloud)."""
+    """Return a writable cache directory. Uses tempdir on Linux."""
     if sys.platform == "win32":
         return "cache/ocr"
-    return "/tmp/cache/ocr"
+    return os.path.join(tempfile.gettempdir(), "cache", "ocr")
 
 
 # PERF(phase3): Try to use orjson for faster JSON serialization (2-5x faster)

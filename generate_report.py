@@ -1,5 +1,4 @@
 import os
-import re
 
 def main():
     report_path = "bug_report.md"
@@ -35,17 +34,17 @@ def main():
     medium = sum(1 for b in bugs if "MEDIUM" in b)
     low = sum(1 for b in bugs if "LOW" in b)
     
-    report = f\"\"\"══════════════════════════════════════════════════════════════════
+    report = f"""══════════════════════════════════════════════════════════════════
 B.L.A.S.T. OCR ENGINE — COMPLETE BUG AUDIT REPORT
 Total bugs found: {len(bugs)}
 CRITICAL: {critical} | HIGH: {high} | MEDIUM: {medium} | LOW: {low}
 ══════════════════════════════════════════════════════════════════
 
-\"\"\"
+"""
     for bug in bugs:
-        report += bug + \"\\n\\n\"
+        report += bug + "\n\n"
         
-    report += f\"\"\"══════════════════════════════════════════════════════════════════
+    report += f"""══════════════════════════════════════════════════════════════════
 COVERAGE SUMMARY
 ══════════════════════════════════════════════════════════════════
 ```text
@@ -73,7 +72,7 @@ RECOMMENDED PRIORITY FIXES (by severity)
 5. [HIGH] Ensure SQLite handles are closed by Session.remove() per thread
 6. [MEDIUM] Add OCREngineError to the Healing abort list
 7. [MEDIUM] Sanitize control characters from extracted text before DOCX output
-\"\"\"
+"""
     
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report)

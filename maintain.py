@@ -83,10 +83,7 @@ def show_stats():
         db = OCRDatabase()
 
         # Raw SQL for speed/simplicity
-        with db.get_session() as session:
-            # This depends on SQLAlchemy session structure,
-            # simplest is to just use the engine if available or basic count
-            # Use the DB methods if available
+        with db.get_session():
             pass
             # For now, just print where the DB is
         logger.info(f"Database located at: {db.engine.url}")

@@ -5,11 +5,13 @@ Unit and integration tests for Searchable PDF (Sandwich PDF) Generator.
 """
 
 import os
-from pathlib import Path
-import numpy as np
 import cv2
-import fitz
+import numpy as np
 import pytest
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 from blast_ocr.core.searchable_pdf import SearchablePDFGenerator
 from blast_ocr.core.document_model import Page, Block, Line, Span, BoundingBox

@@ -4,7 +4,6 @@ tests/test_formula_extractor.py
 Unit tests for Mathematical Formula Recognition & KaTeX conversion.
 """
 
-import pytest
 from blast_ocr.core.formula_extractor import FormulaExtractor
 from blast_ocr.core.document_model import Block, Line, Span, BoundingBox, BlockType
 

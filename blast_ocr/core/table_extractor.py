@@ -228,3 +228,6 @@ class TableExtractor:
             grid.append([c.text for c in r])
 
         return grid
+
+    # Alias for API backwards-compatibility
+    extract_tables = extract_tables_from_image

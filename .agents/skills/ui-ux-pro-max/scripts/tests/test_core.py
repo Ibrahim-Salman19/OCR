@@ -20,7 +20,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from core import BM25, detect_domain, search, search_stack, CSV_CONFIG, AVAILABLE_STACKS
-from design_system import generate_design_system, persist_design_system, DesignSystemGenerator
+from design_system import generate_design_system, DesignSystemGenerator
 
 
 class TestTokenizer(unittest.TestCase):

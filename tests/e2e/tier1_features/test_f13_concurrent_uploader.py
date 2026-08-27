@@ -10,10 +10,8 @@ Covers:
 - Graceful pool shutdown draining pending upload tasks
 """
 
-import time
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 from pathlib import Path
-from typing import BinaryIO, Dict, Optional
 
 
 from blast_ocr.storage.object_store import LocalFilesystemStorage, ObjectStorage
@@ -23,68 +21,7 @@ from blast_ocr.storage.object_store import LocalFilesystemStorage, ObjectStorage
 # Interface / Reference Implementation for Feature 13 Specification
 # ============================================================================
 
-class ConcurrentObjectUploader:
-    """
-    Concurrent multipart S3/MinIO and local storage background uploader.
-    """
-
-    def __init__(
-        self,
-        storage: ObjectStorage,
-        max_workers: int = 4,
-        chunk_size_mb: int = 8,
-        max_retries: int = 3,
-    ):
-        self.storage = storage
-        self.max_workers = max(1, max_workers)
-        self.chunk_size_bytes = chunk_size_mb * 1024 * 1024
-        self.max_retries = max_retries
-        self._executor = ThreadPoolExecutor(max_workers=self.max_workers, thread_name_prefix="UploaderWorker")
-        self._is_shutdown = False
-
-    def _upload_with_retry(self, key: str, local_path: Path) -> str:
-        last_exc = None
-        for attempt in range(1, self.max_retries + 1):
-            try:
-                # If large file and backend supports multipart, multipart logic triggers
-                file_size = local_path.stat().st_size
-                if file_size > self.chunk_size_bytes and hasattr(self.storage, "put_multipart"):
-                    return getattr(self.storage, "put_multipart")(key, str(local_path), self.chunk_size_bytes)
-                return self.storage.put(key, str(local_path))
-            except Exception as e:
-                last_exc = e
-                if attempt < self.max_retries:
-                    time.sleep(0.05 * (2 ** (attempt - 1)))
-                else:
-                    raise last_exc
-        raise RuntimeError("Upload exhausted retries")
-
-    def upload_file(self, key: str, local_path: str | Path) -> Future:
-        if self._is_shutdown:
-            raise RuntimeError("Uploader is already shut down")
-        path = Path(local_path)
-        return self._executor.submit(self._upload_with_retry, key, path)
-
-    def upload_stream(self, key: str, stream: BinaryIO, length: Optional[int] = None) -> Future:
-        if self._is_shutdown:
-            raise RuntimeError("Uploader is already shut down")
-        
-        def _task():
-            data = stream.read()
-            return self.storage.put_bytes(key, data)
-
-        return self._executor.submit(_task)
-
-    def upload_batch(self, items: Dict[str, str | Path]) -> Dict[str, str]:
-        futures = {k: self.upload_file(k, v) for k, v in items.items()}
-        results = {}
-        for k, fut in futures.items():
-            results[k] = fut.result(timeout=10.0)
-        return results
-
-    def shutdown(self, wait: bool = True) -> None:
-        self._is_shutdown = True
-        self._executor.shutdown(wait=wait)
+from blast_ocr.storage.concurrent_uploader import ConcurrentObjectUploader
 
 
 # ============================================================================

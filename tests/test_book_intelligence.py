@@ -2,7 +2,6 @@
 Unit tests for Book Intelligence module (Phase 4).
 """
 
-import pytest
 import os
 from blast_ocr.core.document_model import (
     Document, Page, Block, Line, Span, BoundingBox, BlockType

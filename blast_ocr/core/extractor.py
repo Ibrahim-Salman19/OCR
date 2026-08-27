@@ -12,12 +12,18 @@ from docx import Document  # noqa: F401 -- re-exported; tests monkeypatch this m
 # FIX(cloud): Redirect EasyOCR model cache to /tmp on Linux (Streamlit Cloud).
 # On cloud, the home dir (/home/appuser) may not have a writable .EasyOCR dir.
 # Setting this env var BEFORE importing easyocr tells it where to store models.
+import tempfile
+
 if sys.platform != "win32":
-    _easyocr_model_dir = "/tmp/.EasyOCR/model"
+    _easyocr_dir = os.path.join(tempfile.gettempdir(), ".EasyOCR")
+    _easyocr_model_dir = os.path.join(_easyocr_dir, "model")
     os.makedirs(_easyocr_model_dir, exist_ok=True)
-    os.environ.setdefault("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
+    os.environ.setdefault("EASYOCR_MODULE_PATH", _easyocr_dir)
 
 import defusedxml
+from PIL import Image
+
+Image.MAX_IMAGE_PIXELS = 100_000_000  # 10,000 x 10,000 max pixels decompression protection
 
 defusedxml.defuse_stdlib()
 
@@ -98,7 +104,8 @@ class RobustOCRExtractor:
             }
             model_storage_directory = os.getenv("BLAST_OCR_EASYOCR_MODEL_DIR")
             if not model_storage_directory and sys.platform != "win32":
-                module_path = os.getenv("EASYOCR_MODULE_PATH", "/tmp/.EasyOCR")
+                default_mod = os.path.join(tempfile.gettempdir(), ".EasyOCR")
+                module_path = os.getenv("EASYOCR_MODULE_PATH", default_mod)
                 clean_module_path = module_path.rstrip("/\\")
                 model_storage_directory = f"{clean_module_path}/model"
 

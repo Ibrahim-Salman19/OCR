@@ -10,187 +10,12 @@ Tier 2 Boundary and Corner Case Tests for Features 5-8:
 
 import json
 import time
-import uuid
 import pytest
-from typing import Any, Dict, List, Optional
 
-# Feature 5: Queue Client contract import / fallback
-try:
-    from blast_ocr.queue.client import QueueClient
-except ImportError:
-    class QueueClient:
-        VALID_PRIORITIES = ("high", "default", "low")
-
-        def __init__(self, redis_client=None, prefix: str = "blast_ocr:queue:"):
-            self.redis = redis_client
-            self.prefix = prefix
-
-        def _get_queue_key(self, priority: str) -> str:
-            p = priority.lower() if isinstance(priority, str) else "default"
-            if p not in self.VALID_PRIORITIES:
-                p = "default"
-            return f"{self.prefix}{p}"
-
-        def enqueue(self, job_data: dict, priority: str = "default") -> str:
-            job_id = job_data.get("job_id") or str(uuid.uuid4())
-            job_data["job_id"] = job_id
-            job_data["enqueued_at"] = time.time()
-            queue_key = self._get_queue_key(priority)
-            payload = json.dumps(job_data)
-            self.redis.lpush(queue_key, payload)
-            return job_id
-
-        def pop_next_job(self, timeout: Optional[int] = None) -> Optional[Dict[str, Any]]:
-            keys = [f"{self.prefix}{p}" for p in self.VALID_PRIORITIES]
-            if timeout is None or timeout == 0:
-                for k in keys:
-                    raw = self.redis.rpop(k)
-                    if raw:
-                        return json.loads(raw)
-                return None
-            else:
-                res = self.redis.brpop(keys, timeout=timeout)
-                if not res:
-                    return None
-                queue_name, raw_payload = res
-                return json.loads(raw_payload)
-
-        def get_queue_lengths(self) -> Dict[str, int]:
-            return {
-                p: self.redis.llen(f"{self.prefix}{p}") for p in self.VALID_PRIORITIES
-            }
-
-
-# Feature 6: Swarm Supervisor contract import / fallback
-try:
-    from blast_ocr.queue.swarm import SwarmSupervisor
-except ImportError:
-    class SwarmSupervisor:
-        def __init__(self, redis_client=None, num_workers: int = 4, max_workers: int = 64):
-            if num_workers < 0:
-                raise ValueError("num_workers cannot be negative.")
-            self.redis = redis_client
-            self.max_workers = max_workers
-            self.num_workers = min(num_workers, max_workers)
-            self.active_workers: Dict[str, dict] = {}
-            self._running = True
-
-            for i in range(self.num_workers):
-                w_id = f"worker_{i}_{uuid.uuid4().hex[:6]}"
-                self.active_workers[w_id] = {"status": "idle", "started_at": time.time()}
-
-        def scale_workers(self, target_count: int) -> int:
-            if target_count < 0:
-                raise ValueError("Worker count cannot be negative.")
-            target_count = min(target_count, self.max_workers)
-            if target_count > len(self.active_workers):
-                for i in range(target_count - len(self.active_workers)):
-                    w_id = f"worker_scaled_{uuid.uuid4().hex[:6]}"
-                    self.active_workers[w_id] = {"status": "idle", "started_at": time.time()}
-            elif target_count < len(self.active_workers):
-                to_remove = list(self.active_workers.keys())[target_count:]
-                for w_id in to_remove:
-                    del self.active_workers[w_id]
-            self.num_workers = len(self.active_workers)
-            return self.num_workers
-
-        def get_worker_count(self) -> int:
-            return len(self.active_workers)
-
-        def shutdown(self, graceful: bool = True) -> bool:
-            self._running = False
-            self.active_workers.clear()
-            return True
-
-
-# Feature 7: Worker Heartbeat Daemon contract import / fallback
-try:
-    from blast_ocr.queue.heartbeat import HeartbeatDaemon
-except ImportError:
-    class HeartbeatDaemon:
-        def __init__(self, redis_client, worker_id: str, interval_sec: float = 5.0, ttl_sec: int = 30):
-            if interval_sec <= 0:
-                raise ValueError("Heartbeat interval must be strictly positive (> 0s).")
-            self.redis = redis_client
-            self.worker_id = worker_id
-            self.interval_sec = interval_sec
-            self.ttl_sec = ttl_sec
-            self.key = f"blast_ocr:worker:{worker_id}"
-
-        def send_heartbeat(self, cpu_percent: float = 0.0, rss_bytes: int = 0, active_job_id: Optional[str] = None) -> bool:
-            payload = {
-                "worker_id": self.worker_id,
-                "timestamp": time.time(),
-                "cpu_percent": max(0.0, min(float(cpu_percent), 100.0)),
-                "rss_bytes": max(0, int(rss_bytes)),
-                "active_job_id": active_job_id,
-                "status": "busy" if active_job_id else "idle",
-            }
-            self.redis.set(self.key, json.dumps(payload), ex=self.ttl_sec)
-            self.redis.hset("blast_ocr:workers_registry", self.worker_id, time.time())
-            return True
-
-        def get_status(self) -> Optional[dict]:
-            raw = self.redis.get(self.key)
-            if not raw:
-                return None
-            try:
-                return json.loads(raw)
-            except Exception:
-                return None
-
-
-# Feature 8: Zombie Job Reaper contract import / fallback
-try:
-    from blast_ocr.queue.reaper import ZombieReaper
-except ImportError:
-    class ZombieReaper:
-        MAX_REAP_ATTEMPTS = 3
-
-        def __init__(self, redis_client, queue_client: QueueClient, grace_sec: float = 30.0):
-            self.redis = redis_client
-            self.queue_client = queue_client
-            self.grace_sec = grace_sec
-
-        def reap_zombies(self) -> List[str]:
-            reaped_jobs = []
-            registry = self.redis.hgetall("blast_ocr:workers_registry")
-            now = time.time()
-
-            for worker_id, last_seen_str in registry.items():
-                try:
-                    last_seen = float(last_seen_str)
-                except (ValueError, TypeError):
-                    continue
-
-                if now - last_seen > self.grace_sec:
-                    # Stale worker detected: check for assigned in-progress job
-                    job_key = f"blast_ocr:worker:{worker_id}:current_job"
-                    raw_job = self.redis.get(job_key)
-                    if raw_job:
-                        try:
-                            job_data = json.loads(raw_job)
-                            job_id = job_data.get("job_id")
-                            reap_count = job_data.get("reap_count", 0) + 1
-                            job_data["reap_count"] = reap_count
-
-                            if reap_count > self.MAX_REAP_ATTEMPTS:
-                                # Escalate to DLQ
-                                self.redis.rpush("blast_ocr:queue:dlq", json.dumps(job_data))
-                            else:
-                                # Requeue to high priority for immediate recovery
-                                self.queue_client.enqueue(job_data, priority="high")
-                            reaped_jobs.append(job_id)
-                        except Exception:
-                            # Quarantined malformed job
-                            self.redis.rpush("blast_ocr:queue:dlq", str(raw_job))
-                        self.redis.delete(job_key)
-                    
-                    # Cleanup stale worker
-                    self.redis.hdel("blast_ocr:workers_registry", worker_id)
-                    self.redis.delete(f"blast_ocr:worker:{worker_id}")
-
-            return reaped_jobs
+from blast_ocr.queue.client import QueueClient
+from blast_ocr.queue.swarm import SwarmSupervisor
+from blast_ocr.queue.heartbeat import HeartbeatDaemon
+from blast_ocr.queue.reaper import ZombieReaper
 
 
 # ============================================================================
@@ -212,9 +37,9 @@ class TestFeature05PriorityQueueBoundaries:
     def test_f05_queue_invalid_priority_string_fallback(self, mock_redis):
         """Invalid priority strings ('ultra_critical', '', None, 123) fall back cleanly to 'default'."""
         client = QueueClient(redis_client=mock_redis)
-        j1 = client.enqueue({"task": "t1"}, priority="ultra_critical")
-        j2 = client.enqueue({"task": "t2"}, priority="")
-        j3 = client.enqueue({"task": "t3"}, priority=None)
+        client.enqueue({"task": "t1"}, priority="ultra_critical")
+        client.enqueue({"task": "t2"}, priority="")
+        client.enqueue({"task": "t3"}, priority=None)
 
         counts = client.get_queue_lengths()
         assert counts["default"] == 3

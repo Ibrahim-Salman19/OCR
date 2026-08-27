@@ -12,10 +12,8 @@ redis://localhost:6379/0). Skipped automatically if unreachable, so this file
 does not fail CI/dev environments without Redis installed.
 """
 
-import os
 import pytest
 
-from blast_ocr.config import config
 
 try:
     from blast_ocr.queue.client import is_queue_available

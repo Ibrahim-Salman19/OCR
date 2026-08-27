@@ -24,9 +24,8 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import psutil
 
-from blast_ocr.core.batch_preprocessor import BatchPreprocessor
 from blast_ocr.core.engines.batched_rapidocr import BatchedRapidOCREngine
-from blast_ocr.core.job_state import TransientWorkerError, NonRetryableJobError
+from blast_ocr.core.job_state import TransientWorkerError
 from blast_ocr.queue.tasks import BackoffDLQHandler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -156,7 +155,6 @@ class StressTestRunner:
         retried_count = 0
 
         for i in range(num_failing_tasks):
-            job_id = f"job_fault_{i}"
             # Retryable exception simulation
             exc = TransientWorkerError("Simulated worker timeout")
             # Step through retries 0, 1, 2 (should schedule retry) and 3 (should DLQ)

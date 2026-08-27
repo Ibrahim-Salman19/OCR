@@ -27,9 +27,9 @@ def verify():
         shutil.rmtree(output_dir)
 
     print(f"[-] Processing {img_path}...")
-    start = time.time()
+    time.time()
     result = pipeline.process_job(img_path, output_dir=output_dir)
-    end = time.time()
+    time.time()
 
     print(f"[-] Result: {result}")
 

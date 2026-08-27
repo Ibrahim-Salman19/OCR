@@ -1,7 +1,6 @@
 import pytest
 from PIL import Image, ImageDraw
 from unittest.mock import MagicMock, patch
-from tests.e2e.conftest import mock_redis, patch_redis
 
 
 @pytest.fixture
@@ -64,6 +63,20 @@ def mock_easyocr_reader_for_tests(request):
         ]
         mock_reader_cls.return_value = mock_reader
         yield
+
+
+@pytest.fixture
+def mock_redis():
+    """Fixture providing isolated in-memory Redis for all unit tests."""
+    try:
+        import fakeredis
+        client = fakeredis.FakeRedis(decode_responses=True)
+        yield client
+        client.flushall()
+    except ImportError:
+        client = MagicMock()
+        client.ping.return_value = True
+        yield client
 
 
 @pytest.fixture(autouse=True)

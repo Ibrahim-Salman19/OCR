@@ -10,14 +10,11 @@ Comprehensive unit tests verifying P0 requirements from Execution Plan v2:
 """
 
 import pytest
-import tempfile
-import os
-from pathlib import Path
 
-from blast_ocr.core.models import JobConfig, JobState, RouteDecision
+from blast_ocr.core.models import JobConfig, JobState
 from blast_ocr.security.gateway import IngestionGateway, SecurityValidationError
 from blast_ocr.core.job_state import JobStateMachine, JobFingerprint
-from blast_ocr.core.book_document import BookDocument, BookParagraph, BookChapter
+from blast_ocr.core.book_document import BookDocument
 from blast_ocr.core.manifest import RunManifest, ManifestOutputArtifact
 from blast_ocr.core.document_model import Document, Page
 

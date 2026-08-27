@@ -4,13 +4,12 @@ def main():
     report_path = "bug_report_v2.md"
     
     # Analyze coverage
-    cov_text = ""
     if os.path.exists(".tmp/final_coverage.txt"):
         with open(".tmp/final_coverage.txt", "r", encoding="utf-8") as f:
             lines = f.readlines()
             for i, line in enumerate(lines):
                 if line.startswith("Name ") and "Stmts" in line:
-                    cov_text = "".join(lines[i:])
+                    "".join(lines[i:])
                     break
     
     critical = [
@@ -39,14 +38,14 @@ def main():
     
     total = len(critical) + len(high) + len(medium) + len(low)
     
-    report = f\"\"\"════════════════════════════════════════════════════════════
+    report = f"""════════════════════════════════════════════════════════════
 B.L.A.S.T. OCR — COMPLETE FORENSIC BUG AUDIT REPORT v2.0
 ════════════════════════════════════════════════════════════
 Total bugs: {total}
 CRITICAL: {len(critical)}  HIGH: {len(high)}  MEDIUM: {len(medium)}  LOW: {len(low)}
 
 ── CRITICAL ─────────────────────────────────────────────
-\"\"\"
+"""
     for b in critical: report += b + "\n\n"
     report += "── HIGH ─────────────────────────────────────────────────\n"
     for b in high: report += b + "\n\n"
@@ -55,7 +54,7 @@ CRITICAL: {len(critical)}  HIGH: {len(high)}  MEDIUM: {len(medium)}  LOW: {len(l
     report += "── LOW ──────────────────────────────────────────────────\n"
     for b in low: report += b + "\n\n"
     
-    report += f\"\"\"════════════════════════════════════════════════════════════
+    report += f"""════════════════════════════════════════════════════════════
 COVERAGE SUMMARY
 ════════════════════════════════════════════════════════════
 Stmts   Miss  Cover
@@ -86,7 +85,7 @@ Session data-bleed:      2 (Streamlit `st.session_state = {{}}` pollution + Shar
 SQL injection vectors:   1 (Job creation via unparameterized file name insertions)
 Unguarded file paths:    0
 ════════════════════════════════════════════════════════════
-\"\"\"
+"""
     
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report)

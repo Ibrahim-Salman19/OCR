@@ -4,9 +4,8 @@ tests/test_semantic_chunker.py
 Unit tests for TOC extraction, Footnote linking, and Semantic RAG chunking.
 """
 
-import pytest
 from blast_ocr.core.document_model import Document, Page, Block, Line, Span, BoundingBox, BlockType
-from blast_ocr.core.semantic_chunker import SemanticChunker, TOCItem, SemanticChunk
+from blast_ocr.core.semantic_chunker import SemanticChunker
 
 
 def test_toc_extraction():

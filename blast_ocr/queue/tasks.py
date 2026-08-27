@@ -142,18 +142,16 @@ class BackoffDLQHandler:
         replayed_payload = None
         if self.redis:
             raw_dlq_jobs = self.redis.lrange(self.dlq_key, 0, -1)
-            remaining_dlq = []
+            target_raw = None
             for raw in raw_dlq_jobs:
                 data = json.loads(raw) if isinstance(raw, (str, bytes)) else raw
-                if data.get("job_id") == job_id:
+                if str(data.get("job_id")) == str(job_id):
                     replayed_payload = data
-                else:
-                    remaining_dlq.append(raw)
+                    target_raw = raw
+                    break
 
-            if replayed_payload:
-                self.redis.delete(self.dlq_key)
-                for item in remaining_dlq:
-                    self.redis.rpush(self.dlq_key, item)
+            if replayed_payload and target_raw is not None:
+                self.redis.lrem(self.dlq_key, 1, target_raw)
 
                 replayed_payload["retry_count"] = 0
                 replayed_payload["status"] = JobState.QUEUED.value
@@ -257,3 +255,43 @@ def run_ocr_job(
             job_payload={"source_path": source_path, "output_dir": output_dir, "config_overrides": config_overrides},
         )
         raise e
+
+
+def compute_backoff(attempt: int, base: float = 1.0, max_backoff: float = 60.0, jitter: bool = True) -> float:
+    """Calculates exponential backoff delay with guard against float overflow."""
+    attempt = max(0, min(attempt, 30))
+    raw_backoff = min(base * (2.0 ** attempt), max_backoff)
+    if jitter:
+        return round(raw_backoff + random.uniform(0.0, 0.5), 3)
+    return float(raw_backoff)
+
+
+class DLQHandler(BackoffDLQHandler):
+    """Subclass of BackoffDLQHandler supporting quarantine and replay contract."""
+
+    def quarantine(self, job_id: str, payload: dict, error_msg: str, traceback_str: str = "") -> bool:
+        record = {
+            "job_id": job_id,
+            "payload": payload,
+            "error": error_msg,
+            "traceback": traceback_str,
+            "quarantined_at": time.time(),
+        }
+        if self.redis:
+            self.redis.rpush(self.dlq_key, json.dumps(record))
+        return True
+
+    def replay(self, job_id: str, queue_client: Optional[Any] = None) -> bool:
+        if not self.redis:
+            return False
+        items = self.redis.lrange(self.dlq_key, 0, -1)
+        for idx, raw in enumerate(items):
+            try:
+                rec = json.loads(raw)
+                if rec.get("job_id") == job_id:
+                    if queue_client:
+                        queue_client.enqueue(rec.get("payload", {}), priority="high")
+                    return True
+            except Exception:
+                continue
+        return False

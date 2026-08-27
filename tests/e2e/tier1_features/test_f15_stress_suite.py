@@ -13,106 +13,14 @@ Covers:
 import os
 import gc
 import time
-import threading
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pytest
 import psutil
 import numpy as np
 
 
-# ============================================================================
-# Interface / Reference Implementation for Feature 15 Specification
-# ============================================================================
-
-class ResourceMonitor:
-    """
-    High-frequency background profiler sampling RSS memory, CPU, and thread count.
-    """
-
-    def __init__(self, interval_sec: float = 0.05):
-        self.interval_sec = interval_sec
-        self.timestamps: List[float] = []
-        self.ram_rss_mb: List[float] = []
-        self.cpu_pct: List[float] = []
-        self.thread_counts: List[int] = []
-        self._running = False
-        self._thread: Optional[threading.Thread] = None
-        self._proc = psutil.Process(os.getpid())
-
-    def start(self) -> None:
-        self._running = True
-        self._thread = threading.Thread(target=self._monitor_loop, daemon=True)
-        self._thread.start()
-
-    def _monitor_loop(self) -> None:
-        while self._running:
-            try:
-                mem_mb = self._proc.memory_info().rss / (1024 * 1024)
-                cpu = self._proc.cpu_percent(interval=None)
-                threads = self._proc.num_threads()
-                
-                self.timestamps.append(time.time())
-                self.ram_rss_mb.append(mem_mb)
-                self.cpu_pct.append(cpu)
-                self.thread_counts.append(threads)
-            except Exception:
-                pass
-            time.sleep(self.interval_sec)
-
-    def stop(self) -> Dict[str, Any]:
-        self._running = False
-        if self._thread:
-            self._thread.join(timeout=1.0)
-        return {
-            "sample_count": len(self.ram_rss_mb),
-            "peak_rss_mb": max(self.ram_rss_mb) if self.ram_rss_mb else 0.0,
-            "mean_rss_mb": float(np.mean(self.ram_rss_mb)) if self.ram_rss_mb else 0.0,
-            "mean_cpu_pct": float(np.mean(self.cpu_pct)) if self.cpu_pct else 0.0,
-        }
-
-
-class MemoryLeakDetector:
-    """
-    Computes Ordinary Least Squares (OLS) memory regression slope.
-    Slope beta <= 0.005 MB/page indicates zero leak.
-    """
-
-    @staticmethod
-    def compute_ols_slope(
-        page_indices: List[int],
-        rss_samples_mb: List[float],
-        warmup_pages: int = 50,
-    ) -> Dict[str, Any]:
-        if len(page_indices) != len(rss_samples_mb):
-            raise ValueError("Mismatched page indices and memory samples")
-
-        # Exclude warmup pages (engine and model initialization)
-        filtered = [(p, m) for p, m in zip(page_indices, rss_samples_mb) if p > warmup_pages]
-        if len(filtered) < 2:
-            return {"slope_mb_per_page": 0.0, "is_zero_leak": True, "r_squared": 0.0}
-
-        x = np.array([p for p, _ in filtered], dtype=np.float64)
-        y = np.array([m for _, m in filtered], dtype=np.float64)
-
-        # OLS fit: y = alpha + beta * x
-        A = np.vstack([x, np.ones(len(x))]).T
-        beta, alpha = np.linalg.lstsq(A, y, rcond=None)[0]
-
-        # Calculate R^2
-        residuals = y - (alpha + beta * x)
-        ss_res = np.sum(residuals ** 2)
-        ss_tot = np.sum((y - np.mean(y)) ** 2)
-        r_squared = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
-
-        is_zero_leak = bool(beta <= 0.005)
-        return {
-            "slope_mb_per_page": float(beta),
-            "intercept_mb": float(alpha),
-            "r_squared": float(r_squared),
-            "is_zero_leak": is_zero_leak,
-            "analyzed_samples": len(filtered),
-        }
+from eval.stress_suite import ResourceMonitor, MemoryLeakDetector
 
 
 # ============================================================================

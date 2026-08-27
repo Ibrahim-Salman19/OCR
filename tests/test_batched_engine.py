@@ -8,7 +8,6 @@ Parallel DBNet Post-Processing, and Batched RapidOCR Engine.
 """
 
 import os
-from pathlib import Path
 import tempfile
 import time
 from typing import List
@@ -18,14 +17,12 @@ import numpy as np
 from PIL import Image
 import pytest
 
-from blast_ocr.config import OCRConfig, get_settings
 from blast_ocr.core.batch_preprocessor import BatchPreprocessor
 from blast_ocr.core.engines import BatchedRapidOCREngine, BaseOCREngine, get_engine
 from blast_ocr.core.onnx_session import ONNXSessionManager
 from blast_ocr.core.tensor_decoder import (
     ParallelDBPostProcessor,
     VectorizedCTCDecoder,
-    VectorizedTensorDecoder,
     extract_rotate_crop_image,
 )
 

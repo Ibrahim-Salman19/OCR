@@ -4,63 +4,10 @@ Opaque-box test suite verifying dynamic batch dimension handling, chunked infere
 throughput scaling, and tensor shape validation for batched ONNX execution.
 """
 
-import time
 import pytest
 import numpy as np
 
-try:
-    from blast_ocr.core.engines.batched_rapidocr import BatchedRapidOCREngine
-except ImportError:
-    # Reference contract implementation for test isolation
-    class BatchedRapidOCREngine:
-        def __init__(self, session=None, max_batch_size: int = 16):
-            self.session = session
-            self.max_batch_size = max_batch_size
-
-        def predict_batch(self, tensor: np.ndarray) -> np.ndarray:
-            if not isinstance(tensor, np.ndarray):
-                raise TypeError("Input must be a numpy ndarray")
-            if len(tensor.shape) != 4:
-                raise ValueError(f"Expected 4D NCHW tensor, got shape {tensor.shape}")
-            if tensor.shape[1] != 3 and tensor.shape[1] != 1:
-                raise ValueError(f"Expected 1 or 3 channels, got {tensor.shape[1]}")
-            if tensor.shape[0] == 0:
-                return np.empty((0, tensor.shape[2], tensor.shape[3]), dtype=np.float32)
-
-            total_items = tensor.shape[0]
-            outputs = []
-            
-            # Dynamic chunking over max_batch_size
-            for start_idx in range(0, total_items, self.max_batch_size):
-                chunk = tensor[start_idx : start_idx + self.max_batch_size]
-                if self.session is not None:
-                    res = self.session.run(None, {"input": chunk})
-                    outputs.append(res[0])
-                else:
-                    # Synthetic inference simulation: (Batch, H/4, W/4)
-                    b, c, h, w = chunk.shape
-                    mock_out = np.zeros((b, 1, h, w), dtype=np.float32)
-                    mock_out[:, 0, :, :] = 0.85
-                    outputs.append(mock_out)
-            
-            return np.concatenate(outputs, axis=0)
-
-        def process_batch(self, images: list, batch_size: int = 16) -> list:
-            if not images:
-                return []
-            results = []
-            for idx, img in enumerate(images):
-                if not isinstance(img, np.ndarray) or len(img.shape) < 2:
-                    raise ValueError(f"Invalid image array at index {idx}")
-                # Return structured result per page/image
-                results.append({
-                    "index": idx,
-                    "status": "success",
-                    "boxes": [[[10, 10], [100, 10], [100, 40], [10, 40]]],
-                    "texts": ["Sample detected line"],
-                    "scores": [0.98],
-                })
-            return results
+from blast_ocr.core.engines.batched_rapidocr import BatchedRapidOCREngine
 
 
 class TestDynamicBatchedONNX:

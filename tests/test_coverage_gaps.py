@@ -14,7 +14,7 @@ def test_extractor_unsupported_language():
     import cv2
     import numpy as np
 
-    config = OCRConfig(ocr_languages=["xyz"])
+    OCRConfig(ocr_languages=["xyz"])
     with patch("easyocr.Reader", side_effect=Exception("invalid language")):
         with pytest.raises(Exception):
             extractor = RobustOCRExtractor()

@@ -64,10 +64,13 @@ class SearchablePDFGenerator:
         page_images: List[Union[str, np.ndarray, Image.Image]],
         page_ocr_results: List[Dict[str, Any]],
         output_pdf_path: str,
-        title: Optional[str],
-        author: Optional[str],
+        title: Optional[str] = None,
+        author: Optional[str] = None,
     ) -> str:
-        import fitz
+        try:
+            import pymupdf as fitz
+        except ImportError:
+            import fitz
 
         doc = fitz.open()
 
@@ -144,6 +147,15 @@ class SearchablePDFGenerator:
     ) -> str:
         from reportlab.pdfgen import canvas
         from reportlab.lib.colors import Color
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        font_name = "Helvetica"
+        try:
+            pdfmetrics.registerFont(TTFont("DejaVuSans", "DejaVuSans.ttf"))
+            font_name = "DejaVuSans"
+        except Exception:
+            pass
 
         c = canvas.Canvas(output_pdf_path)
         if title:
@@ -171,11 +183,18 @@ class SearchablePDFGenerator:
                 xmin, ymin, ymax = box["xmin"], box["ymin"], box["ymax"]
                 box_h = max(1.0, ymax - ymin)
                 font_size = max(4.0, min(box_h * 0.80, 96.0))
-                c.setFont("Helvetica", font_size)
                 
-                # ReportLab Y-origin is bottom-left
-                rl_y = height - ymax + (box_h * 0.15)
-                c.drawString(xmin, rl_y, text)
+                try:
+                    c.setFont(font_name, font_size)
+                    rl_y = height - ymax + (box_h * 0.15)
+                    c.drawString(xmin, rl_y, text)
+                except UnicodeEncodeError:
+                    safe_text = text.encode("ascii", "replace").decode("ascii")
+                    c.setFont("Helvetica", font_size)
+                    rl_y = height - ymax + (box_h * 0.15)
+                    c.drawString(xmin, rl_y, safe_text)
+                except Exception as draw_err:
+                    logger.debug(f"Error drawing searchable PDF text block: {draw_err}")
 
             c.showPage()
 

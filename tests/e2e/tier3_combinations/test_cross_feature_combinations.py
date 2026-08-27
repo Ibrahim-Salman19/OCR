@@ -21,33 +21,18 @@ Verifies seamless interoperability across the 16 core features:
 - Feature 16: Prometheus & JSON Telemetry Metrics
 """
 
-import io
 import json
-import os
 import time
-import uuid
 import psutil
 import threading
-import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import cv2
 import numpy as np
-import pytest
-from PIL import Image, ImageDraw
 
-from blast_ocr.config import config
 from blast_ocr.storage.database import OCRDatabase
-from blast_ocr.storage.object_store import (
-    LocalFilesystemStorage,
-    ObjectStorage,
-    S3ObjectStorage,
-    artifact_key,
-    get_object_storage,
-)
 from blast_ocr.cache.manager import OCRCache
 from blast_ocr.telemetry import TelemetryTracker, _get_prometheus_metrics
 
@@ -115,7 +100,7 @@ class SwarmWorkerMock:
             return job_data
 
 
-class ZombieReaper:
+class CrossFeatureZombieReaper:
     """Detects expired worker leases and re-queues or dead-letters orphaned jobs."""
     def __init__(self, redis_mock: Any, max_retries: int = 3):
         self.redis = redis_mock
@@ -210,7 +195,6 @@ class TestCrossFeatureCombinations:
         to CPUExecutionProvider with batched tensor execution preserving output contracts.
         """
         # Create session with fallback configuration
-        providers_with_cuda = ["CUDAExecutionProvider", "CPUExecutionProvider"]
         
         with patch("onnxruntime.InferenceSession", side_effect=lambda path, providers=None, **kwargs: (
             mock_onnx_session_factory(path, providers=["CPUExecutionProvider"])
@@ -335,7 +319,7 @@ class TestCrossFeatureCombinations:
         Simulates worker abruptly dying while holding a job lock.
         Zombie Reaper discovers expired heartbeat, releases lock, and re-queues job safely.
         """
-        reaper = ZombieReaper(mock_redis, max_retries=3)
+        reaper = CrossFeatureZombieReaper(mock_redis, max_retries=3)
         
         # Setup crashed worker state
         crashed_worker_id = "worker_crashed_99"
@@ -374,7 +358,7 @@ class TestCrossFeatureCombinations:
         A poison pill job that repeatedly crashes workers exhausts max_retries=3
         and is routed directly to the Dead Letter Queue (`queue:dlq`) with forensic diagnostics.
         """
-        reaper = ZombieReaper(mock_redis, max_retries=3)
+        reaper = CrossFeatureZombieReaper(mock_redis, max_retries=3)
         job_id = "poison_pill_job_666"
         
         job_payload = {
@@ -595,7 +579,7 @@ class TestCrossFeatureCombinations:
         Records 100 job/page events through TelemetryTracker, asserting metric registry integrity.
         """
         metrics = _get_prometheus_metrics()
-        initial_pages_metric = metrics["pages_total"]
+        metrics["pages_total"]
 
         for i in range(25):
             TelemetryTracker.record_page_metrics(
@@ -651,7 +635,7 @@ class TestCrossFeatureCombinations:
         low-priority batch job that safely moves to DLQ without stalling the high-priority stream.
         """
         queues = ["queue:high", "queue:normal", "queue:low"]
-        reaper = ZombieReaper(mock_redis, max_retries=2)
+        reaper = CrossFeatureZombieReaper(mock_redis, max_retries=2)
 
         # High priority streaming job (healthy)
         mock_redis.rpush("queue:high", json.dumps({

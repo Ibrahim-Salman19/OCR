@@ -11,22 +11,15 @@ Covers:
 6. FastAPI REST endpoints for priority dispatch, worker inspection, queue monitoring, and replay
 """
 
-import json
-import os
 import threading
 import time
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
 from blast_ocr.api.app import app
 from blast_ocr.core.job_state import (
     classify_exception,
-    JobStateMachine,
-    NonRetryableJobError,
-    RetryableJobError,
-    TransientWorkerError,
-    TemporaryStorageError,
     WorkerLostError,
     UnsupportedPDFError,
     EncryptedPDFError,
@@ -37,13 +30,11 @@ from blast_ocr.queue.client import (
     QueueClient,
     PriorityQueueManager,
     PriorityLevel,
-    JobPriority,
-    enqueue_job,
 )
 from blast_ocr.queue.heartbeat import HeartbeatDaemon, WorkerRegistry
-from blast_ocr.queue.reaper import ZombieReaper, ZombieJobReaper, ReaperResult
+from blast_ocr.queue.reaper import ZombieReaper
 from blast_ocr.queue.swarm import SwarmSupervisor, SwarmWorker
-from blast_ocr.queue.tasks import BackoffDLQHandler, run_ocr_job
+from blast_ocr.queue.tasks import BackoffDLQHandler
 from blast_ocr.storage.database import OCRDatabase
 
 

@@ -21,5 +21,12 @@ final_coverage/
 poppler-25.12.0/
 VC_redist.x64.exe
 *.db
+*.sqlite
+*.sqlite3
 *.log
-.env
+.env*
+.tmp/
+tmp/
+dist/
+build/
+*.egg-info/

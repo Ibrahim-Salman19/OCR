@@ -18,6 +18,9 @@ import cv2
 import numpy as np
 from PIL import Image
 
+Image.MAX_IMAGE_PIXELS = 100_000_000  # 10,000 x 10,000 max pixels decompression protection
+MAX_IMAGE_DIMENSION = 10_000
+
 try:
     import pypdfium2 as pdfium
 
@@ -108,6 +111,12 @@ class BatchPreprocessor:
                 if img is None:
                     pil_img = Image.open(io.BytesIO(data)).convert("RGB")
                     img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+            if img is not None and (img.shape[0] > MAX_IMAGE_DIMENSION or img.shape[1] > MAX_IMAGE_DIMENSION):
+                raise ValueError(
+                    f"Image dimensions {img.shape[1]}x{img.shape[0]} exceed maximum safe dimension "
+                    f"({MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION}). Possible decompression bomb."
+                )
             return img
 
         raise TypeError(f"Unsupported image input type: {type(source)}")
@@ -136,6 +145,8 @@ class BatchPreprocessor:
         for img in images:
             if not isinstance(img, np.ndarray) or img.size == 0 or img.ndim < 2:
                 continue
+            if np.isnan(img).any() or np.isinf(img).any():
+                raise ValueError("Input image array contains NaN or Inf values.")
             if target_size:
                 h, w = target_size
                 img_resized = cv2.resize(img, (w, h))

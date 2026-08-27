@@ -2,7 +2,6 @@
 Unit tests for Tier-0 Native Text Extraction and Routing Layer (Phase 5).
 """
 
-import pytest
 from blast_ocr.core.tier0_extractor import Tier0Extractor
 
 

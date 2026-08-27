@@ -13,17 +13,12 @@ Comprehensive Unit and Functional Test Suite for Milestone 4:
 
 import json
 import logging
-import os
-from pathlib import Path
 import subprocess
 import sys
-import tempfile
 import time
-from typing import Any, Dict, List
 
 import numpy as np
 from PIL import Image
-import psutil
 import pytest
 
 from eval.benchmark_load import (
@@ -34,7 +29,6 @@ from eval.benchmark_load import (
     MetricsAggregator,
     BenchmarkRunner,
     LoadBenchmarkRunner,
-    run_load_benchmark,
 )
 from eval.stress_suite import (
     ResourceMonitor,
@@ -47,7 +41,6 @@ from eval.stress_suite import (
 from blast_ocr.telemetry import (
     TelemetryTracker,
     _get_prometheus_metrics,
-    start_metrics_server,
 )
 
 

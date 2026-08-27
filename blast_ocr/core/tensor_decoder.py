@@ -158,6 +158,49 @@ class VectorizedCTCDecoder:
 
         return results
 
+    @staticmethod
+    def decode_greedy(
+        logits: np.ndarray,
+        vocab: Sequence[str],
+        blank_idx: int = 0,
+    ) -> List[Tuple[str, float]]:
+        """Vectorized greedy CTC decoding across a batch of logits."""
+        if not isinstance(logits, np.ndarray):
+            raise TypeError("Logits must be a numpy ndarray")
+        if len(logits.shape) != 3:
+            raise ValueError(f"Expected 3D tensor (Batch, Time, Vocab), got shape {logits.shape}")
+        if logits.shape[2] != len(vocab):
+            raise ValueError(f"Logits vocab dimension {logits.shape[2]} does not match vocab size {len(vocab)}")
+        if logits.shape[0] == 0:
+            return []
+
+        if np.isnan(logits).any() or np.isinf(logits).any():
+            logits = np.nan_to_num(logits, nan=0.0, posinf=1.0, neginf=-1.0)
+
+        batch_size, time_steps, vocab_size = logits.shape
+        exp_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
+        probs = exp_logits / np.sum(exp_logits, axis=-1, keepdims=True)
+        argmax_indices = np.argmax(logits, axis=-1)
+        results = []
+
+        for b in range(batch_size):
+            seq = argmax_indices[b]
+            b_probs = probs[b]
+            char_list = []
+            prob_list = []
+            prev_idx = -1
+            for t, idx in enumerate(seq):
+                if idx != blank_idx and idx != prev_idx:
+                    char_list.append(vocab[idx])
+                    prob_list.append(b_probs[t, idx])
+                prev_idx = idx
+            text = "".join(char_list)
+            mean_conf = float(np.mean(prob_list)) if prob_list else 1.0
+            if not np.isfinite(mean_conf):
+                mean_conf = 0.0
+            results.append((text, mean_conf))
+        return results
+
 
 # -----------------------------------------------------------------------------
 # 2. Concurrent DBNet Polygon Post-Processor
@@ -169,6 +212,43 @@ class ParallelDBPostProcessor:
     High-performance DBNet detection polygon extractor and binarizer.
     Supports multi-threaded slice extraction and unclip polygon processing across batches.
     """
+
+    @staticmethod
+    def extract_polygons(
+        prob_map: np.ndarray,
+        thresh: float = 0.3,
+        box_thresh: float = 0.6,
+        unclip_ratio: float = 1.5,
+        max_candidates: int = 1000,
+    ) -> List[np.ndarray]:
+        """Extract polygon bounding boxes from a 2D/3D probability map."""
+        if not isinstance(prob_map, np.ndarray):
+            raise TypeError("Probability map must be a numpy ndarray")
+        if np.isnan(prob_map).any() or np.isinf(prob_map).any():
+            prob_map = np.nan_to_num(prob_map, nan=0.0, posinf=1.0, neginf=0.0)
+
+        if len(prob_map.shape) == 3:
+            prob_map = prob_map[0]
+        elif len(prob_map.shape) != 2:
+            raise ValueError(f"Expected 2D (H, W) or 3D (1, H, W) map, got {prob_map.shape}")
+
+        h, w = prob_map.shape
+        mask = (prob_map > thresh).astype(np.uint8) * 255
+        contours, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        boxes = []
+        for cnt in contours[:max_candidates]:
+            if cv2.contourArea(cnt) < 16:
+                continue
+            cnt_mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.drawContours(cnt_mask, [cnt], -1, 1, -1)
+            score = cv2.mean(prob_map, mask=cnt_mask)[0]
+            if score < box_thresh:
+                continue
+            rect = cv2.minAreaRect(cnt)
+            box = cv2.boxPoints(rect)
+            box = np.asarray(box, dtype=np.int32)
+            boxes.append(box)
+        return boxes
 
     def __init__(
         self,
@@ -515,3 +595,8 @@ class VectorizedTensorDecoder:
         Vectorized greedy CTC decode for a batch of text crop logits/probabilities.
         """
         return self.ctc_decoder.decode_batch(rec_preds)
+
+
+# Backward compatibility aliases
+CTCDecoder = VectorizedCTCDecoder
+DBNetDecoder = ParallelDBPostProcessor

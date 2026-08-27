@@ -13,33 +13,21 @@ Simulates production document ingestion workloads against SLA performance target
 - Scenario 8: Enterprise SLA & Prometheus Observability under Production Traffic (F1, F2, F4, F10, F14, F16)
 """
 
-import io
 import json
-import os
 import time
-import random
-import uuid
 import psutil
-import tempfile
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from unittest.mock import MagicMock, patch
 
-import cv2
 import numpy as np
-import pytest
-from PIL import Image, ImageDraw
 
 from blast_ocr.config import config
 from blast_ocr.cache.manager import OCRCache
 from blast_ocr.storage.database import OCRDatabase
-from blast_ocr.storage.object_store import get_object_storage
-from blast_ocr.core.models import JobConfig, JobState
 from blast_ocr.core.document_model import Document, Page, Block, Line, Span, BoundingBox
-from blast_ocr.core.semantic_chunker import SemanticChunker
-from blast_ocr.telemetry import TelemetryTracker, _get_prometheus_metrics
+from blast_ocr.telemetry import TelemetryTracker
 
 
 # ============================================================================
@@ -239,7 +227,7 @@ class TestRealWorldWorkloadScenarios:
             mock_redis.set(f"blast:job:lease:{c_job}", "worker_dead_node")
         
         # Reaper runs and recovers crashed leases
-        from tests.e2e.tier3_combinations.test_cross_feature_combinations import ZombieReaper
+        from tests.e2e.tier3_combinations.test_cross_feature_combinations import CrossFeatureZombieReaper as ZombieReaper
         reaper = ZombieReaper(mock_redis, max_retries=3)
         reaped = reaper.reap()
         assert len(reaped) == 2
@@ -384,7 +372,7 @@ class TestRealWorldWorkloadScenarios:
         Processes multilingual document (English, German, Arabic, Formulas, Tables).
         Asserts layout preservation, reading order tau >= 0.8, and exports verified .md and .docx files.
         """
-        from eval.metrics import compute_cer, reading_order_tau
+        from eval.metrics import reading_order_tau
         from blast_ocr.core.exporter import save_output
 
         gold_paragraphs = [
@@ -442,7 +430,7 @@ class TestRealWorldWorkloadScenarios:
         queues = ["queue:high", "queue:normal", "queue:low"]
         total_jobs = 20
         
-        from tests.e2e.tier3_combinations.test_cross_feature_combinations import ZombieReaper, SwarmWorkerMock
+        from tests.e2e.tier3_combinations.test_cross_feature_combinations import CrossFeatureZombieReaper as ZombieReaper, SwarmWorkerMock
         reaper = ZombieReaper(mock_redis, max_retries=1)
 
         for i in range(total_jobs):
@@ -463,7 +451,6 @@ class TestRealWorldWorkloadScenarios:
 
         workers = [SwarmWorkerMock(f"chaos_worker_{w}", mock_redis) for w in range(3)]
         succeeded = []
-        dlq_routed = []
 
         # Process first pass
         for w in workers:

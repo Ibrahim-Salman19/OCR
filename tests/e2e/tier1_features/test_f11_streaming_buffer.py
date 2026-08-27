@@ -11,151 +11,33 @@ Covers:
 """
 
 import json
-import os
-import shutil
-import tempfile
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from PIL import Image
 
-from PIL import Image, ImageDraw
-
-
-# ============================================================================
-# Interface / Reference Implementations for Feature 11 Specification
-# ============================================================================
-
-class ChunkScratchManager:
-    """
-    Manages isolated ephemeral scratch directories for chunk-window ingestion.
-    Purges scratch files immediately after batch consumption.
-    """
-
-    def __init__(self, base_temp_dir: Optional[Path] = None):
-        self.base_temp_dir = base_temp_dir or Path(tempfile.gettempdir())
-        self.active_scratch_dirs: List[Path] = []
-
-    def create_scratch_window(self, window_index: int) -> Path:
-        scratch = self.base_temp_dir / f"scratch_w_{window_index}_{os.getpid()}"
-        scratch.mkdir(parents=True, exist_ok=True)
-        self.active_scratch_dirs.append(scratch)
-        return scratch
-
-    def purge_scratch_window(self, scratch_dir: Path) -> None:
-        if scratch_dir.exists():
-            shutil.rmtree(scratch_dir, ignore_errors=True)
-        if scratch_dir in self.active_scratch_dirs:
-            self.active_scratch_dirs.remove(scratch_dir)
-
-    def cleanup_all(self) -> None:
-        for d in list(self.active_scratch_dirs):
-            self.purge_scratch_window(d)
+from blast_ocr.core.streaming import (
+    PageStreamGenerator,
+    StreamDocumentWriter,
+)
 
 
-class PageStreamGenerator:
-    """
-    Yields windowed page batches (size K) from documents/images,
-    managing immediate per-chunk scratch cleanup to bound RSS <= 500MB.
-    """
+def _create_dummy_image_pdf(pdf_path: Path, page_count: int = 12) -> None:
+    """Helper to create a valid multi-page PDF with PIL images for testing."""
+    images = []
+    for p in range(1, page_count + 1):
+        img = Image.new("RGB", (300, 400), color="white")
+        images.append(img)
+    if images:
+        images[0].save(str(pdf_path), save_all=True, append_images=images[1:])
 
-    def __init__(
-        self,
-        source_path: str | Path,
-        total_pages: int = 16,
-        chunk_size: int = 8,
-        temp_dir: Optional[str | Path] = None,
-    ):
-        self.source_path = Path(source_path)
-        self.total_pages = total_pages
-        self.chunk_size = max(1, chunk_size)
-        self.scratch_mgr = ChunkScratchManager(Path(temp_dir) if temp_dir else None)
-        self.current_window_dir: Optional[Path] = None
-
-    def __iter__(self) -> Generator[List[Tuple[int, Path]], None, None]:
-        num_chunks = (self.total_pages + self.chunk_size - 1) // self.chunk_size
-        for win_idx in range(num_chunks):
-            start_page = win_idx * self.chunk_size + 1
-            end_page = min(self.total_pages, (win_idx + 1) * self.chunk_size)
-            
-            # Create isolated scratch folder
-            self.current_window_dir = self.scratch_mgr.create_scratch_window(win_idx)
-            chunk_items: List[Tuple[int, Path]] = []
-            
-            for p in range(start_page, end_page + 1):
-                img_path = self.current_window_dir / f"page_{p:04d}.png"
-                img = Image.new("RGB", (300, 400), color="white")
-                draw = ImageDraw.Draw(img)
-                draw.text((20, 20), f"Page {p} content", fill="black")
-                img.save(img_path)
-                chunk_items.append((p, img_path))
-            
-            try:
-                yield chunk_items
-            finally:
-                # Immediate purge upon completing current chunk window
-                if self.current_window_dir:
-                    self.scratch_mgr.purge_scratch_window(self.current_window_dir)
-                    self.current_window_dir = None
-
-    def close(self) -> None:
-        self.scratch_mgr.cleanup_all()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-
-class StreamDocumentWriter:
-    """
-    Incremental document exporter supporting streaming append of Markdown,
-    Plain Text, and JSONL formats without assembling monolithic in-memory models.
-    """
-
-    def __init__(self, output_path: str | Path, format: str = "markdown"):
-        self.output_path = Path(output_path)
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        self.format = format.lower().strip().lstrip(".")
-        self.file_handle = open(self.output_path, "w", encoding="utf-8")
-        self.written_pages = 0
-
-    def write_page(self, page_num: int, text: str, layout: Optional[Dict[str, Any]] = None) -> None:
-        if self.format in ("md", "markdown"):
-            self.file_handle.write(f"## Page {page_num}\n\n{text}\n\n---\n\n")
-        elif self.format in ("txt", "text"):
-            self.file_handle.write(f"--- Page {page_num} ---\n{text}\n\n")
-        elif self.format in ("jsonl", "json"):
-            record = {
-                "page": page_num,
-                "text": text,
-                "layout": layout or {},
-            }
-            self.file_handle.write(json.dumps(record, ensure_ascii=False) + "\n")
-        self.file_handle.flush()
-        self.written_pages += 1
-
-    def finalize(self) -> Path:
-        if not self.file_handle.closed:
-            self.file_handle.close()
-        return self.output_path
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.finalize()
-
-
-# ============================================================================
-# Test Cases (>= 5 Tests)
-# ============================================================================
 
 def test_f11_page_stream_generator_windowing_partitions(tmp_path):
     """
     Test 1: Tests PageStreamGenerator correctly partitions total document pages
     into exact chunk windows of size K (e.g. K=5 for 12 pages -> batches of 5, 5, 2).
     """
-    gen = PageStreamGenerator(source_path=tmp_path / "mock.pdf", total_pages=12, chunk_size=5, temp_dir=tmp_path)
+    pdf_path = tmp_path / "mock.pdf"
+    _create_dummy_image_pdf(pdf_path, 12)
+    gen = PageStreamGenerator(source_path=pdf_path, total_pages=12, chunk_size=5, temp_dir=tmp_path)
     
     batches = list(gen)
     assert len(batches) == 3, f"Expected 3 chunk batches, got {len(batches)}"
@@ -181,7 +63,9 @@ def test_f11_chunk_scratch_immediate_unlinking(tmp_path):
     Test 2: Tests that scratch files created during a chunk window are immediately
     purged from disk once iteration proceeds to the next chunk or completes.
     """
-    gen = PageStreamGenerator(source_path=tmp_path / "doc.pdf", total_pages=8, chunk_size=4, temp_dir=tmp_path)
+    pdf_path = tmp_path / "doc.pdf"
+    _create_dummy_image_pdf(pdf_path, 8)
+    gen = PageStreamGenerator(source_path=pdf_path, total_pages=8, chunk_size=4, temp_dir=tmp_path)
     
     observed_scratch_paths = []
     for chunk in gen:
@@ -249,10 +133,12 @@ def test_f11_streaming_generator_cleanup_on_interruption(tmp_path):
     Test 5: Tests exception safety and premature break handling: scratch folders
     are cleanly deleted even if processing fails mid-stream.
     """
+    pdf_path = tmp_path / "bad.pdf"
+    _create_dummy_image_pdf(pdf_path, 10)
     scratch_dir_captured = None
     
     try:
-        with PageStreamGenerator(source_path=tmp_path / "bad.pdf", total_pages=10, chunk_size=3, temp_dir=tmp_path) as gen:
+        with PageStreamGenerator(source_path=pdf_path, total_pages=10, chunk_size=3, temp_dir=tmp_path) as gen:
             for i, chunk in enumerate(gen):
                 if i == 0:
                     scratch_dir_captured = chunk[0][1].parent

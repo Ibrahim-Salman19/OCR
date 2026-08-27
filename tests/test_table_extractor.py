@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 import pytest
 
-from blast_ocr.core.table_extractor import TableExtractor, TableCell, ExtractedTable
+from blast_ocr.core.table_extractor import TableExtractor
 from blast_ocr.core.document_model import Span, BoundingBox
 
 

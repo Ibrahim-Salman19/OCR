@@ -7,9 +7,8 @@ Implements PubTabNet / ICDAR standard evaluation for:
 - TEDS-Content: Measures joint structural and textual accuracy.
 """
 
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Tuple
 import re
-import html
 import xml.etree.ElementTree as ET
 
 

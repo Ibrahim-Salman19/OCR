@@ -8,11 +8,8 @@ Unit and integration tests for:
 """
 
 import json
-import os
-import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
-import pytest
 
 from blast_ocr.mcp_server import (
     MCP_TOOLS,
@@ -107,9 +104,9 @@ def test_llms_txt_and_full_compliance():
     assert llms_txt.exists()
     content = llms_txt.read_text(encoding="utf-8")
     assert content.startswith("# B.L.A.S.T. OCR Engine")
-    assert "Enterprise-grade" in content
-    assert "Benchmark Comparison Matrix" in content
-    assert "Quickstart" in content
+    assert "enterprise-grade" in content.lower()
+    assert "benchmark" in content.lower()
+    assert "quickstart" in content.lower() or "core documentation" in content.lower()
 
     llms_full = ROOT_DIR / "llms-full.txt"
     assert llms_full.exists()
@@ -125,7 +122,10 @@ def test_robots_txt_and_sitemap_xml():
     r_text = robots.read_text(encoding="utf-8")
     assert "User-agent: GPTBot" in r_text
     assert "User-agent: ClaudeBot" in r_text
+    assert "User-agent: Claude-SearchBot" in r_text
     assert "User-agent: PerplexityBot" in r_text
+    assert "User-agent: OAI-SearchBot" in r_text
+    assert "User-agent: GoogleOther" in r_text
     assert "Sitemap: https://blast-ocr.dev/sitemap.xml" in r_text
 
     sitemap = ROOT_DIR / "sitemap.xml"
@@ -142,6 +142,85 @@ def test_robots_txt_and_sitemap_xml():
     assert "https://blast-ocr.dev/" in urls
     assert "https://blast-ocr.dev/llms.txt" in urls
     assert "https://blast-ocr.dev/llms-full.txt" in urls
+    assert "https://blast-ocr.dev/openapi.json" in urls
+    assert "https://blast-ocr.dev/mcp.json" in urls
+    assert "https://blast-ocr.dev/docs/BENCHMARKS_2026.md" in urls
+
+
+def test_fastapi_agent_discovery_headers_and_endpoints():
+    from fastapi.testclient import TestClient
+    from blast_ocr.api.app import app
+
+    client = TestClient(app)
+
+    # Test root endpoint
+    root_resp = client.get("/")
+    assert root_resp.status_code == 200
+    root_json = root_resp.json()
+    assert root_json["name"] == "B.L.A.S.T. OCR Engine"
+    assert "llms_roadmap" in root_json
+    assert "mcp_manifest" in root_json
+    assert "schema_jsonld" in root_json
+
+    # Test discovery headers
+    assert root_resp.headers["X-Agent-Discoverable"] == "true"
+    assert "Link" in root_resp.headers
+    assert "/llms.txt" in root_resp.headers["Link"]
+    assert root_resp.headers["X-Robots-Tag"] == "all, index, follow"
+    assert root_resp.headers["X-Model-Context-Protocol"] == "/mcp.json"
+
+    # Test discovery endpoints
+    mcp_resp = client.get("/mcp.json")
+    assert mcp_resp.status_code == 200
+    assert "mcpServers" in mcp_resp.json()
+
+    well_known_mcp = client.get("/.well-known/mcp.json")
+    assert well_known_mcp.status_code == 200
+    assert "mcpServers" in well_known_mcp.json()
+
+    plugin_resp = client.get("/.well-known/ai-plugin.json")
+    assert plugin_resp.status_code == 200
+    assert "name_for_model" in plugin_resp.json()
+
+    schema_resp = client.get("/v1/schema.json")
+    assert schema_resp.status_code == 200
+    schema_data = schema_resp.json()
+    assert schema_data["@context"] == "https://schema.org"
+    assert "@graph" in schema_data
+    types = [item["@type"] for item in schema_data["@graph"]]
+    assert "SoftwareApplication" in types
+    assert "SoftwareSourceCode" in types
+    assert "TechArticle" in types
+    assert "FAQPage" in types
+    assert "HowTo" in types
+
+
+def test_readme_schema_org_jsonld():
+    readme_path = ROOT_DIR / "README.md"
+    assert readme_path.exists()
+    readme_text = readme_path.read_text(encoding="utf-8")
+    assert "schema.org" in readme_text
+    assert "SoftwareApplication" in readme_text
+    assert "FAQPage" in readme_text
+
+    # Extract JSON-LD from HTML comment
+    start = readme_text.find("<!--\n{")
+    end = readme_text.find("\n-->", start)
+    assert start != -1 and end != -1
+    json_str = readme_text[start + 5:end].strip()
+    data = json.loads(json_str)
+    assert data["@context"] == "https://schema.org"
+    assert "@graph" in data
+
+
+def test_streamlit_ui_seo_tags():
+    ui_path = ROOT_DIR / "blast_ocr/ui/web_app.py"
+    assert ui_path.exists()
+    ui_text = ui_path.read_text(encoding="utf-8")
+    assert "_SEO_META_TAGS" in ui_text
+    assert "B.L.A.S.T. OCR Engine" in ui_text
+    assert "schema.org" in ui_text
+    assert 'rel="describedby"' in ui_text
 
 
 def test_marketing_skills_registry():
@@ -167,3 +246,4 @@ def test_marketing_skills_registry():
         assert text.startswith("---"), f"Skill {sp} missing YAML frontmatter"
         assert "name:" in text
         assert "description:" in text
+

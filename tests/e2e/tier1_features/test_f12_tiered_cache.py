@@ -11,164 +11,9 @@ Covers:
 """
 
 import json
-import os
 import time
-import queue
-import threading
-from collections import OrderedDict
-from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from blast_ocr.cache.tiered_cache import TieredOCRCache
 
-
-
-# ============================================================================
-# Interface / Reference Implementation for Feature 12 Specification
-# ============================================================================
-
-class AsyncCacheWriter:
-    """
-    Background worker queue for non-blocking disk persistence.
-    Eliminates fsync latency from the OCR critical path.
-    """
-
-    def __init__(self, cache_dir: Path):
-        self.cache_dir = cache_dir
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self._queue: queue.Queue[Optional[Tuple[str, Dict[str, Any]]]] = queue.Queue()
-        self._running = True
-        self._thread = threading.Thread(target=self._worker_loop, daemon=True)
-        self._thread.start()
-
-    def _worker_loop(self) -> None:
-        while self._running:
-            try:
-                item = self._queue.get(timeout=0.1)
-            except queue.Empty:
-                continue
-
-            if item is None:  # Sentinel to stop
-                self._queue.task_done()
-                break
-
-            key, value = item
-            try:
-                dest = self.cache_dir / f"{key}.json"
-                tmp_dest = self.cache_dir / f".tmp_{key}_{time.time_ns()}.json"
-                with open(tmp_dest, "w", encoding="utf-8") as f:
-                    json.dump(value, f, ensure_ascii=False)
-                    f.flush()
-                    os.fsync(f.fileno())
-                os.replace(tmp_dest, dest)
-            except Exception:
-                pass
-            finally:
-                self._queue.task_done()
-
-    def write_async(self, key: str, value: Dict[str, Any]) -> None:
-        self._queue.put((key, value))
-
-    def flush(self) -> None:
-        self._queue.join()
-
-    def stop(self) -> None:
-        self._running = False
-        self._queue.put(None)
-        self._thread.join(timeout=2.0)
-
-
-class TieredOCRCache:
-    """
-    Dual-tier cache: L1 In-Memory LRU + L2 Asynchronous Disk Cache.
-    """
-
-    def __init__(self, cache_dir: str | Path, l1_capacity: int = 100):
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.l1_capacity = max(1, l1_capacity)
-        self._l1_cache: OrderedDict[str, Dict[str, Any]] = OrderedDict()
-        self._lock = threading.Lock()
-        self._async_writer = AsyncCacheWriter(self.cache_dir)
-
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
-        with self._lock:
-            # 1. Check L1 in-memory cache
-            if key in self._l1_cache:
-                self._l1_cache.move_to_end(key)
-                return self._l1_cache[key]
-
-        # 2. Check L2 disk cache
-        disk_path = self.cache_dir / f"{key}.json"
-        if disk_path.exists():
-            try:
-                with open(disk_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                
-                # Promote to L1
-                with self._lock:
-                    self._l1_cache[key] = data
-                    if len(self._l1_cache) > self.l1_capacity:
-                        self._l1_cache.popitem(last=False)
-                return data
-            except Exception:
-                return None
-
-        return None
-
-    def put(self, key: str, value: Dict[str, Any], sync: bool = False) -> None:
-        with self._lock:
-            self._l1_cache[key] = value
-            self._l1_cache.move_to_end(key)
-            if len(self._l1_cache) > self.l1_capacity:
-                self._l1_cache.popitem(last=False)
-
-        if sync:
-            dest = self.cache_dir / f"{key}.json"
-            tmp_dest = self.cache_dir / f".tmp_{key}_{time.time_ns()}.json"
-            with open(tmp_dest, "w", encoding="utf-8") as f:
-                json.dump(value, f, ensure_ascii=False)
-            os.replace(tmp_dest, dest)
-        else:
-            self._async_writer.write_async(key, value)
-
-    def flush(self) -> None:
-        self._async_writer.flush()
-
-    def clear(self) -> None:
-        with self._lock:
-            self._l1_cache.clear()
-        for f in self.cache_dir.glob("*.json"):
-            try:
-                f.unlink()
-            except OSError:
-                pass
-
-    def prune_cache(self, max_size_mb: float = 50.0) -> int:
-        """Prunes oldest L2 cache files if total directory size exceeds max_size_mb."""
-        self.flush()
-        files = list(self.cache_dir.glob("*.json"))
-        total_bytes = sum(f.stat().st_size for f in files)
-        max_bytes = max_size_mb * 1024 * 1024
-        
-        pruned_count = 0
-        if total_bytes > max_bytes:
-            # Sort by mtime ascending (oldest first)
-            files.sort(key=lambda x: x.stat().st_mtime)
-            for f in files:
-                sz = f.stat().st_size
-                f.unlink()
-                total_bytes -= sz
-                pruned_count += 1
-                if total_bytes <= max_bytes:
-                    break
-        return pruned_count
-
-    def close(self) -> None:
-        self._async_writer.stop()
-
-
-# ============================================================================
-# Test Cases (>= 5 Tests)
-# ============================================================================
 
 def test_f12_l1_in_memory_cache_hit_fast_path(tmp_path):
     """
@@ -183,9 +28,10 @@ def test_f12_l1_in_memory_cache_hit_fast_path(tmp_path):
     cache.put(key, payload, sync=True)
 
     # Delete disk file to prove subsequent get() hits L1 in-memory directly
-    disk_file = tmp_path / "cache" / f"{key}.json"
-    assert disk_file.exists()
-    disk_file.unlink()
+    disk_files = cache._get_disk_paths(key)
+    for disk_file in disk_files:
+        if disk_file.exists():
+            disk_file.unlink()
 
     # Query key - should succeed via L1 memory
     retrieved = cache.get(key)

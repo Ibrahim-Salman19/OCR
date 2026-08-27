@@ -38,3 +38,15 @@ class OutputWriteError(BLASTOCRException):
     """Failed to write results to disk"""
 
     pass
+
+
+class OCREngineInitializationError(OCREngineError):
+    """OCR engine backend failed to initialize or load weights"""
+
+    pass
+
+
+class CorruptedDocumentError(BLASTOCRException):
+    """Failed to parse or rasterize corrupted document"""
+
+    pass

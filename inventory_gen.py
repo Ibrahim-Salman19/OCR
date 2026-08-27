@@ -5,7 +5,7 @@ def count_lines(path):
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             return sum(1 for _ in f)
-    except:
+    except Exception:
         return "N/A"
 
 

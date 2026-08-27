@@ -20,14 +20,13 @@ import logging
 import os
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import psutil
 
-from blast_ocr.core.batch_preprocessor import BatchPreprocessor
 from blast_ocr.core.engines.batched_rapidocr import BatchedRapidOCREngine
-from blast_ocr.queue.client import QueueClient, PriorityQueueManager, PriorityLevel
+from blast_ocr.queue.client import PriorityQueueManager, PriorityLevel
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("eval.benchmark_suite")

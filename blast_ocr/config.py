@@ -86,6 +86,10 @@ class OCRConfig(BaseSettings):
     retry_backoff: int = Field(default=2)
     enable_fallback: bool = Field(default=True)
     secure_mode: bool = Field(default=False, description="Enable PII redaction")
+    api_key: Optional[str] = Field(
+        default=None,
+        description="API authentication key. If set, all REST API requests must include X-API-Key or Authorization Bearer header.",
+    )
 
     # Preprocessing (Added for Phase 4 Fix)
     denoise_level: int = Field(default=0, description="Denoising strength (0-20)")

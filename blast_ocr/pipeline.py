@@ -217,6 +217,15 @@ class BlastPipeline:
                         logger.error(
                             f"Failed to render batch {start_idx}-{end_idx}: {e}"
                         )
+                        for p_idx in range(start_idx, end_idx + 1):
+                            err_res = {
+                                "page": p_idx,
+                                "text": f"[Error rendering page {p_idx}: {e}]",
+                                "confidence": 0.0,
+                                "processing_time": 0.0,
+                                "status": "error",
+                            }
+                            all_results.append(self._post_process_page_result(err_res, job_id))
                         continue
 
                     batch_results = self._process_image_batch(

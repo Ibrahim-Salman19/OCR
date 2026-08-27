@@ -10,6 +10,21 @@ from pathlib import Path
 
 from blast_ocr.pipeline import BlastPipeline
 
+# Try importing LlamaIndex Document
+try:
+    from llama_index.core.schema import Document as LlamaDocument
+except ImportError:
+    try:
+        from llama_index.schema import Document as LlamaDocument
+    except ImportError:
+        class LlamaDocument:  # type: ignore[no-redef]
+            def __init__(self, text: str, extra_info: Optional[Dict[str, Any]] = None):
+                self.text = text
+                self.extra_info = extra_info or {}
+
+            def __repr__(self):
+                return f"Document(text={self.text[:50]!r}..., extra_info={self.extra_info})"
+
 
 class BlastOCRReader:
     """
@@ -58,21 +73,6 @@ class BlastOCRReader:
             result = pipeline.process_job(fpath)
         finally:
             pipeline.close()
-
-        # Try importing LlamaIndex Document
-        try:
-            from llama_index.core.schema import Document as LlamaDocument
-        except ImportError:
-            try:
-                from llama_index.schema import Document as LlamaDocument
-            except ImportError:
-                class LlamaDocument:  # Fallback lightweight schema
-                    def __init__(self, text: str, extra_info: Optional[Dict[str, Any]] = None):
-                        self.text = text
-                        self.extra_info = extra_info or {}
-
-                    def __repr__(self):
-                        return f"Document(text={self.text[:50]!r}..., extra_info={self.extra_info})"
 
         output_files = result.get("output_files", {})
         md_file = output_files.get("md")

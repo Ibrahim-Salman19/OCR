@@ -39,7 +39,7 @@ def main():
 
     # 4. Test Extractor Init
     try:
-        extractor = RobustOCRExtractor()
+        _ = RobustOCRExtractor()
         print("[OK] Extractor initialized (EasyOCR loaded)")
     except Exception as e:
         print(f"[FAIL] Extractor init failed: {e}")

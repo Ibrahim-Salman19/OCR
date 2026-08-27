@@ -111,7 +111,7 @@ class TestConfigCoverage:
 class TestInitCoverage:
     def test_etree_import_error(self):
         """Covers lines 12-13 in __init__.py where lxml.etree raises ImportError."""
-        real_import = builtins_import = __import__
+        builtins_import = __import__
 
         def mock_import(name, globals=None, locals=None, fromlist=(), level=0):
             if name == "lxml":

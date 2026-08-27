@@ -120,6 +120,19 @@ class ConcurrentObjectUploader:
                 if attempt < self.max_retries:
                     time.sleep(0.05 * (2 ** (attempt - 1)))
                 else:
+                    if hasattr(self.storage, "_client") and hasattr(self.storage, "bucket"):
+                        try:
+                            client = getattr(self.storage, "_client")
+                            bucket = getattr(self.storage, "bucket")
+                            mp_list = client.list_multipart_uploads(Bucket=bucket, Prefix=key)
+                            for mp in mp_list.get("Uploads", []):
+                                if mp.get("Key") == key:
+                                    client.abort_multipart_upload(
+                                        Bucket=bucket, Key=key, UploadId=mp.get("UploadId")
+                                    )
+                                    logger.info(f"Aborted abandoned multipart upload for {key}")
+                        except Exception as abort_err:
+                            logger.debug(f"Could not abort multipart upload: {abort_err}")
                     raise last_exc
         raise RuntimeError("Upload exhausted retries")
 

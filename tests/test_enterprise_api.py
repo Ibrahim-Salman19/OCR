@@ -5,7 +5,6 @@ Integration tests for FastAPI REST API endpoints.
 """
 
 from fastapi.testclient import TestClient
-import pytest
 import numpy as np
 import cv2
 import io

@@ -10,15 +10,30 @@ import sys
 from typing import Any, Dict
 
 
+def _is_safe_mcp_path(target_path: str) -> bool:
+    """Sandbox verification for MCP file access."""
+    try:
+        from blast_ocr.api.routes import _is_safe_path
+        return _is_safe_path(target_path)
+    except Exception:
+        # Fallback to basic traversal check
+        resolved = os.path.abspath(os.path.realpath(target_path))
+        forbidden = ("/etc", "/root", "/boot", "/sys", "/proc", "/dev", "/usr", "/home", "/var")
+        return not any(resolved == f or resolved.startswith(f + os.sep) for f in forbidden)
+
+
 def get_pipeline(engine: str = "rapidocr", secure_mode: bool = False):
-    from blast_ocr.pipeline import OCRPipeline
-    return OCRPipeline(engine=engine, secure_mode=secure_mode)
+    from blast_ocr.pipeline import BlastPipeline
+    config_overrides = {"ocr_engine": engine, "secure_mode": secure_mode}
+    return BlastPipeline(config_overrides=config_overrides)
 
 
 def handle_process(args: Dict[str, Any]) -> Dict[str, Any]:
     source_path = args.get("source_path")
     if not source_path or not os.path.exists(source_path):
         return {"error": f"File not found: {source_path}"}
+    if not _is_safe_mcp_path(source_path):
+        return {"error": f"Access denied: path '{source_path}' is outside allowed directories."}
 
     formats = args.get("formats", ["markdown"])
     engine = args.get("engine", "rapidocr")
@@ -26,33 +41,45 @@ def handle_process(args: Dict[str, Any]) -> Dict[str, Any]:
     dewarp = args.get("dewarp", False)
 
     pipeline = get_pipeline(engine=engine, secure_mode=secure_mode)
-    result = pipeline.process(
-        source_path=source_path,
-        formats=formats,
-        dewarp=dewarp,
-    )
-    return {
-        "status": "success",
-        "source_file": result.get("source_file"),
-        "text_snippet": (result.get("text", "")[:500] + "...")
-        if len(result.get("text", "")) > 500
-        else result.get("text", ""),
-        "full_text": result.get("text", ""),
-        "generated_files": result.get("generated_files", {}),
-        "metadata": result.get("metadata", {}),
-    }
+    try:
+        result = pipeline.process_job(
+            source=source_path,
+            formats=formats,
+            enable_dewarp=dewarp,
+        )
+        return {
+            "status": "success",
+            "source_file": result.get("source_file", os.path.basename(source_path)),
+            "text_snippet": (result.get("text", "")[:500] + "...")
+            if len(result.get("text", "")) > 500
+            else result.get("text", ""),
+            "full_text": result.get("text", ""),
+            "generated_files": result.get("generated_files", {}),
+            "metadata": result.get("metadata", {}),
+        }
+    except Exception as e:
+        return {"error": f"Processing failed: {e}"}
+    finally:
+        pipeline.close()
 
 
 def handle_extract_tables(args: Dict[str, Any]) -> Dict[str, Any]:
     source_path = args.get("source_path")
     if not source_path or not os.path.exists(source_path):
         return {"error": f"File not found: {source_path}"}
+    if not _is_safe_mcp_path(source_path):
+        return {"error": f"Access denied: path '{source_path}' is outside allowed directories."}
 
     try:
+        import cv2
         from blast_ocr.core.table_extractor import TableExtractor
 
+        img = cv2.imread(source_path)
+        if img is None:
+            return {"error": f"Could not decode image from '{source_path}'"}
+
         extractor = TableExtractor()
-        tables = extractor.extract_tables_from_image(source_path)
+        tables = extractor.extract_tables(img, spans=[])
         return {
             "status": "success",
             "table_count": len(tables),
@@ -78,26 +105,32 @@ def handle_semantic_chunk(args: Dict[str, Any]) -> Dict[str, Any]:
     source_path = args.get("source_path")
     if not source_path or not os.path.exists(source_path):
         return {"error": f"File not found: {source_path}"}
+    if not _is_safe_mcp_path(source_path):
+        return {"error": f"Access denied: path '{source_path}' is outside allowed directories."}
 
     max_tokens = args.get("max_tokens", 512)
     overlap_tokens = args.get("overlap_tokens", 64)
 
+    pipeline = get_pipeline(engine="rapidocr")
     try:
-        pipeline = get_pipeline(engine="rapidocr")
-        result = pipeline.process(source_path=source_path, formats=["markdown"])
+        result = pipeline.process_job(source=source_path, formats=["markdown"])
         from blast_ocr.core.semantic_chunker import SemanticChunker
 
-        chunker = SemanticChunker(
-            max_tokens=max_tokens, overlap_tokens=overlap_tokens
+        chunks = SemanticChunker.chunk_text(
+            text=result.get("text", ""),
+            title=os.path.basename(source_path),
+            max_chunk_tokens=max_tokens,
+            overlap_tokens=overlap_tokens,
         )
-        chunks = chunker.chunk_document(result.get("text", ""))
         return {
             "status": "success",
             "chunk_count": len(chunks),
-            "chunks": chunks,
+            "chunks": [c.to_dict() for c in chunks],
         }
     except Exception as e:
         return {"error": str(e)}
+    finally:
+        pipeline.close()
 
 
 MCP_TOOLS = [
@@ -205,6 +238,9 @@ def run_stdio_server():
             req_id = req.get("id")
             method = req.get("method")
 
+            # Handle notifications (requests without id): execute without returning a response
+            is_notification = req_id is None
+
             if method == "tools/list":
                 res = {
                     "jsonrpc": "2.0",
@@ -252,15 +288,18 @@ def run_stdio_server():
                         },
                     },
                 }
+            elif method in ("notifications/initialized", "notifications/cancelled"):
+                continue  # No response for MCP notifications
             else:
                 res = {"jsonrpc": "2.0", "id": req_id, "result": {}}
 
-            sys.stdout.write(json.dumps(res) + "\n")
-            sys.stdout.flush()
+            if not is_notification:
+                sys.stdout.write(json.dumps(res) + "\n")
+                sys.stdout.flush()
         except Exception as e:
             err_res = {
                 "jsonrpc": "2.0",
-                "id": None,
+                "id": req_id if 'req_id' in locals() else None,
                 "error": {"code": -32603, "message": str(e)},
             }
             sys.stdout.write(json.dumps(err_res) + "\n")

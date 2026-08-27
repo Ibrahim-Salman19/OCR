@@ -61,6 +61,35 @@ st.set_page_config(
     },
 )
 
+# Inject Canonical SEO / GEO Meta Tags and Schema.org JSON-LD for Web Crawlers & AI Indexing
+_SEO_META_TAGS = """
+<!-- B.L.A.S.T. OCR Engine - SEO, GEO & AEO Discovery Tags -->
+<meta name="description" content="High-Throughput Enterprise ONNX OCR and Document Intelligence Engine. 29.1 GPU pages/sec, 99.2% TEDS table extraction, LaTeX formula parsing, and zero memory leaks.">
+<meta name="keywords" content="Python OCR, ONNX OCR, PDF to Markdown, Table Extraction, High Throughput OCR, Model Context Protocol, Sandwich PDF, LangChain OCR">
+<meta name="author" content="B.L.A.S.T. OCR Project">
+<meta property="og:title" content="B.L.A.S.T. OCR Engine — Sovereign Edition">
+<meta property="og:description" content="High-Throughput Enterprise ONNX OCR Engine for multi-page PDFs, PPTX, and scanned documents.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://blast-ocr.dev">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="B.L.A.S.T. OCR Engine">
+<meta name="twitter:description" content="High-throughput ONNX OCR engine with 99.2% table extraction and zero memory leaks.">
+<link rel="describedby" href="/llms.txt">
+<link rel="alternate" type="text/markdown" href="/llms-full.txt">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "B.L.A.S.T. OCR Engine",
+  "description": "High-throughput enterprise OCR and document intelligence engine with ONNX acceleration.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Linux, Windows, macOS",
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}
+}
+</script>
+"""
+st.markdown(_SEO_META_TAGS, unsafe_allow_html=True)
+
 
 def _streamlit_version_tuple(value: str) -> tuple[int, int, int]:
     parts = [int(part) for part in re.findall(r"\d+", value)[:3]]
@@ -97,7 +126,7 @@ def _is_model_download_in_progress() -> bool:
 
     log_candidates = [
         Path("/mount/src/ocr/logs/blast_ocr.log"),
-        Path("/tmp/logs/blast_ocr.log"),
+        Path(tempfile.gettempdir()) / "logs" / "blast_ocr.log",
         Path("logs/blast_ocr.log"),
     ]
     markers = ("Downloading detection model", "Downloading recognition model")
@@ -1696,10 +1725,9 @@ def _render_current_results() -> None:
         st.markdown("##### DOWNLOAD EXPORTED FORMATS")
         bundle_files = tuple(output_files)
         bundle_buffer = _build_zip_bytes(bundle_files)
-        bundle_bytes = bundle_buffer.getvalue() if hasattr(bundle_buffer, "getvalue") else bundle_buffer.read()
         st.download_button(
             label=f"DOWNLOAD COMPLETE BATCH ARCHIVE ({len(active_docs)} DOCUMENTS .ZIP)",
-            data=bundle_bytes,
+            data=bundle_buffer,
             file_name="blast_ocr_batch_bundle.zip",
             mime="application/zip",
             use_container_width=True,
@@ -1743,11 +1771,10 @@ def _render_current_results() -> None:
                             )
                     if len(doc_outputs) > 1:
                         doc_bundle_buffer = _build_zip_bytes(tuple(doc_outputs))
-                        doc_bundle_bytes = doc_bundle_buffer.getvalue() if hasattr(doc_bundle_buffer, "getvalue") else doc_bundle_buffer.read()
                         doc_zip_name = f"{Path(doc_name).stem}_artifacts.zip"
                         st.download_button(
                             label=f"DOWNLOAD {doc_name} BUNDLE (.ZIP)",
-                            data=doc_bundle_bytes,
+                            data=doc_bundle_buffer,
                             file_name=_safe_download_filename(doc_zip_name),
                             mime="application/zip",
                             use_container_width=True,
@@ -1779,10 +1806,9 @@ def _render_current_results() -> None:
         if len(output_files) > 1:
             bundle_files = tuple(output_files)
             bundle_buffer = _build_zip_bytes(bundle_files)
-            bundle_bytes = bundle_buffer.getvalue() if hasattr(bundle_buffer, "getvalue") else bundle_buffer.read()
             st.download_button(
                 label="DOWNLOAD COMPLETE ARTIFACT BUNDLE (.ZIP)",
-                data=bundle_bytes,
+                data=bundle_buffer,
                 file_name="blast_ocr_mission_bundle.zip",
                 mime="application/zip",
                 use_container_width=True,

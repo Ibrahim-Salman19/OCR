@@ -10,7 +10,6 @@ against a real MinIO container when Docker is available in this environment
 (auto-skipped otherwise) for genuine end-to-end confidence.
 """
 
-import os
 import shutil
 import subprocess
 import time

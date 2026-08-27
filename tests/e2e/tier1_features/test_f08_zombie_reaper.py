@@ -6,87 +6,8 @@ and atomic reaper failover execution.
 """
 
 import json
-import time
-import pytest
 
-try:
-    from blast_ocr.queue.reaper import ZombieReaper
-except ImportError:
-    # Reference contract implementation for test isolation
-    class ZombieReaper:
-        LEASE_PREFIX = "blast_ocr:leases:"
-        DLQ_KEY = "blast_ocr:queue:dlq"
-
-        def __init__(self, redis_client, queue_manager, lease_timeout_sec: float = 2.0, max_retries: int = 3):
-            self.redis = redis_client
-            self.queue_manager = queue_manager
-            self.lease_timeout = lease_timeout_sec
-            self.max_retries = max_retries
-
-        def record_lease(self, worker_id: str, job_payload: dict):
-            job_id = job_payload["job_id"]
-            lease_data = {
-                "worker_id": worker_id,
-                "job_payload": job_payload,
-                "leased_at": time.time(),
-            }
-            self.redis.set(f"{self.LEASE_PREFIX}{job_id}", json.dumps(lease_data))
-
-        def release_lease(self, job_id: str):
-            self.redis.delete(f"{self.LEASE_PREFIX}{job_id}")
-
-        def reap_zombies(self) -> dict:
-            """
-            Scans active leases. If worker is dead (no heartbeat) or lease expired,
-            re-enqueues the job or moves it to DLQ if max_retries exceeded.
-            """
-            lease_keys = self.redis.keys(f"{self.LEASE_PREFIX}*")
-            reaped = 0
-            quarantined_dlq = 0
-
-            for lk in lease_keys:
-                raw = self.redis.get(lk)
-                if not raw:
-                    continue
-                try:
-                    data = json.loads(raw) if isinstance(raw, str) else json.loads(raw.decode("utf-8"))
-                except Exception:
-                    continue
-
-                worker_id = data.get("worker_id")
-                job_payload = data.get("job_payload", {})
-                leased_at = data.get("leased_at", 0)
-
-                # Check if worker is alive
-                worker_alive = bool(self.redis.exists(f"blast_ocr:workers:{worker_id}"))
-                lease_expired = (time.time() - leased_at) > self.lease_timeout
-
-                if not worker_alive or lease_expired:
-                    # Zombie detected!
-                    job_payload["retry_count"] = job_payload.get("retry_count", 0) + 1
-                    job_payload["last_reaped_at"] = time.time()
-                    job_id = job_payload.get("job_id")
-
-                    if job_payload["retry_count"] > self.max_retries:
-                        # Exceeded retries -> Quarantine to DLQ
-                        job_payload["dlq_reason"] = "Max retries exceeded due to worker crashes"
-                        self.redis.lpush(self.DLQ_KEY, json.dumps(job_payload))
-                        quarantined_dlq += 1
-                    else:
-                        # Re-enqueue to original priority queue
-                        priority = job_payload.get("priority", "default")
-                        self.queue_manager.enqueue(
-                            job_id=job_id,
-                            source_path=job_payload.get("source_path", ""),
-                            priority=priority,
-                            config_overrides=job_payload.get("config_overrides"),
-                        )
-                        reaped += 1
-
-                    # Remove old lease
-                    self.redis.delete(lk)
-
-            return {"reaped_count": reaped, "dlq_count": quarantined_dlq, "checked_leases": len(lease_keys)}
+from blast_ocr.queue.reaper import ZombieReaper
 
 
 class TestZombieJobReaper:

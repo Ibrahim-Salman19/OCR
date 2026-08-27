@@ -69,7 +69,7 @@ def test_process_job_creates_output_dir(pipeline, test_image, tmp_path):
 def test_job_always_recorded_in_db(pipeline, tmp_path):
     """BUG HYPOTHESIS: Exception before db.create_job means no DB record."""
     # Try with a bad file
-    result = pipeline.process_job("/nonexistent.pdf", str(tmp_path))
+    pipeline.process_job("/nonexistent.pdf", str(tmp_path))
     # The job_id should still be returned or DB should have the record
     # This verifies the try/except wraps correctly
 
@@ -116,7 +116,7 @@ def test_config_overrides_unknown_key_ignored(tmp_path):
     from blast_ocr.pipeline import BlastPipeline
 
     try:
-        pipeline = BlastPipeline(config_overrides={"TOTALLY_FAKE_SETTING": 999})
+        BlastPipeline(config_overrides={"TOTALLY_FAKE_SETTING": 999})
         # Should silently ignore unknown keys
     except AttributeError as e:
         pytest.fail(

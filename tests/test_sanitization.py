@@ -1,4 +1,3 @@
-import pytest
 from blast_ocr.core.exporter import sanitize_for_xml, save_output
 
 

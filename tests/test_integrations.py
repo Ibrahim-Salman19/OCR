@@ -5,7 +5,6 @@ Unit tests for LangChain and LlamaIndex integration connectors.
 """
 
 from unittest.mock import MagicMock, patch
-import pytest
 
 from blast_ocr.integrations.langchain_loader import BlastOCRDocumentLoader
 from blast_ocr.integrations.llamaindex_reader import BlastOCRReader

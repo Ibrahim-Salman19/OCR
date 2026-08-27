@@ -11,16 +11,10 @@ Comprehensive test suite for Milestone 3 (Streaming Buffer & Storage Engine):
 
 import io
 import json
-import os
 import psutil
-import shutil
-import tempfile
 import time
-from pathlib import Path
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 
-import pytest
-from PIL import Image, ImageDraw
 
 from blast_ocr.core.streaming import (
     ChunkScratchManager,
@@ -28,7 +22,6 @@ from blast_ocr.core.streaming import (
     StreamDocumentWriter,
 )
 from blast_ocr.cache.tiered_cache import (
-    AsyncCacheWriter,
     TieredOCRCache,
 )
 from blast_ocr.storage.concurrent_uploader import (
@@ -37,10 +30,6 @@ from blast_ocr.storage.concurrent_uploader import (
 )
 from blast_ocr.storage.object_store import (
     LocalFilesystemStorage,
-    ObjectStorage,
-    S3ObjectStorage,
-    get_object_storage,
-    artifact_key,
 )
 
 
@@ -364,7 +353,7 @@ class TestObjectStorageEnhancedPrimitives:
 
         # Stream put
         in_stream = io.BytesIO(b"Direct stream bytes into storage")
-        uri = storage.put_stream(key, in_stream)
+        storage.put_stream(key, in_stream)
         assert storage.exists(key)
 
         # Stream get

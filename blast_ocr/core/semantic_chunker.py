@@ -231,3 +231,25 @@ class SemanticChunker:
 
         _flush_chunk()
         return chunks
+
+    @classmethod
+    def chunk_text(
+        cls,
+        text: str,
+        title: str = "Document",
+        max_chunk_tokens: int = 512,
+        overlap_tokens: int = 64,
+    ) -> List[SemanticChunk]:
+        """Convenience method to chunk raw text using semantic paragraph segmentation."""
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        if not paragraphs:
+            return []
+
+        blocks = []
+        for p in paragraphs:
+            b_type = BlockType.TITLE if (len(p) < 60 and not p.endswith(".")) else BlockType.PARAGRAPH
+            blocks.append(Block(text=p, block_type=b_type, bbox=[0, 0, 100, 100], confidence=1.0))
+
+        page = Page(page_num=1, width=1000, height=1000, blocks=blocks)
+        doc = Document(title=title, pages=[page])
+        return cls.chunk_document(doc, max_chunk_tokens=max_chunk_tokens, overlap_tokens=overlap_tokens)
