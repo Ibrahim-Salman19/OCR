@@ -117,3 +117,37 @@ Do NOT just count tests — evaluate their quality:
 
 ---
 *Expecting this to run as a full-team audit (not a quick fix) — it spans 153 files across 6 domains. Say so if you want it scoped down.*
+
+## 2026-08-28T19:44:45Z
+
+Use a very large team of agents. Conduct exhaustive web research across global production document intelligence engines, PDF/image parsing standards, and OCR vulnerability databases to produce a comprehensive taxonomy of document processing edge cases, followed by a forensic gap analysis of the B.L.A.S.T. OCR codebase.
+
+Working directory: /mnt/d/code/Projects/Python/OCR_Book
+Integrity mode: development
+
+## Requirements
+
+### R1. Global Web Research & Failure Taxonomy
+Conduct exhaustive web research across academic literature, CVE vulnerability databases, and production issue trackers (Docling, Marker, PyMuPDF, Poppler, Tesseract, PaddleOCR, Adobe PDF SDK, Ghostscript) to catalog all documented document processing failure modes and edge cases across:
+1. **PDF Structure & Corruptions**: Linearized stream faults, broken XREF tables, cyclic object references, PDF polyglots, dual-layer font encoding conflicts, PDF 2.0 object streams, JBIG2 decode bombs.
+2. **Raster Image & Preprocessing**: Extreme aspect ratios (e.g. 100:1 panoramas), multi-megapixel decompression bombs, EXIF orientation tag inversion, 16-bit CMYK / LAB color space conversions, zero-DPI / uncalibrated scan spreads, alpha transparency blending artifacts.
+3. **Text, Typography & Encoding**: Zero-width joiners/spaces, right-to-left BiDi unicode overrides, CID font glyph-to-unicode missing mappings, vertical CJK text flow, mixed RTL/LTR lines, ligatures (`ﬁ`, `ﬂ`, `ﬃ`), soft hyphens.
+4. **Layout & Multi-Modal Structure**: Multi-column overlapping bounding boxes, borderless nested tables, multi-page merged tables, mixed rotation within a single page, inline mathematical formulas with complex sub/superscripts.
+5. **High-Throughput & Batch Streaming**: Memory leak slopes during 10,000+ page processing, out-of-order Redis queue deliveries, zombie worker deadlocks, multipart upload timeouts, socket backpressure.
+
+### R2. Codebase Forensic Gap Analysis
+Perform an in-depth audit of the B.L.A.S.T. OCR repository against the compiled taxonomy to identify any unhandled edge cases, potential pipeline halts, unhandled exceptions, or memory accumulation risks.
+
+### R3. Hardening Blueprint & Test Harness Specification
+Deliver an actionable, prioritized mitigation blueprint with concrete code patterns, typed exception designs, and programmatic test specifications for each identified vulnerability or edge case.
+
+## Acceptance Criteria
+
+### Research Taxonomy
+- [ ] Deliver a structured taxonomy cataloging 50+ document processing edge cases, security vectors, and format anomalies with real-world examples and root causes.
+
+### Codebase Gap Analysis
+- [ ] Provide a module-by-module audit of B.L.A.S.T. OCR mapping each taxonomy entry to the current code behavior (`Handled`, `Partially Handled`, `Vulnerable`, or `Not Applicable`).
+
+### Mitigation & Verification Blueprint
+- [ ] Provide concrete architectural recommendations, defensive validation logic, and test harness specifications for every identified gap.
