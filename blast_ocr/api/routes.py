@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Query, Response
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Query, Response, Request
 from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 
 from blast_ocr.config import config
@@ -380,13 +380,16 @@ async def download_job_artifact(job_id: int, fmt: str):
 
 
 @router.get("/ocr/jobs/{job_id}/stream")
-async def stream_job_events(job_id: int):
+async def stream_job_events(job_id: int, request: Request):
     """Streams real-time Server-Sent Events (SSE) tracking job progress."""
     async def event_generator():
         db = OCRDatabase()
         try:
             last_count = -1
             for _ in range(60):
+                if await request.is_disconnected():
+                    break
+
                 job = db.get_job(job_id)
                 if not job:
                     yield f"data: {json.dumps({'error': 'Job not found', 'job_id': job_id})}\n\n"
@@ -413,7 +416,15 @@ async def stream_job_events(job_id: int):
         finally:
             db.close()
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @router.get("/ocr/jobs/{job_id}/toc")
@@ -438,7 +449,7 @@ async def get_job_toc(job_id: int):
             pages_list.append(page_obj)
 
         doc = Document(title=Path(job.filename).stem, pages=pages_list)
-        toc = SemanticChunker.extract_toc(doc)
+        toc = await asyncio.to_thread(SemanticChunker.extract_toc, doc)
         return {"job_id": job_id, "document": doc.title, "toc": [t.to_dict() for t in toc]}
     finally:
         db.close()
@@ -466,7 +477,7 @@ async def get_job_chunks(job_id: int, max_tokens: int = 512):
             pages_list.append(page_obj)
 
         doc = Document(title=Path(job.filename).stem, pages=pages_list)
-        chunks = SemanticChunker.chunk_document(doc, max_chunk_tokens=max_tokens)
+        chunks = await asyncio.to_thread(SemanticChunker.chunk_document, doc, max_chunk_tokens=max_tokens)
         return {"job_id": job_id, "chunk_count": len(chunks), "chunks": [c.to_dict() for c in chunks]}
     finally:
         db.close()

@@ -20,6 +20,7 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = 100_000_000  # 10,000 x 10,000 max pixels decompression protection
 MAX_IMAGE_DIMENSION = 10_000
+MAX_RECOGNITION_CROP_WIDTH = 1536  # Clamp for extreme aspect-ratio crops (e.g. panorama headers)
 
 try:
     import pypdfium2 as pdfium
@@ -36,6 +37,19 @@ try:
 except ImportError:
     pdf2image = None
     _PDF2IMAGE_AVAILABLE = False
+
+
+def _composite_over_white(color: np.ndarray, alpha: np.ndarray) -> np.ndarray:
+    """Porter-Duff 'over' compositing of an RGB/BGR array onto an opaque white matte.
+
+    Naively dropping the alpha channel (e.g. cv2.cvtColor(..., COLOR_BGRA2BGR) or
+    PIL's Image.convert('RGB')) keeps the underlying color values as-is, so a fully
+    transparent pixel stored as (0, 0, 0, 0) renders as black instead of the white
+    a viewer would actually see, which collapses black text to black-on-black.
+    """
+    color_f = color.astype(np.float32)
+    alpha_f = alpha.astype(np.float32)[..., None] / 255.0
+    return (color_f * alpha_f + 255.0 * (1.0 - alpha_f)).astype(np.uint8)
 
 
 class BatchPreprocessor:
@@ -74,12 +88,16 @@ class BatchPreprocessor:
             if source.ndim == 2:
                 return cv2.cvtColor(source, cv2.COLOR_GRAY2BGR)
             if source.ndim == 3 and source.shape[2] == 4:
-                return cv2.cvtColor(source, cv2.COLOR_BGRA2BGR)
+                return _composite_over_white(source[:, :, :3], source[:, :, 3])
             if source.ndim == 3 and source.shape[2] == 3:
                 return source.copy()
             raise ValueError(f"Unsupported numpy image shape: {source.shape}")
 
         if isinstance(source, Image.Image):
+            if source.mode in ("RGBA", "LA") or (source.mode == "P" and "transparency" in source.info):
+                rgba = np.array(source.convert("RGBA"))
+                rgb = _composite_over_white(rgba[:, :, :3], rgba[:, :, 3])
+                return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             rgb = np.array(source.convert("RGB"))
             return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
@@ -389,6 +407,7 @@ class BatchPreprocessor:
         max_wh = max(max_wh, 1.0)
         img_width = int(math.ceil(t_height * max_wh))
         img_width = max(32, int(math.ceil(img_width / 32.0) * 32))
+        img_width = min(img_width, MAX_RECOGNITION_CROP_WIDTH)
 
         batch_k = len(crop_images)
         batch_tensor = np.zeros((batch_k, 3, t_height, img_width), dtype=np.float32)

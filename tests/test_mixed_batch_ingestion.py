@@ -74,6 +74,12 @@ def test_security_gateway_blocks_unauthorized_and_spoofed(tmp_path):
     with pytest.raises(SecurityValidationError, match="binary null bytes"):
         IngestionGateway.validate(binary_txt)
 
+    # 4. Trojan Source: text containing a Unicode BiDi override control character
+    hostile_txt = tmp_path / "trojan_source.txt"
+    hostile_txt.write_text("access_level = ⁦‮admin⁩ // normal user", encoding="utf-8")
+    with pytest.raises(SecurityValidationError, match="BiDi override"):
+        IngestionGateway.validate(hostile_txt)
+
 
 def test_directory_ingestion_filters_non_images(clean_workdir, tmp_path):
     """Verify directory processing collects only images and ignores .txt/.md/.py safely."""

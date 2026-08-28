@@ -48,9 +48,35 @@ MAGIC_BYTES = {
 }
 
 
+# Unicode BiDi override/embedding control characters (Trojan Source, CVE-2021-42574
+# class attacks): these can reorder how text visually renders without changing its
+# logical byte order, hiding malicious content from a human reviewer.
+BIDI_OVERRIDE_CHARS = frozenset(
+    "‪‫‬‭‮⁦⁧⁨⁩"
+)
+
+
 class SecurityValidationError(Exception):
     """Raised when an ingested file violates security policies."""
     pass
+
+
+def _scan_text_sample(sample: bytes, ext: str) -> None:
+    """Rejects a raw text upload containing null bytes or Unicode BiDi override characters.
+
+    This only inspects the leading sample read at the ingestion boundary (consistent
+    with the existing header check below); it is a fast reject for hostile uploads,
+    not a substitute for full-document text sanitization applied to extracted content.
+    """
+    if b"\x00" in sample:
+        raise SecurityValidationError(
+            f"File header contains binary null bytes, rejecting invalid text document '{ext}'"
+        )
+    decoded = sample.decode("utf-8", errors="ignore")
+    if any(ch in BIDI_OVERRIDE_CHARS for ch in decoded):
+        raise SecurityValidationError(
+            f"File contains Unicode BiDi override control characters, rejecting potentially hostile text document '{ext}'"
+        )
 
 
 @dataclass(frozen=True)
@@ -100,10 +126,7 @@ class IngestionGateway:
         elif ext in {".txt", ".md", ".markdown"}:
             with open(src, "rb") as f:
                 sample = f.read(1024)
-            if b"\x00" in sample:
-                raise SecurityValidationError(
-                    f"File header contains binary null bytes, rejecting invalid text document '{ext}'"
-                )
+            _scan_text_sample(sample, ext)
 
     @classmethod
     def validate_and_ingest(
@@ -141,10 +164,7 @@ class IngestionGateway:
         elif ext in {".txt", ".md", ".markdown"}:
             with open(src, "rb") as f:
                 sample = f.read(1024)
-            if b"\x00" in sample:
-                raise SecurityValidationError(
-                    f"File header contains binary null bytes, rejecting invalid text document '{ext}'"
-                )
+            _scan_text_sample(sample, ext)
 
         # Compute SHA256 file fingerprint
         import hashlib

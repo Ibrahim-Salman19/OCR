@@ -198,7 +198,10 @@ class PageStreamGenerator:
                         img_path = out_dir / f"page_{p_num:04d}.png"
                         pix.save(str(img_path))
                         items.append((p_num, img_path))
+                        pix = None
+                        page = None
                     doc.close()
+                    fitz.TOOLS.store_shrink(100)
                     rendered_successfully = len(items) > 0
                 except Exception as e_fitz:
                     logger.debug(f"PyMuPDF streaming render failed: {e_fitz}")

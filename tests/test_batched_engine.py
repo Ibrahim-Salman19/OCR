@@ -92,6 +92,29 @@ class TestBatchPreprocessor:
         assert loaded_rgba.ndim == 3
         assert loaded_rgba.shape == (100, 100, 3)
 
+    def test_load_image_alpha_composites_over_white_not_black(self):
+        """Transparent pixels must composite onto white, not collapse to black (TAX-IMG-06)."""
+        preprocessor = BatchPreprocessor()
+
+        # Fully transparent "black" pixel, a common PNG export artifact: RGB=0, alpha=0.
+        rgba = np.zeros((10, 10, 4), dtype=np.uint8)
+        loaded = preprocessor.load_image(rgba)
+        assert loaded.shape == (10, 10, 3)
+        assert np.all(loaded == 255), "Fully transparent pixels must composite to white, not black"
+
+        # Half-transparent black should land roughly mid-gray, not near-black.
+        half_alpha = np.zeros((10, 10, 4), dtype=np.uint8)
+        half_alpha[:, :, 3] = 128
+        loaded_half = preprocessor.load_image(half_alpha)
+        assert np.isclose(loaded_half[:, :, 0].mean(), 127, atol=2)
+
+    def test_load_image_from_pil_rgba_composites_over_white(self):
+        preprocessor = BatchPreprocessor()
+        pil_rgba = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+        loaded = preprocessor.load_image(pil_rgba)
+        assert loaded.shape == (10, 10, 3)
+        assert np.all(loaded == 255), "Fully transparent PIL RGBA must composite to white, not black"
+
     def test_load_image_from_pil(self, sample_text_image: np.ndarray):
         preprocessor = BatchPreprocessor()
         pil_img = Image.fromarray(cv2.cvtColor(sample_text_image, cv2.COLOR_BGR2RGB))
@@ -185,6 +208,15 @@ class TestBatchPreprocessor:
         # Check that all original indices are preserved
         all_indices = sorted(indices1 + indices2)
         assert all_indices == [0, 1, 2]
+
+    def test_preprocess_recognition_subbatch_clamps_extreme_aspect_ratio(self):
+        """A pathological panorama-style crop must not blow up the recognition tensor width unbounded."""
+        from blast_ocr.core.batch_preprocessor import MAX_RECOGNITION_CROP_WIDTH
+
+        preprocessor = BatchPreprocessor()
+        extreme_crop = np.full((32, 3200, 3), 255, dtype=np.uint8)  # 100:1 aspect ratio
+        tensor, _ = preprocessor.preprocess_recognition_subbatch([extreme_crop])
+        assert tensor.shape[-1] == MAX_RECOGNITION_CROP_WIDTH
 
 
 # =============================================================================
