@@ -368,15 +368,21 @@ class BlastPipeline:
 
     def process_job(
         self,
-        source_path: str,
+        source_path: str = None,
         output_dir: str = None,
         progress_callback: Callable = None,
         job_id: int = None,
+        source: str = None,
+        **kwargs,
     ) -> Dict:
         """Execute a full OCR job"""
         from blast_ocr.security.gateway import IngestionGateway, SecurityValidationError
 
-        source = Path(source_path)
+        resolved_source = source_path or source or kwargs.get("source")
+        if not resolved_source:
+            return {"status": "error", "message": "Source path cannot be empty"}
+
+        source = Path(resolved_source)
         if not source.exists():
             return {"status": "error", "message": f"File not found: {source}"}
 
@@ -417,10 +423,10 @@ class BlastPipeline:
         try:
             results = []
             ext = source.suffix.lower()
+            image_exts = [".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp"]
 
             # Route based on type
             if source.is_dir():
-                image_exts = [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]
                 image_paths = []
                 for f in sorted(os.listdir(source)):
                     if Path(f).suffix.lower() in image_exts:
@@ -459,12 +465,24 @@ class BlastPipeline:
             elif ext == ".pptx":
                 page_images = None
                 text = extract_from_pptx(str(source))
-                res = {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0}
+                res = {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0, "route": "native"}
                 res = self._post_process_page_result(res, job_id)
                 results = [res]
                 if progress_callback:
                     progress_callback(1, 1)
-            elif ext in [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]:
+            elif ext in [".txt", ".md", ".markdown"]:
+                page_images = None
+                try:
+                    with open(str(source), "r", encoding="utf-8", errors="replace") as f:
+                        text = f.read()
+                except Exception as read_err:
+                    raise ValueError(f"Failed to read text file: {read_err}")
+                res = {"page": 1, "text": text, "confidence": 1.0, "processing_time": 0.0, "route": "native"}
+                res = self._post_process_page_result(res, job_id)
+                results = [res]
+                if progress_callback:
+                    progress_callback(1, 1)
+            elif ext in image_exts:
                 page_images = [str(source)]
                 restore_temp_dir = tempfile.mkdtemp()
                 try:
@@ -494,7 +512,19 @@ class BlastPipeline:
                     except Exception:
                         pass
 
-            from blast_ocr.core.document_model import Document
+            from blast_ocr.core.document_model import Document, Page
+            if not pages_list and results:
+                pages_list = [
+                    Page(
+                        page_num=r.get("page", idx + 1),
+                        width=r.get("width", 1000),
+                        height=r.get("height", 1400),
+                        raw_text=r.get("text", ""),
+                    )
+                    for idx, r in enumerate(results)
+                    if r.get("text") is not None
+                ]
+
             doc_model = Document(title=source.stem, pages=pages_list) if pages_list else None
 
             # Export Layout JSON for Layout Inspector
@@ -674,6 +704,7 @@ class BlastPipeline:
                 "status": "success",
                 "source_file": source.name,
                 "job_id": job_id,
+                "text": full_text,
                 "pages_processed": len(results),
                 "generated_files": {k: v for k, v in output_map.items() if v},
                 "output_files": output_map,

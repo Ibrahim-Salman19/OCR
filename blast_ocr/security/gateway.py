@@ -19,7 +19,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".webp", ".pptx", ".txt"}
+ALLOWED_EXTENSIONS = {
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".webp",
+    ".pptx",
+    ".txt",
+    ".md",
+    ".markdown",
+}
 
 # Magic bytes signature dictionary
 MAGIC_BYTES = {
@@ -29,6 +42,8 @@ MAGIC_BYTES = {
     ".jpeg": [b"\xff\xd8\xff"],
     ".bmp": [b"BM"],
     ".tiff": [b"II*\x00", b"MM\x00*"],
+    ".tif": [b"II*\x00", b"MM\x00*"],
+    ".webp": [b"RIFF"],
     ".pptx": [b"PK\x03\x04"],  # Zip container
 }
 
@@ -82,6 +97,13 @@ class IngestionGateway:
                 raise SecurityValidationError(
                     f"File header magic bytes do not match expected signature for extension '{ext}'"
                 )
+        elif ext in {".txt", ".md", ".markdown"}:
+            with open(src, "rb") as f:
+                sample = f.read(1024)
+            if b"\x00" in sample:
+                raise SecurityValidationError(
+                    f"File header contains binary null bytes, rejecting invalid text document '{ext}'"
+                )
 
     @classmethod
     def validate_and_ingest(
@@ -115,6 +137,13 @@ class IngestionGateway:
             if not matched:
                 raise SecurityValidationError(
                     f"File header magic bytes do not match expected signature for extension '{ext}'"
+                )
+        elif ext in {".txt", ".md", ".markdown"}:
+            with open(src, "rb") as f:
+                sample = f.read(1024)
+            if b"\x00" in sample:
+                raise SecurityValidationError(
+                    f"File header contains binary null bytes, rejecting invalid text document '{ext}'"
                 )
 
         # Compute SHA256 file fingerprint

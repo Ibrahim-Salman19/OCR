@@ -1333,7 +1333,7 @@ def handle_file_upload(
 
     allowed_extensions = {str(ext).lower() for ext in _GATEWAY_EXTENSIONS}
     uploaded_files = st.file_uploader(
-        "DROP MISSION FILES (PDF, PNG, JPG, TIFF, BMP, PPTX)",
+        "DROP MISSION FILES (PDF, PNG, JPG, TIFF, BMP, WEBP, PPTX, TXT, MD)",
         accept_multiple_files=True,
         type=[ext.lstrip(".") for ext in sorted(allowed_extensions)],
         key="mission_payload_uploader",
@@ -1346,9 +1346,10 @@ def handle_file_upload(
     active_jobs = _active_job_ids()
     if uploaded_files and not active_jobs:
         batch_errors = _validate_upload_batch(uploaded_files, allowed_extensions)
-        if batch_errors:
-            for message in batch_errors:
-                st.error(message)
+        valid_files = [
+            f for f in uploaded_files
+            if Path(str(getattr(f, "name", ""))).suffix.lower() in allowed_extensions
+        ]
 
         total_bytes = sum(max(0, _safe_int(getattr(f, "size", 0), 0)) for f in uploaded_files)
         total_mb = total_bytes / (1024 * 1024)
@@ -1356,15 +1357,28 @@ def handle_file_upload(
             size_str = f"{total_bytes / 1024:.1f} KB"
         else:
             size_str = f"{total_mb:.2f} MB"
+
+        if batch_errors:
+            for message in batch_errors:
+                st.error(message)
+            if valid_files:
+                st.warning(f"⚠️ {len(batch_errors)} file(s) had validation errors and will be skipped. {len(valid_files)} valid file(s) are ready for execution.")
+
         if not batch_errors:
             st.success(f"VERIFIED FOR INGESTION: {len(uploaded_files)} file(s), {size_str} total.")
+
+        is_disabled = (
+            (len(valid_files) == 0 and len(uploaded_files) > 0)
+            or (len(uploaded_files) > DEFAULT_MAX_BATCH_FILES)
+            or (total_bytes > DEFAULT_MAX_BATCH_MB * 1024 * 1024)
+        )
 
         if st.button(
             "EXECUTE OCR ENGINE",
             type="primary",
             use_container_width=True,
             key="execute_ocr",
-            disabled=bool(batch_errors),
+            disabled=is_disabled,
         ):
             out_dir = get_session_output_dir()
             out_dir.mkdir(parents=True, exist_ok=True)
