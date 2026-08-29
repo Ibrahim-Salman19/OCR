@@ -837,12 +837,79 @@ def inject_seo_metadata() -> None:
 
 
 # -----------------------------------------------------------------------------
+# Landing / loading experience
+# -----------------------------------------------------------------------------
+
+
+def render_landing_page() -> None:
+    """One-time full-viewport welcome hero shown before entering the operations console."""
+    st.markdown(
+        '<div class="blast-landing">'
+        '<div class="blast-landing-glow blast-landing-glow--1"></div>'
+        '<div class="blast-landing-glow blast-landing-glow--2"></div>'
+        '<div class="blast-landing-content">'
+        '<div class="blast-landing-badge"><span class="status-dot"></span> SOVEREIGN EDITION</div>'
+        '<h1 class="blast-landing-title">B.L.A.S.T. <span>OCR</span></h1>'
+        '<p class="blast-landing-tagline">'
+        "Batched, Latency-Aware, Streaming, Text-extraction &mdash; a production-grade document "
+        "intelligence engine built for GPU-accelerated throughput, distributed queue scale, "
+        "and a hardened security boundary on every file that enters it."
+        "</p>"
+        '<div class="blast-landing-features">'
+        '<div class="blast-feature-card"><div class="blast-feature-icon">&#9889;</div>'
+        "<h3>GPU-Accelerated Inference</h3>"
+        "<p>Batched ONNX tensor inference with dynamic sizing for sub-second page latency.</p></div>"
+        '<div class="blast-feature-card"><div class="blast-feature-icon">&#128279;</div>'
+        "<h3>Distributed Swarm Queue</h3>"
+        "<p>Redis-backed priority queue with worker heartbeats, retry backoff, and dead-letter quarantine.</p></div>"
+        '<div class="blast-feature-card"><div class="blast-feature-icon">&#128230;</div>'
+        "<h3>Bounded Memory Streaming</h3>"
+        "<p>Batch-and-stream page processing keeps memory flat across large, multi-hundred-page archives.</p></div>"
+        '<div class="blast-feature-card"><div class="blast-feature-icon">&#128737;</div>'
+        "<h3>Hardened Security Gateway</h3>"
+        "<p>Magic-byte validation, path-traversal sandboxing, and hostile-text filtering on every upload.</p></div>"
+        "</div>"
+        "</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    _, cta_col, _ = _pad_columns(st.columns([1, 1.2, 1]), 3)
+    with cta_col:
+        if st.button(
+            "ENTER MISSION CONTROL",
+            type="primary",
+            use_container_width=True,
+            key="landing_enter_cta",
+        ):
+            st.session_state["entered_app"] = True
+            st.rerun()
+
+
+def render_loading_screen(title: str, message: str) -> None:
+    """Branded full-width loading state for genuine async waits (e.g. first-run model download)."""
+    st.markdown(
+        '<div class="blast-loading-screen">'
+        '<div class="blast-loading-mark">'
+        '<div class="blast-loading-ring"></div>'
+        '<div class="blast-loading-ring blast-loading-ring--delay"></div>'
+        '<div class="blast-loading-core">B</div>'
+        "</div>"
+        f'<h2 class="blast-loading-title">{html.escape(title)}</h2>'
+        f'<p class="blast-loading-message">{html.escape(message)}</p>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+# -----------------------------------------------------------------------------
 # Session lifecycle
 # -----------------------------------------------------------------------------
 
 
 def init_session_state() -> None:
     defaults: dict[str, Any] = {
+        "entered_app": False,
         "total_scans": 0,
         "pages_decoded": 0,
         "processing_history": [],
@@ -2587,11 +2654,15 @@ def main() -> None:
         load_css()
         inject_seo_metadata()
 
+        if not st.session_state.get("entered_app", False):
+            render_landing_page()
+            st.stop()
+
         if _is_cloud_runtime() and _is_model_download_in_progress():
-            st.markdown("## INITIALIZING OCR MODELS")
-            st.info(
-                "First-run model download is in progress on the server. "
-                "Please wait 2-5 minutes and refresh this page."
+            render_loading_screen(
+                "INITIALIZING OCR MODELS",
+                "First-run model download is in progress on the server. This usually takes "
+                "2-5 minutes — refresh this page once the download completes.",
             )
             st.stop()
 

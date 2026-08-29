@@ -149,6 +149,7 @@ def test_main_ui_flow():
     """Covers main UI rendering branches (lines 155-227) including tabs and presets."""
     mock_state = MockSessionState(
         {
+            "entered_app": True,
             "total_scans": 142,
             "pages_decoded": 890,
             "processing_history": [{"log": "entry"}],
@@ -191,6 +192,7 @@ def test_main_ui_flow():
         "streamlit.session_state",
         MockSessionState(
             {
+                "entered_app": True,
                 "processing_history": [],
                 "total_scans": 0,
                 "pages_decoded": 0,
@@ -224,22 +226,23 @@ def test_main_cli_execution():
 
 def test_main_shows_model_download_initializing_message_on_cloud():
     """Covers cloud bootstrap gate while OCR models are downloading."""
-    mock_state = MockSessionState({})
+    mock_state = MockSessionState({"entered_app": True})
     with patch("streamlit.session_state", mock_state):
         with patch("blast_ocr.ui.web_app._is_cloud_runtime", return_value=True):
             with patch(
                 "blast_ocr.ui.web_app._is_model_download_in_progress", return_value=True
             ):
-                with patch("streamlit.markdown"):
-                    with patch("streamlit.info") as info_mock:
-                        with patch(
-                            "streamlit.stop", side_effect=RuntimeError("stopped")
-                        ):
-                            try:
-                                web_app.main()
-                            except RuntimeError as e:
-                                assert str(e) == "stopped"
-    assert info_mock.called
+                with patch("streamlit.markdown") as markdown_mock:
+                    with patch(
+                        "streamlit.stop", side_effect=RuntimeError("stopped")
+                    ):
+                        try:
+                            web_app.main()
+                        except RuntimeError as e:
+                            assert str(e) == "stopped"
+    assert any(
+        "INITIALIZING OCR MODELS" in str(call.args[0]) for call in markdown_mock.call_args_list
+    )
 
 
 def test_handle_file_upload_multi_pdf_success():
