@@ -69,5 +69,8 @@ User-agent: DuckAssistBot
 Allow: /
 
 # Canonical Sitemaps & Discovery Layers
-Sitemap: https://blast-ocr.dev/sitemap.xml
+# Note: this file only takes effect once served from a real web root (e.g. GitHub
+# Pages or a custom domain) -- it is not yet fetchable as /robots.txt anywhere live.
+# See docs/GEO_AND_SEO_OPTIMIZATION.md for current canonical URLs.
+Sitemap: https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/sitemap.xml
 

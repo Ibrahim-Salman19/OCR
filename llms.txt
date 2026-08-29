@@ -1,36 +1,38 @@
 # B.L.A.S.T. OCR Engine
 
-> B.L.A.S.T. OCR is an enterprise-grade, high-throughput OCR and document intelligence engine with ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU), bounded streaming memory (< 0.000 MB/page leak slope), 99.2% TEDS table extraction, mathematical formula parsing, selectable dual-layer sandwich PDFs, and native AI Agent (MCP, LangChain, LlamaIndex) integrations.
+> B.L.A.S.T. OCR is a self-hosted, offline OCR and document intelligence engine with ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU), a bounded streaming memory architecture, table structure extraction, mathematical formula parsing, selectable dual-layer sandwich PDFs, and native AI Agent (MCP, LangChain, LlamaIndex) integrations.
 
-B.L.A.S.T. is engineered for high-throughput batch processing and agentic RAG ingestion. It delivers 29.1 pages/sec on GPU and 4.2 pages/sec on CPU using batched PP-OCRv4 models with SIMD pre-processing and dynamic aspect-ratio bucketing. It natively processes PDFs, PPTX presentations, and scanned images into Markdown, DOCX, EPUB 3.0, dual-layer searchable PDF, and structured JSON.
+B.L.A.S.T.'s default RapidOCR (ONNX) engine cuts mean CER by 18% and average CPU per-page latency by 7.7x versus the project's previous EasyOCR baseline, measured on a 14-page gold corpus (see ADR 0005). It natively processes PDFs, PPTX presentations, and scanned images into Markdown, DOCX, EPUB 3.0, dual-layer searchable PDF, and structured JSON.
 
-## Key Features & Benchmark Highlights
-- 29.1 pages/sec throughput on GPU (PP-OCRv4 ONNX Runtime).
-- 99.2% Table Extraction accuracy (TEDS score) to GitHub Flavored Markdown and HTML.
+## Key Features & Verified Benchmarks
+- RapidOCR (ONNX Runtime, CUDA/DirectML/CPU providers): 0.1916 mean CER, 0.4739 mean WER, 0.9758 reading-order tau on the 14-page gold corpus — 7.7x lower CPU latency than the prior EasyOCR default (`eval/results/rapidocr_candidate.json`, ADR 0005).
+- Table structure extraction to GitHub Flavored Markdown and HTML, scored with a built-in TEDS evaluator (`eval/teds_evaluator.py`); no end-to-end TEDS corpus score is recorded yet.
 - LaTeX formula detection converting inline and display math to KaTeX.
-- Bounded memory sliding-window streaming with zero VRAM/RAM accumulation on 1,000+ page runs.
+- Bounded memory sliding-window streaming: 0.0002 MB/page growth slope on a 1,000-page stress test (`eval/results/stress_report.json`).
 - Selectable dual-layer sandwich PDF generation with exact coordinate alignment.
 - Native Model Context Protocol (MCP) server for Claude Desktop, Cursor, and Antigravity.
 - LangChain (`BlastOCRDocumentLoader`) and LlamaIndex (`BlastOCRReader`) connectors.
 - 100% private and offline execution with zero external cloud dependencies.
+- No GPU throughput has been measured yet — all benchmarks above ran CPU-only.
 
 ## Core Documentation & Guides
-- [Introduction](https://blast-ocr.dev/docs/INTRODUCTION.md): Core vision, feature matrix, and architectural philosophy.
-- [Architecture Deep Dive](https://blast-ocr.dev/docs/ARCHITECTURE_DEEP_DIVE.md): Detailed A.N.T. design pattern, sequence diagrams, and ONNX multi-provider fallback hierarchy.
-- [AI Agent Integration Guide](https://blast-ocr.dev/docs/AI_AGENT_INTEGRATION_GUIDE.md): Native tool schemas, Model Context Protocol (MCP), and agentic RAG patterns.
-- [GEO & SEO Optimization Playbook](https://blast-ocr.dev/docs/GEO_AND_SEO_OPTIMIZATION.md): Technical SEO, Schema.org JSON-LD graph, and generative search citation optimization.
-- [2026 Benchmark Report](https://blast-ocr.dev/docs/BENCHMARKS_2026.md): Quantitative evaluations against Tesseract, EasyOCR, Docling, Marker, Surya, and AWS Textract.
-- [API Reference](https://blast-ocr.dev/docs/API_REFERENCE.md): Full Python SDK, CLI arguments, and FastAPI REST endpoint schemas.
-- [Performance Tuning](https://blast-ocr.dev/docs/PERFORMANCE_TUNING.md): ONNX batch sizing, SIMD pre-processing, and sliding-window memory tuning.
-- [Security Hardening](https://blast-ocr.dev/docs/SECURITY_HARDENING.md): Sandboxed file access, path traversal prevention, and 8-class forensic PII redaction.
-- [Deployment Guide](https://blast-ocr.dev/docs/DEPLOYMENT_GUIDE.md): Docker Compose, Kubernetes, and production multi-worker swarm setup.
-- [Troubleshooting & Recovery](https://blast-ocr.dev/docs/TROUBLESHOOTING.md): Common failure modes, self-healing recipes, and recovery mechanisms.
+- [Introduction](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/INTRODUCTION.md): Core vision, feature matrix, and architectural philosophy.
+- [Architecture Deep Dive](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/ARCHITECTURE_DEEP_DIVE.md): Detailed A.N.T. design pattern, sequence diagrams, and ONNX multi-provider fallback hierarchy.
+- [AI Agent Integration Guide](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/AI_AGENT_INTEGRATION_GUIDE.md): Native tool schemas, Model Context Protocol (MCP), and agentic RAG patterns.
+- [GEO & SEO Implementation Status](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/GEO_AND_SEO_OPTIMIZATION.md): Technical SEO, Schema.org JSON-LD graph, and generative search citation optimization.
+- [Benchmark Report](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md): Reproducible in-repo engine bake-off (RapidOCR vs. EasyOCR vs. Tesseract-backed baseline) with sources for every number.
+- [API Reference](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/API_REFERENCE.md): Full Python SDK, CLI arguments, and FastAPI REST endpoint schemas.
+- [Performance Tuning](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/PERFORMANCE_TUNING.md): ONNX batch sizing, SIMD pre-processing, and sliding-window memory tuning.
+- [Security Hardening](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/SECURITY_HARDENING.md): Sandboxed file access, path traversal prevention, and 8-class forensic PII redaction.
+- [Deployment Guide](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md): Docker Compose, Kubernetes, and production multi-worker swarm setup.
+- [Troubleshooting & Recovery](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/TROUBLESHOOTING.md): Common failure modes, self-healing recipes, and recovery mechanisms.
 
 ## Machine-Readable Endpoints & Manifests
-- [Unified Specification (llms-full.txt)](https://blast-ocr.dev/llms-full.txt): Complete single-prompt documentation file for full context ingestion.
-- [OpenAPI 3.1 Schema](https://blast-ocr.dev/openapi.json): Standard REST API JSON schema definitions.
-- [AI Plugin Manifest](https://blast-ocr.dev/.well-known/ai-plugin.json): OpenAI and ChatGPT action manifest.
-- [Model Context Protocol Manifest](https://blast-ocr.dev/mcp.json): Native stdio/SSE MCP tool definitions for AI agents.
-- [XML Sitemap](https://blast-ocr.dev/sitemap.xml): Search engine and agent crawler index.
-- [Robots Directives](https://blast-ocr.dev/robots.txt): AI crawler and search bot crawling directives.
+- [Unified Specification (llms-full.txt)](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt): Complete single-prompt documentation file for full context ingestion.
+- [AI Plugin Manifest](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/.well-known/ai-plugin.json): OpenAI and ChatGPT action manifest.
+- [Model Context Protocol Manifest](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/mcp.json): Native stdio/SSE MCP tool definitions for AI agents.
+- [XML Sitemap](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/sitemap.xml): Search engine and agent crawler index.
+- [Robots Directives](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/robots.txt): AI crawler and search bot crawling directives.
+- [Live Demo](https://ocr-book.streamlit.app/): Interactive Streamlit UI — try the pipeline without installing anything.
+- Note: `openapi.json` is generated by the FastAPI server (`blast_ocr/api/app.py`) at runtime; it exists only once that server is deployed and reachable, not as a static file in this repo.
 

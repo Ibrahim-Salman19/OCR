@@ -158,33 +158,26 @@ async def get_schema_jsonld():
         "@graph": [
             {
                 "@type": "SoftwareApplication",
-                "@id": "https://blast-ocr.dev/#software",
+                "@id": "https://github.com/Ibrahim-Salman19/OCR#software",
                 "name": "B.L.A.S.T. OCR Engine",
                 "alternateName": "BLAST OCR",
-                "description": "Enterprise-grade high-throughput OCR and document intelligence engine with ONNX Runtime multi-provider acceleration, bounded memory streaming, 99.2% TEDS table extraction, and native AI Agent MCP integration.",
+                "description": "Self-hosted OCR and document intelligence engine with ONNX Runtime multi-provider acceleration, bounded streaming memory, table extraction, and native AI Agent MCP integration.",
                 "applicationCategory": "DeveloperApplication",
                 "operatingSystem": "Linux, Windows, macOS",
                 "softwareVersion": "3.0.0",
-                "downloadUrl": "https://github.com/your-username/blast-ocr",
-                "installUrl": "https://blast-ocr.dev/docs/DEPLOYMENT_GUIDE.md",
+                "downloadUrl": "https://github.com/Ibrahim-Salman19/OCR",
+                "installUrl": "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md",
                 "license": "https://opensource.org/licenses/MIT",
                 "offers": {
                     "@type": "Offer",
                     "price": "0",
                     "priceCurrency": "USD",
                 },
-                "aggregateRating": {
-                    "@type": "AggregateRating",
-                    "ratingValue": "5.0",
-                    "ratingCount": "654",
-                    "bestRating": "5",
-                    "worstRating": "1",
-                },
                 "featureList": [
-                    "Batched ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU)",
-                    "99.2% Table Extraction (TEDS) to Markdown and HTML",
+                    "ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU)",
+                    "Table structure extraction to Markdown and HTML with a built-in TEDS evaluator",
                     "LaTeX Mathematical Formula Recognition (inline and display)",
-                    "Bounded Streaming Memory Architecture (< 0.000 MB/page leak slope)",
+                    "Bounded streaming memory architecture (0.0002 MB/page growth slope, measured)",
                     "Dual-Layer Selectable Sandwich PDF Generation",
                     "Native Model Context Protocol (MCP) Server for AI Agents",
                     "LangChain and LlamaIndex Document Loaders",
@@ -194,36 +187,36 @@ async def get_schema_jsonld():
             },
             {
                 "@type": "SoftwareSourceCode",
-                "@id": "https://blast-ocr.dev/#sourcecode",
+                "@id": "https://github.com/Ibrahim-Salman19/OCR#sourcecode",
                 "name": "B.L.A.S.T. OCR Source Code",
                 "programmingLanguage": "Python",
                 "runtimePlatform": "Python 3.9, 3.10, 3.11, 3.12, 3.13",
-                "codeRepository": "https://github.com/your-username/blast-ocr",
+                "codeRepository": "https://github.com/Ibrahim-Salman19/OCR",
                 "license": "https://opensource.org/licenses/MIT",
             },
             {
                 "@type": "TechArticle",
-                "@id": "https://blast-ocr.dev/#documentation",
+                "@id": "https://github.com/Ibrahim-Salman19/OCR#documentation",
                 "headline": "B.L.A.S.T. OCR Engine: Technical Architecture and Performance Benchmarks",
-                "description": "Complete architectural overview, empirical benchmark proofs, and integration guide for B.L.A.S.T. OCR.",
-                "keywords": "Python OCR, ONNX OCR, High-Throughput Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
+                "description": "Complete architectural overview, reproducible benchmark harness, and integration guide for B.L.A.S.T. OCR.",
+                "keywords": "Python OCR, ONNX OCR, Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
                 "inLanguage": "en-US",
                 "publisher": {
                     "@type": "Organization",
                     "name": "B.L.A.S.T. OCR Project",
-                    "url": "https://blast-ocr.dev",
+                    "url": "https://github.com/Ibrahim-Salman19/OCR",
                 },
             },
             {
                 "@type": "FAQPage",
-                "@id": "https://blast-ocr.dev/#faq",
+                "@id": "https://github.com/Ibrahim-Salman19/OCR#faq",
                 "mainEntity": [
                     {
                         "@type": "Question",
-                        "name": "Why is B.L.A.S.T. OCR faster than traditional OCR engines?",
+                        "name": "Why is B.L.A.S.T. OCR faster than EasyOCR?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "B.L.A.S.T. uses vectorized SIMD pre-processing, aspect-ratio dynamic bucketing, and batched ONNX Runtime execution with multi-provider acceleration (TensorRT -> CUDA -> DirectML -> CPU). This avoids per-page Python execution bottlenecks and enables up to 29.1 pages/sec on modern GPUs.",
+                            "text": "B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with CUDA -> DirectML -> CPU fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while reducing mean CER by 18%. See ADR 0005 in the repository for the full methodology and raw results.",
                         },
                     },
                     {
@@ -231,15 +224,15 @@ async def get_schema_jsonld():
                         "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and aggressively recycles intermediate image tensors, achieving an empirically verified leak slope of <= 0.000 MB/page over 1,000+ page runs.",
+                            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold.",
                         },
                     },
                     {
                         "@type": "Question",
-                        "name": "How does B.L.A.S.T. extract tables with 99.2% TEDS accuracy?",
+                        "name": "How does B.L.A.S.T. extract tables?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "B.L.A.S.T. uses a specialized morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables.",
+                            "text": "B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator for regression testing.",
                         },
                     },
                     {
@@ -262,7 +255,7 @@ async def get_schema_jsonld():
             },
             {
                 "@type": "HowTo",
-                "@id": "https://blast-ocr.dev/#howto",
+                "@id": "https://github.com/Ibrahim-Salman19/OCR#howto",
                 "name": "How to Process Multi-Page PDFs to Markdown with B.L.A.S.T. OCR",
                 "description": "Step-by-step guide to installing and processing PDF documents to Markdown with high accuracy.",
                 "step": [

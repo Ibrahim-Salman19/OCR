@@ -104,7 +104,7 @@ def test_llms_txt_and_full_compliance():
     assert llms_txt.exists()
     content = llms_txt.read_text(encoding="utf-8")
     assert content.startswith("# B.L.A.S.T. OCR Engine")
-    assert "enterprise-grade" in content.lower()
+    assert "self-hosted" in content.lower()
     assert "benchmark" in content.lower()
     assert "quickstart" in content.lower() or "core documentation" in content.lower()
 
@@ -126,7 +126,10 @@ def test_robots_txt_and_sitemap_xml():
     assert "User-agent: PerplexityBot" in r_text
     assert "User-agent: OAI-SearchBot" in r_text
     assert "User-agent: GoogleOther" in r_text
-    assert "Sitemap: https://blast-ocr.dev/sitemap.xml" in r_text
+    assert (
+        "Sitemap: https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/sitemap.xml"
+        in r_text
+    )
 
     sitemap = ROOT_DIR / "sitemap.xml"
     assert sitemap.exists()
@@ -139,12 +142,15 @@ def test_robots_txt_and_sitemap_xml():
             ".//{http://www.sitemaps.org/schemas/sitemap/0.9}loc"
         )
     ]
-    assert "https://blast-ocr.dev/" in urls
-    assert "https://blast-ocr.dev/llms.txt" in urls
-    assert "https://blast-ocr.dev/llms-full.txt" in urls
-    assert "https://blast-ocr.dev/openapi.json" in urls
-    assert "https://blast-ocr.dev/mcp.json" in urls
-    assert "https://blast-ocr.dev/docs/BENCHMARKS_2026.md" in urls
+    assert "https://github.com/Ibrahim-Salman19/OCR" in urls
+    assert "https://ocr-book.streamlit.app/" in urls
+    assert "https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms.txt" in urls
+    assert "https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt" in urls
+    assert "https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/mcp.json" in urls
+    assert (
+        "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md"
+        in urls
+    )
 
 
 def test_fastapi_agent_discovery_headers_and_endpoints():
@@ -194,6 +200,14 @@ def test_fastapi_agent_discovery_headers_and_endpoints():
     assert "FAQPage" in types
     assert "HowTo" in types
 
+    software_entry = next(
+        item for item in schema_data["@graph"] if item["@type"] == "SoftwareApplication"
+    )
+    assert "aggregateRating" not in software_entry, (
+        "aggregateRating must not be fabricated review markup -- "
+        "see docs/GEO_AND_SEO_OPTIMIZATION.md section 2"
+    )
+
 
 def test_readme_schema_org_jsonld():
     readme_path = ROOT_DIR / "README.md"
@@ -211,6 +225,14 @@ def test_readme_schema_org_jsonld():
     data = json.loads(json_str)
     assert data["@context"] == "https://schema.org"
     assert "@graph" in data
+
+    software_entry = next(
+        item for item in data["@graph"] if item["@type"] == "SoftwareApplication"
+    )
+    assert "aggregateRating" not in software_entry, (
+        "aggregateRating must not be fabricated review markup -- "
+        "see docs/GEO_AND_SEO_OPTIMIZATION.md section 2"
+    )
 
 
 def test_streamlit_ui_seo_tags():

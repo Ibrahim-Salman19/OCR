@@ -172,7 +172,7 @@ MCP_TOOLS = [
     },
     {
         "name": "blast_ocr_extract_tables",
-        "description": "Extract structured tables from document images or scanned pages with 99.2% TEDS accuracy in Markdown and HTML.",
+        "description": "Extract structured tables from document images or scanned pages into Markdown and HTML, scored with a built-in TEDS evaluator.",
         "inputSchema": {
             "type": "object",
             "properties": {

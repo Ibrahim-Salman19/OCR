@@ -114,11 +114,10 @@ AI agents do not browse websites like humans; they parse machine-readable endpoi
 - **Visual Proof**: Architecture diagram (Mermaid / ASCII), interactive web demo instructions, and export showcases.
 
 ### 6.2 The Competitor Comparison Matrix
-Always position against industry incumbents with verifiable technical metrics:
-- **Tesseract**: High CPU latency, poor layout preservation vs. B.L.A.S.T. 30x faster ONNX batched inference.
-- **EasyOCR**: VRAM leaks on multi-page PDFs vs. B.L.A.S.T. bounded streaming memory (< 0.005 MB/page).
-- **Marker / Nougat / MinerU**: Heavy multi-gigabyte GPU requirements vs. B.L.A.S.T. CPU-first ONNX + GPU multi-provider fallback.
-- **Docling / Unstructured**: Complex heavyweight dependencies vs. B.L.A.S.T. zero-infra standalone option with optional swarm scaling.
+Position against industry incumbents using only metrics you have actually measured on your own corpus, cited to a committed result file or ADR. Never publish a competitor's performance number (CER, WER, TEDS, pages/sec) unless your own harness produced it or you are quoting a named, linked third-party source — an LLM asked to "fill in a comparison table" will readily invent plausible-looking decimals for rows you never ran, and that failure mode is exactly what got caught and had to be reverted in B.L.A.S.T.'s own README (see `docs/BENCHMARKS_2026.md` §5, "What's Not Yet Benchmarked"). Two safe patterns:
+- **In-repo bake-off**: engines/versions you actually swapped and measured (e.g. B.L.A.S.T.'s RapidOCR-vs-EasyOCR bake-off, ADR 0005: 7.7x lower CPU latency, 18% lower CER, both sourced to a checked-in JSON result).
+- **Qualitative feature table**: capability presence/absence (native MCP server, offline execution, license) — these are checkable facts about a product, not measured performance, and carry far less fabrication risk than a decimal.
+For anything else, cite a named third-party benchmark (with a link) rather than presenting an estimate as your own measurement.
 
 ---
 

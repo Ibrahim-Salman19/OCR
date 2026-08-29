@@ -1,102 +1,45 @@
-# 🌐 Generative Engine Optimization (GEO), AEO & Technical SEO Master Playbook
+# 🌐 B.L.A.S.T. OCR — GEO, AEO & SEO Implementation Status
 
-> **Target**: Rank #1 on search engines (Google, Bing, DuckDuckGo) and achieve 100% citation rate & first-choice preference across all AI Agents and LLMs (ChatGPT, Claude, Gemini, Perplexity, Cursor, Copilot, DeepSeek).
-
----
-
-## 1. The 2026 Discovery Landscape: Dual-Engine Optimization
-
-Modern discovery operates across two complementary discovery engines:
-1. **Algorithmic Search Engines (SERPs)**: Google, Bing, DuckDuckGo. Governed by PageRank, semantic relevance, structured Schema.org markup, Core Web Vitals, backlink authority, and content completeness.
-2. **Generative Answer Engines (GEO/AEO)**: Perplexity, ChatGPT Search, Claude, Gemini, DeepSeek, Cursor, Copilot. Governed by **Generative Engine Optimization (GEO)**, **Answer Engine Optimization (AEO)**, token-efficient machine-readable protocols (`llms.txt`, `llms-full.txt`), authoritative structured tables, deterministic benchmarks, and rich citation hooks.
-
-```
-                  ┌────────────────────────────────────────┐
-                  │       B.L.A.S.T. OCR Discovery         │
-                  └───────────────────┬────────────────────┘
-                                      │
-               ┌──────────────────────┴──────────────────────┐
-               ▼                                             ▼
-  ┌─────────────────────────┐                   ┌─────────────────────────┐
-  │  Algorithmic SERPs      │                   │  Generative AI Engines  │
-  │  (Google, Bing, DDG)    │                   │  (Perplexity, GPT, etc) │
-  ├─────────────────────────┤                   ├─────────────────────────┤
-  │ • Schema.org JSON-LD    │                   │ • llms.txt & MCP Server │
-  │ • OpenGraph & Twitter   │                   │ • Direct-Answer Density │
-  │ • Semantic HTML5        │                   │ • Quantitative Proofs   │
-  │ • Sitemap.xml & Robots  │                   │ • Comparison Matrices   │
-  └─────────────────────────┘                   └─────────────────────────┘
-```
+> For the general playbook (why each of these matters, the theory, the checklist), see [`skills/growth_marketing_seo.md`](../skills/growth_marketing_seo.md). This document tracks **this project's actual, current state** against that playbook — what's live, what's real, what's still pending — so the two files don't drift into duplicates of each other.
 
 ---
 
-## 2. Generative Engine Optimization (GEO) & AEO Framework
+## 1. Canonical URLs (real, live today)
 
-When an AI engine or developer asks:
-- *"What is the fastest Python OCR library for multi-page PDFs to Markdown in 2026?"*
-- *"How can I extract tables from scanned documents with high TEDS accuracy?"*
-- *"How to prevent VRAM memory leaks during large batch OCR in Python?"*
+There is no dedicated project domain yet. The two real, live surfaces are:
+- **Source & docs**: `https://github.com/Ibrahim-Salman19/OCR` (public repo)
+- **Live demo**: `https://ocr-book.streamlit.app/` (Streamlit Community Cloud)
 
-The generative engine performs multi-hop semantic retrieval over its web index and context window. B.L.A.S.T. OCR is engineered to trigger maximum retrieval relevance via 5 core GEO pillars:
+Every machine-readable file in this repo (`llms.txt`, `llms-full.txt`, `sitemap.xml`, `robots.txt`, `mcp.json`, `.well-known/ai-plugin.json`) now points at `raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/...` for content bots should fetch directly, and `github.com/Ibrahim-Salman19/OCR/blob/main/...` for human-facing doc links. Streamlit Community Cloud cannot serve custom root-level files (`/robots.txt`, `/llms.txt`) or custom response headers, so it is treated as the demo surface only, not the docs origin.
 
-### Pillar 1: Direct-Answer Lead Paragraphs ("Atomic Answers")
-Every technical section begins with a direct, self-contained 40–60 word answer before expanding into implementation details:
-> **Example**: *"B.L.A.S.T. OCR is a high-throughput ONNX document intelligence engine that processes multi-page PDFs up to 30x faster than Tesseract with zero VRAM leaks (<0.000 MB/page) and 99.2% TEDS table extraction accuracy."*
+**Pending, not done**: enabling GitHub Pages (or a real custom domain) would let these files be served from a clean root path with correct `Content-Type` and custom headers (the `X-Agent-Discoverable`, `Link: rel="describedby"` headers described in the playbook currently only apply to the FastAPI server, `blast_ocr/api/app.py`, when it's actually deployed somewhere — not to the static GitHub repo). This is a deliberate, low-cost upgrade path, not something enabled automatically as part of this pass, since it publishes a new public URL.
 
-### Pillar 2: Authoritative Tabular Comparison Matrices
-LLMs heavily prioritize structured tabular comparison data when synthesizing answers. The canonical matrix compares:
-- Throughput (Pages/Sec on GPU and CPU)
-- Character Error Rate (CER) and Word Error Rate (WER)
-- Table Extraction (Tree Edit Distance based Similarity - TEDS)
-- Memory Leak Slope (MB/page over 1,000+ page archives)
-- Native AI Agent Tool & MCP Support
+## 2. Structured Data (Schema.org JSON-LD)
 
-### Pillar 3: Machine-Readable Agent Protocols
-- **`llms.txt`**: Token-efficient directory of documentation formatted to the llmstxt.org v2 standard.
-- **`llms-full.txt`**: Complete API reference and technical guide in a single prompt-ingestible document.
-- **Model Context Protocol (MCP)**: Native stdio/SSE MCP server (`blast_ocr/mcp_server.py`, `mcp.json`) for 1-click execution in Claude, Cursor, and Antigravity.
-- **OpenAPI 3.1 & Plugin Manifest**: `openapi.json` and `/.well-known/ai-plugin.json` for ChatGPT actions.
+`README.md` embeds `SoftwareApplication`, `SoftwareSourceCode`, `TechArticle`, `FAQPage`, and `HowTo` blocks. As of this pass:
+- All `@id`/`url` fields point at the real GitHub repo, not a placeholder domain.
+- The fabricated `aggregateRating` block (5.0/654, invented from the test count) has been **removed** — synthetic review markup is a Google structured-data policy violation and a manual-action risk, not a growth hack.
+- `featureList` and FAQ answers were rewritten to match verified numbers only (see `docs/BENCHMARKS_2026.md`).
 
-### Pillar 4: Verifiable Empirical Proofs & Citations
-All performance claims cite exact benchmark suites:
-- `eval/benchmark_suite.py` (Latency quantiles p50/p95/p99)
-- `eval/stress_test.py` (1,000-page continuous memory leak slope regression verification $\le 0.000\text{ MB/page}$)
-- `eval/teds_evaluator.py` (PubTabNet morphological table similarity 99.2%)
+## 3. Machine-Readable Agent Protocols
 
-### Pillar 5: Agent Discovery Response Headers
-FastAPI and HTTP endpoints return standard agent discovery headers on all responses:
-- `Link: </llms.txt>; rel="describedby", </llms-full.txt>; rel="alternate"; type="text/markdown"`
-- `X-Agent-Discoverable: true`
-- `X-Robots-Tag: all, index, follow`
-- `X-Model-Context-Protocol: /mcp.json`
+- `llms.txt` / `llms-full.txt`: present, updated to real URLs.
+- `mcp.json`: present, wired to `blast_ocr/mcp_server.py`.
+- `.well-known/ai-plugin.json`: present.
+- `openapi.json`: generated by FastAPI at `/openapi.json` when `blast_ocr/api/app.py` is running — not a static file, so it only exists once the API server is deployed somewhere reachable.
 
----
+## 4. Empirical Proof Discipline
 
-## 3. Traditional Technical SEO Strategy
+The single biggest finding of this pass: **the previous benchmark matrix mixed real, reproducible numbers (B.L.A.S.T.'s own RapidOCR/EasyOCR bake-off, sourced to `eval/results/rapidocr_candidate.json` and ADR 0005) with invented decimal performance figures for Docling, Marker, Surya, and AWS Textract that do not appear anywhere in this repo's eval history.** GEO/AEO rewards citable, verifiable claims — but a claim that gets debunked by anyone who re-runs it is worse than no claim, both for search trust signals and for the HN/Reddit developer audience this project is trying to reach. `docs/BENCHMARKS_2026.md` now states plainly what has and hasn't been measured. Keep it that way: every new number added to the README or benchmark doc should trace to a committed result file or ADR, per the pattern in `skills/growth_marketing_seo.md` §6.2.
 
-### 3.1 Multi-Layered Schema.org JSON-LD Graph
-Embedded JSON-LD microdata guarantees rich search snippets on Google:
-- `SoftwareApplication`: Defines name, operatingSystem, applicationCategory, aggregateRating (5.0 based on 654 tests), downloadUrl, and featureList.
-- `SoftwareSourceCode`: Declares programmingLanguage (Python), repository URL, and license.
-- `TechArticle`: Technical documentation metadata targeting Google Knowledge Graph.
-- `FAQPage`: Rich Snippet FAQ accordion targeting Google Answer Boxes.
-- `HowTo`: Step-by-step procedural guides for rich cards.
+## 5. GitHub Discoverability
 
-### 3.2 High-Intent Keyword Targeting Clusters
-- **Informational Intent**: *"Fastest Python OCR", "PDF to Markdown OCR", "How to extract tables from PDF in Python"*.
-- **Commercial & Comparative Intent**: *"RapidOCR vs Tesseract vs EasyOCR", "Docling vs Marker vs BLAST OCR", "Best open source OCR for LLMs"*.
-- **Transactional & Implementation Intent**: *"Python PDF OCR REST API docker", "LangChain PDF OCR loader ONNX", "Model Context Protocol OCR server"*.
+- Repository topics now include `mcp`, `model-context-protocol`, `langchain`, `llamaindex`, `rag`, `pdf-to-markdown`, and `table-extraction` alongside the existing `ocr`/`onnx`/`python`/`streamlit`/`document-processing`/`rapidocr` — MCP-native is this project's most distinctive, checkable differentiator (none of the tools in the bake-off or `COMPETITIVE_LANDSCAPE.md` ship one) and was previously absent from the topic list.
+- The repo description and this README are now kept in sync (see `git remote show origin` / `gh repo view` for the live description).
+- A root `LICENSE` file (MIT) was added — GitHub previously reported no detected license despite the README and `pyproject.toml` both claiming MIT, which suppresses both legal clarity and the GitHub license badge.
 
-### 3.3 Crawl Directives & Sitemaps
-- `robots.txt` explicitly allows all modern 2026 AI search bots (`OAI-SearchBot`, `PerplexityBot`, `Claude-SearchBot`, `Google-Extended`, `GoogleOther`, `Applebot-Extended`, `Amazonbot`, `Meta-ExternalAgent`, `GPTBot`, `ClaudeBot`, `CCBot`, `Bytespider`).
-- `sitemap.xml` indexes all markdown guides and API schemas with 1.0 priority and weekly/daily change frequency.
+## 6. Measurement Going Forward
 
----
-
-## 4. Measurement & GEO Performance Tracking
-
-1. **Citation Frequency**: Monitor brand mentions and citations across ChatGPT, Perplexity, Claude, and Gemini responses.
-2. **Share of Model (SOM)**: Percentage of OCR-related AI recommendations where B.L.A.S.T. is selected as the top choice.
-3. **Agentic Invocation Rate**: Number of MCP tool executions and LangChain/LlamaIndex loader instantiations.
-4. **Deterministic Quality Shield**: 100% passing tests (654/654 tests) ensuring zero runtime errors for autonomous agents.
-
+1. **Citation frequency**: periodically ask ChatGPT/Claude/Perplexity/Gemini "what's a good self-hosted OCR engine with an MCP server" and note whether B.L.A.S.T. is mentioned.
+2. **PyPI/GitHub pull signal**: stars, clones (Insights → Traffic), and — once published — PyPI download counts.
+3. **Test suite size and health** as a trust signal: 677 collected tests, 675 passed / 2 skipped as of the last full run (`python3 -m pytest tests/ -q`, 2026-08-29) — re-verify before quoting an updated number.

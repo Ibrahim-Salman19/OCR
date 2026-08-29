@@ -64,24 +64,24 @@ st.set_page_config(
 # Inject Canonical SEO / GEO Meta Tags and Schema.org JSON-LD for Web Crawlers & AI Indexing
 _SEO_META_TAGS = """
 <!-- B.L.A.S.T. OCR Engine - SEO, GEO & AEO Discovery Tags -->
-<meta name="description" content="High-Throughput Enterprise ONNX OCR and Document Intelligence Engine. 29.1 GPU pages/sec, 99.2% TEDS table extraction, LaTeX formula parsing, and zero memory leaks.">
-<meta name="keywords" content="Python OCR, ONNX OCR, PDF to Markdown, Table Extraction, High Throughput OCR, Model Context Protocol, Sandwich PDF, LangChain OCR">
+<meta name="description" content="Self-hosted ONNX OCR and document intelligence engine. Native MCP server, table extraction, LaTeX formula parsing, and a bounded-memory streaming architecture.">
+<meta name="keywords" content="Python OCR, ONNX OCR, PDF to Markdown, Table Extraction, Model Context Protocol, Sandwich PDF, LangChain OCR, LlamaIndex OCR">
 <meta name="author" content="B.L.A.S.T. OCR Project">
 <meta property="og:title" content="B.L.A.S.T. OCR Engine — Sovereign Edition">
-<meta property="og:description" content="High-Throughput Enterprise ONNX OCR Engine for multi-page PDFs, PPTX, and scanned documents.">
+<meta property="og:description" content="Self-hosted ONNX OCR engine for multi-page PDFs, PPTX, and scanned documents, with a native MCP server for AI agents.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://blast-ocr.dev">
+<meta property="og:url" content="https://ocr-book.streamlit.app/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="B.L.A.S.T. OCR Engine">
-<meta name="twitter:description" content="High-throughput ONNX OCR engine with 99.2% table extraction and zero memory leaks.">
-<link rel="describedby" href="/llms.txt">
-<link rel="alternate" type="text/markdown" href="/llms-full.txt">
+<meta name="twitter:description" content="Self-hosted ONNX OCR engine with table extraction, a native MCP server, and a bounded-memory streaming architecture.">
+<link rel="describedby" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms.txt">
+<link rel="alternate" type="text/markdown" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "B.L.A.S.T. OCR Engine",
-  "description": "High-throughput enterprise OCR and document intelligence engine with ONNX acceleration.",
+  "description": "Self-hosted OCR and document intelligence engine with ONNX acceleration and a native MCP server.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Linux, Windows, macOS",
   "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}
@@ -851,9 +851,8 @@ def render_landing_page() -> None:
         '<div class="blast-landing-badge"><span class="status-dot"></span> SOVEREIGN EDITION</div>'
         '<h1 class="blast-landing-title">B.L.A.S.T. <span>OCR</span></h1>'
         '<p class="blast-landing-tagline">'
-        "Batched, Latency-Aware, Streaming, Text-extraction &mdash; a production-grade document "
-        "intelligence engine built for GPU-accelerated throughput, distributed queue scale, "
-        "and a hardened security boundary on every file that enters it."
+        "Batched. Latency-Aware. Streaming. Text-extraction. "
+        "Document OCR built for production throughput, not notebook demos."
         "</p>"
         '<div class="blast-landing-features">'
         '<div class="blast-feature-card"><div class="blast-feature-icon">&#9889;</div>'
@@ -864,7 +863,7 @@ def render_landing_page() -> None:
         "<p>Redis-backed priority queue with worker heartbeats, retry backoff, and dead-letter quarantine.</p></div>"
         '<div class="blast-feature-card"><div class="blast-feature-icon">&#128230;</div>'
         "<h3>Bounded Memory Streaming</h3>"
-        "<p>Batch-and-stream page processing keeps memory flat across large, multi-hundred-page archives.</p></div>"
+        "<p>Batch-and-stream page processing keeps memory flat on archives hundreds of pages long.</p></div>"
         '<div class="blast-feature-card"><div class="blast-feature-icon">&#128737;</div>'
         "<h3>Hardened Security Gateway</h3>"
         "<p>Magic-byte validation, path-traversal sandboxing, and hostile-text filtering on every upload.</p></div>"
@@ -2662,7 +2661,7 @@ def main() -> None:
             render_loading_screen(
                 "INITIALIZING OCR MODELS",
                 "First-run model download is in progress on the server. This usually takes "
-                "2-5 minutes — refresh this page once the download completes.",
+                "2-5 minutes. Refresh this page once it finishes.",
             )
             st.stop()
 

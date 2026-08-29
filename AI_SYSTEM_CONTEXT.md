@@ -49,8 +49,8 @@ B.L.A.S.T. is a high-performance, deterministic, and self-healing OCR automation
 ### Setup
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/blast-ocr.git
-   cd blast-ocr
+   git clone https://github.com/Ibrahim-Salman19/OCR.git
+   cd OCR
    ```
 
 2. **Install dependencies:**
@@ -3766,8 +3766,9 @@ Thank you for your interest in improving the B.L.A.S.T. OCR Engine!
 
 1. **Fork & Clone**
    ```bash
-   git clone https://github.com/your-username/blast-ocr.git
+   git clone https://github.com/your-username/OCR.git
    ```
+   (Replace `your-username` with your fork's owner — the upstream repo is [`Ibrahim-Salman19/OCR`](https://github.com/Ibrahim-Salman19/OCR).)
 2. **Install Dev Dependencies**
    ```bash
    pip install -r requirements.txt

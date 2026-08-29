@@ -1,10 +1,47 @@
 [project]
 name = "blast-ocr"
 version = "3.0.0"
-description = "B.L.A.S.T. -- self-hosted OCR/document-intelligence pipeline (PDF/PPTX/image -> Markdown/DOCX/EPUB)"
+description = "Self-hosted OCR/document-intelligence pipeline (PDF/PPTX/image -> Markdown/DOCX/EPUB) with a native MCP server and LangChain/LlamaIndex loaders"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
+authors = [{ name = "Ibrahim Salman", email = "hafiz.muhammad.ibrahim.salman@gmail.com" }]
+keywords = [
+    "ocr",
+    "pdf-to-markdown",
+    "document-intelligence",
+    "table-extraction",
+    "onnx",
+    "rapidocr",
+    "mcp",
+    "model-context-protocol",
+    "langchain",
+    "llamaindex",
+    "rag",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ibrahim-Salman19/OCR"
+Repository = "https://github.com/Ibrahim-Salman19/OCR"
+Documentation = "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/INTRODUCTION.md"
+"Live Demo" = "https://ocr-book.streamlit.app/"
+Changelog = "https://github.com/Ibrahim-Salman19/OCR/blob/main/CHANGELOG.md"
+Issues = "https://github.com/Ibrahim-Salman19/OCR/issues"
 
 # requirements.txt (the "CRITICAL STABILITY CORE" pins, notably
 # streamlit==1.32.0 for Python <3.14) is the actual source of truth --

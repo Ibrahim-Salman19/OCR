@@ -3,31 +3,32 @@
 > **Blueprint. Link. Architect. Stylize. Trigger.**  
 > The ultra-high-throughput, memory-bounded OCR and document intelligence engine for PDFs, PowerPoints (PPTX), and scanned images.
 
-[![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen.svg)](https://github.com/your-username/blast-ocr)
-[![Tests](https://img.shields.io/badge/Tests-654%2F654%20Passing%20(100%25)-brightgreen.svg)](https://github.com/your-username/blast-ocr/actions)
+[![Status](https://img.shields.io/badge/Status-Active--Development-brightgreen.svg)](https://github.com/Ibrahim-Salman19/OCR)
+[![Tests](https://img.shields.io/badge/Tests-675%2F677%20Passing%20(2%20skipped)-brightgreen.svg)](https://github.com/Ibrahim-Salman19/OCR/actions)
 [![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Throughput](https://img.shields.io/badge/Throughput-29.1%20Pages%2FSec-orange.svg)](docs/BENCHMARKS_2026.md)
-[![Table TEDS](https://img.shields.io/badge/Table%20TEDS-99.2%25-green.svg)](eval/teds_evaluator.py)
-[![Memory Leak](https://img.shields.io/badge/Memory%20Leak-0.000%20MB%2Fpage-success.svg)](eval/stress_test.py)
+[![CER Reduction](https://img.shields.io/badge/CER%20vs%20EasyOCR-%E2%88%9218%25-orange.svg)](docs/BENCHMARKS_2026.md)
+[![Latency vs EasyOCR](https://img.shields.io/badge/Latency%20vs%20EasyOCR-7.7x%20faster-orange.svg)](docs/adr/0005-phase3-engine-bakeoff.md)
+[![Memory Leak](https://img.shields.io/badge/1k--page%20leak%20slope-0.0002%20MB%2Fpage-success.svg)](eval/results/stress_report.json)
 [![MCP Native](https://img.shields.io/badge/MCP-Native%20Stdio%2FSSE-purple.svg)](mcp.json)
 [![LLMs.txt](https://img.shields.io/badge/LLMs.txt-v2%20Standard-blueviolet.svg)](llms.txt)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-ff4b4b.svg)](https://ocr-book.streamlit.app/)
 
 ---
 
 ## ⚡ Quick Answer: What is B.L.A.S.T. OCR?
 
-**B.L.A.S.T. OCR** is an enterprise-grade, high-throughput document intelligence and optical character recognition (OCR) engine for Python. Powered by batched ONNX Runtime execution (`TensorRT` $\to$ `CUDA` $\to$ `DirectML` $\to$ `CPU`), it converts multi-page PDFs, scanned images, and PPTX decks into structured Markdown, dual-layer searchable sandwich PDFs, styled DOCX, EPUB 3.0, and structured JSON with **29.1 pages/sec GPU throughput**, **99.2% table extraction accuracy (TEDS)**, **LaTeX mathematical formula detection**, and **zero memory leaks ($\le 0.000\text{ MB/page}$)** across 1,000+ page archives.
+**B.L.A.S.T. OCR** is a self-hosted, offline document intelligence and optical character recognition (OCR) engine for Python. Powered by ONNX Runtime execution (RapidOCR/PP-OCRv4, with multi-provider fallback across `CUDA` → `DirectML` → `CPU`), it converts multi-page PDFs, scanned images, and PPTX decks into structured Markdown, dual-layer searchable sandwich PDFs, styled DOCX, EPUB 3.0, and structured JSON. In an in-repo bake-off against EasyOCR on the same 14-page gold corpus (`docs/adr/0005-phase3-engine-bakeoff.md`), its default RapidOCR engine cut mean character error rate by **18%** (0.2338 → 0.1916 CER) and per-page CPU latency by **7.7x** (117.8s → 15.3s), while a 1,000-page streaming stress test measured a memory growth slope of **0.0002 MB/page** (`eval/results/stress_report.json`) — all reproducible from the committed eval harness, not vendor-reported numbers.
 
 ---
 
 ## 🌟 Core Capabilities & Features
 
-- 🏎️ **30x Faster Batched ONNX Inference**: Vectorized SIMD pre-processing, dynamic aspect-ratio bucketing, and PP-OCRv4 ONNX acceleration.
-- 📊 **99.2% Table Extraction (TEDS)**: Reconstructs complex, nested, and borderless tables directly into GitHub Flavored Markdown and HTML.
+- 🏎️ **ONNX Runtime OCR Engine**: RapidOCR (PP-OCRv4 weights) with multi-provider fallback (`CUDA` → `DirectML` → `CPU`), replacing an EasyOCR baseline at 7.7x lower per-page CPU latency (`docs/adr/0005`).
+- 📊 **Table Structure Extraction**: Morphological grid detection and cell reconstruction into GitHub Flavored Markdown and HTML, scored with a built-in Tree-Edit-Distance (TEDS) evaluator (`eval/teds_evaluator.py`).
 - 📐 **LaTeX Math & Formula Recognition**: Automatically recognizes inline ($...$) and display ($$...$$) mathematical expressions into KaTeX Markdown.
-- 🌊 **Bounded Streaming Memory Architecture**: Sliding-window buffer chunking prevents VRAM/RAM accumulation on 1,000+ page archives.
-- 📄 **Selectable Dual-Layer Sandwich PDFs**: Generates 100% compliant PDF/A dual-layer documents with exact word-level bounding box alignment.
+- 🌊 **Bounded Streaming Memory Architecture**: Sliding-window buffer chunking measured at a 0.0002 MB/page growth slope across a 1,000-page streaming stress test (`eval/results/stress_report.json`).
+- 📄 **Selectable Dual-Layer Sandwich PDFs**: Generates dual-layer documents (PyMuPDF) with word-level bounding box alignment between the visible scan and the invisible text layer.
 - 🤖 **Native AI Agent Protocols**: Built-in [Model Context Protocol (MCP)](mcp.json) server, [`llms.txt`](llms.txt), [`llms-full.txt`](llms-full.txt), [LangChain](blast_ocr/integrations/), and [LlamaIndex](blast_ocr/integrations/) connectors.
 - 🛡️ **Forensic PII Redaction**: Automated masking for SSNs, credit cards, emails, phone numbers, API keys, JWT tokens, IPv4/IPv6, and IBANs.
 - 🐝 **Distributed Multi-Worker Swarm**: 3-tier priority queue (`high`/`default`/`low`), automated zombie reaper, DLQ quarantine, and exponential retry backoff.
@@ -35,23 +36,33 @@
 
 ---
 
-## 📊 2026 Benchmark Comparison Matrix (Gold Standard)
+## 📊 In-Repo Engine Bake-Off (Reproducible, 14-Page Gold Corpus)
 
-| Feature / Dimension | **B.L.A.S.T. OCR (2026)** | Tesseract 5.3 | EasyOCR 1.7 | Docling (IBM) | Marker / Nougat | Surya OCR | AWS Textract |
-|---|---|---|---|---|---|---|---|
-| **GPU Pages / Sec** | **29.1** | N/A (CPU) | 1.9 | 3.4 | 0.5 | 4.8 | ~2.0 (API) |
-| **CPU Pages / Sec** | **4.2** | 0.8 | 0.3 | 2.1 | 0.1 | 0.6 | N/A (Cloud) |
-| **Mean CER** | **0.1916** | 0.4992 | 0.2338 | 0.2250 | 0.2104 | 0.2015 | 0.1850 |
-| **Mean WER** | **0.4739** | 0.7288 | 0.4968 | 0.4910 | 0.4820 | 0.4790 | 0.4600 |
-| **Reading Order $\tau$** | **0.9758** | 0.6770 | 0.9641 | 0.9680 | 0.9510 | 0.9620 | 0.9600 |
-| **Table TEDS Score** | **99.2%** | 54.1% | 68.4% | 91.5% | 88.0% | 93.2% | 95.0% |
-| **1,000-Page Leak Slope**| **0.000 MB/p** | 0.120 MB/p | 0.480 MB/p | 0.080 MB/p | 0.350 MB/p | 0.210 MB/p | N/A |
-| **Searchable PDF** | **Yes (PyMuPDF)** | Yes | No | No | No | No | Extra Cost |
-| **LaTeX Math Parser** | **Yes (Built-in)**| No | No | Partial | Yes | Yes | No |
-| **Native MCP Server** | **Yes (Built-in)**| No | No | No | No | No | No |
-| **Offline Privacy** | **100% Local** | 100% Local | 100% Local | 100% Local | 100% Local | 100% Local | Cloud Bound |
+This is B.L.A.S.T.'s own internal engine bake-off — every number below comes from a committed JSON result file and can be re-run with `python -m eval.run`. It is **not** a claim about how competing standalone tools perform; it compares the OCR backends B.L.A.S.T. has actually shipped and measured on the same corpus.
 
-*Empirical proofs and reproducible harness available in [`eval/benchmark_suite.py`](eval/benchmark_suite.py) and [`docs/BENCHMARKS_2026.md`](docs/BENCHMARKS_2026.md).*
+| Metric | **RapidOCR (current default)** | EasyOCR (previous default) | Phase-0 pipeline (Tesseract-backed) |
+|---|---|---|---|
+| **Mean CER** | **0.1916** | 0.2338 | 0.4992 |
+| **Mean WER** | **0.4739** | 0.4968 | 0.7288 |
+| **Reading Order τ** | **0.9758** | 0.9641 | n/a |
+| **Avg. CPU latency/page** | **~15.3s** | ~117.8s | n/a |
+| **Source** | [`eval/results/rapidocr_candidate.json`](eval/results/rapidocr_candidate.json), [ADR 0005](docs/adr/0005-phase3-engine-bakeoff.md) | ADR 0005 | [ADR 0003](docs/adr/0003-phase1-preprocessing-fixes.md) |
+
+Separately, a 1,000-page streaming stress test measured a memory growth slope of **0.0002 MB/page** against a 0.005 MB/page fail threshold (zero-leak gate passed) — see [`eval/results/stress_report.json`](eval/results/stress_report.json) and [`eval/stress_test.py`](eval/stress_test.py).
+
+**GPU throughput, table-extraction TEDS score, and multi-engine (Docling/Marker/Surya/Textract) head-to-head numbers are not yet benchmarked in this repo** and are intentionally omitted here rather than estimated. For third-party-reported context on those tools (with sources), see [`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md).
+
+### Feature comparison (capability, not performance)
+
+| Feature | **B.L.A.S.T. OCR** | Tesseract | EasyOCR | Docling | Marker | AWS Textract |
+|---|---|---|---|---|---|---|
+| Dual-layer searchable PDF | **Yes (PyMuPDF)** | No | No | No | No | Extra cost |
+| LaTeX math parser | **Yes (built-in)** | No | No | Partial | Yes | No |
+| Native MCP server | **Yes (built-in)** | No | No | No | No | No |
+| LangChain / LlamaIndex loaders | **Yes (built-in)** | No | No | Yes (LangChain) | No | Yes (AWS SDK) |
+| Runs fully offline | **Yes** | Yes | Yes | Yes | Yes | No (cloud API) |
+
+*License and independent-benchmark citations for Docling, Marker, MinerU, and AWS Textract are tracked in [`docs/COMPETITIVE_LANDSCAPE.md`](docs/COMPETITIVE_LANDSCAPE.md) rather than restated here, since they weren't run against B.L.A.S.T.'s own corpus.*
 
 ---
 
@@ -61,8 +72,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/blast-ocr.git
-cd blast-ocr
+git clone https://github.com/Ibrahim-Salman19/OCR.git
+cd OCR
 
 # Install core runtime dependencies
 pip install -r requirements.txt
@@ -149,14 +160,14 @@ python run.py thick_book.pdf --dewarp --engine ensemble --out book_results/
 
 ## ❓ Frequently Asked Questions (FAQ & AEO Answers)
 
-### Why is B.L.A.S.T. OCR faster than traditional OCR engines?
-B.L.A.S.T. uses vectorized SIMD pre-processing, aspect-ratio dynamic bucketing, and batched ONNX Runtime execution with multi-provider acceleration (`TensorRT` $\to$ `CUDA` $\to$ `DirectML` $\to$ `CPU`). This avoids per-page Python execution bottlenecks and enables up to 29.1 pages/sec on modern GPUs.
+### Why is B.L.A.S.T. OCR faster than EasyOCR?
+B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with `CUDA` → `DirectML` → `CPU` fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while also reducing mean CER by 18% — see [ADR 0005](docs/adr/0005-phase3-engine-bakeoff.md) for the full methodology and raw results.
 
 ### How does B.L.A.S.T. prevent memory leaks on large PDF archives?
-B.L.A.S.T. implements a bounded sliding-window streaming architecture (`StreamingPDFProcessor`) that caps concurrent in-memory page buffers and aggressively recycles intermediate image tensors, achieving an empirically verified leak slope of $\le 0.000\text{ MB/page}$ over 1,000+ page runs.
+B.L.A.S.T. implements a bounded sliding-window streaming architecture (`StreamingPDFProcessor`) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold — see [`eval/results/stress_report.json`](eval/results/stress_report.json).
 
-### How does B.L.A.S.T. extract tables with 99.2% TEDS accuracy?
-B.L.A.S.T. uses a specialized morphological table detection and cell reconstruction engine (`TableExtractor`) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables.
+### How does B.L.A.S.T. extract tables?
+B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (`TableExtractor`) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator (`eval/teds_evaluator.py`) for regression testing.
 
 ### How do I connect B.L.A.S.T. OCR to Claude Desktop, Cursor, or Antigravity?
 B.L.A.S.T. includes a native Model Context Protocol (MCP) server. Run `python -m blast_ocr.mcp_server` or configure `mcp.json` to expose `blast_ocr_process`, `blast_ocr_extract_tables`, `blast_ocr_extract_formulas`, and `blast_ocr_semantic_chunk` tools with zero configuration.
@@ -183,7 +194,7 @@ B.L.A.S.T. utilizes PyMuPDF to synthesize dual-layer searchable PDFs where the o
 
 ## 🧪 Rigorous Testing & Quality Gates
 
-B.L.A.S.T. is verified by **654 automated tests** with 100% deterministic green status:
+B.L.A.S.T. has **677 automated tests** covering the OCR pipeline, security boundary, queue/storage backends, and export formats — the full suite currently passes **675/677 (2 skipped)**, verified via `python3 -m pytest tests/ -q`:
 
 ```bash
 # Run full test suite with coverage
@@ -215,33 +226,26 @@ Distributed under the **MIT License**. Free for commercial and private use.
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "@id": "https://blast-ocr.dev/#software",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#software",
       "name": "B.L.A.S.T. OCR Engine",
       "alternateName": "BLAST OCR",
-      "description": "Enterprise-grade high-throughput OCR and document intelligence engine with ONNX Runtime multi-provider acceleration, bounded memory streaming, 99.2% TEDS table extraction, and native AI Agent MCP integration.",
+      "description": "Self-hosted OCR and document intelligence engine with ONNX Runtime multi-provider acceleration, bounded streaming memory, table extraction, and native AI Agent MCP integration.",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Linux, Windows, macOS",
       "softwareVersion": "3.0.0",
-      "downloadUrl": "https://github.com/your-username/blast-ocr",
-      "installUrl": "https://blast-ocr.dev/docs/DEPLOYMENT_GUIDE.md",
+      "downloadUrl": "https://github.com/Ibrahim-Salman19/OCR",
+      "installUrl": "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md",
       "license": "https://opensource.org/licenses/MIT",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
       },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "5.0",
-        "ratingCount": "654",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
       "featureList": [
-        "Batched ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU)",
-        "99.2% Table Extraction (TEDS) to Markdown and HTML",
+        "ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU)",
+        "Table structure extraction to Markdown and HTML with a built-in TEDS evaluator",
         "LaTeX Mathematical Formula Recognition (inline and display)",
-        "Bounded Streaming Memory Architecture (< 0.000 MB/page leak slope)",
+        "Bounded streaming memory architecture (0.0002 MB/page growth slope, measured)",
         "Dual-Layer Selectable Sandwich PDF Generation",
         "Native Model Context Protocol (MCP) Server for AI Agents",
         "LangChain and LlamaIndex Document Loaders",
@@ -251,36 +255,36 @@ Distributed under the **MIT License**. Free for commercial and private use.
     },
     {
       "@type": "SoftwareSourceCode",
-      "@id": "https://blast-ocr.dev/#sourcecode",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#sourcecode",
       "name": "B.L.A.S.T. OCR Source Code",
       "programmingLanguage": "Python",
       "runtimePlatform": "Python 3.9, 3.10, 3.11, 3.12, 3.13",
-      "codeRepository": "https://github.com/your-username/blast-ocr",
+      "codeRepository": "https://github.com/Ibrahim-Salman19/OCR",
       "license": "https://opensource.org/licenses/MIT"
     },
     {
       "@type": "TechArticle",
-      "@id": "https://blast-ocr.dev/#documentation",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#documentation",
       "headline": "B.L.A.S.T. OCR Engine: Technical Architecture and Performance Benchmarks",
-      "description": "Complete architectural overview, empirical benchmark proofs, and integration guide for B.L.A.S.T. OCR.",
-      "keywords": "Python OCR, ONNX OCR, High-Throughput Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
+      "description": "Complete architectural overview, reproducible benchmark harness, and integration guide for B.L.A.S.T. OCR.",
+      "keywords": "Python OCR, ONNX OCR, Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
       "inLanguage": "en-US",
       "publisher": {
         "@type": "Organization",
         "name": "B.L.A.S.T. OCR Project",
-        "url": "https://blast-ocr.dev"
+        "url": "https://github.com/Ibrahim-Salman19/OCR"
       }
     },
     {
       "@type": "FAQPage",
-      "@id": "https://blast-ocr.dev/#faq",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#faq",
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "Why is B.L.A.S.T. OCR faster than traditional OCR engines?",
+          "name": "Why is B.L.A.S.T. OCR faster than EasyOCR?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "B.L.A.S.T. uses vectorized SIMD pre-processing, aspect-ratio dynamic bucketing, and batched ONNX Runtime execution with multi-provider acceleration (TensorRT -> CUDA -> DirectML -> CPU). This avoids per-page Python execution bottlenecks and enables up to 29.1 pages/sec on modern GPUs."
+            "text": "B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with CUDA -> DirectML -> CPU fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while reducing mean CER by 18%. See ADR 0005 in the repository for the full methodology and raw results."
           }
         },
         {
@@ -288,15 +292,15 @@ Distributed under the **MIT License**. Free for commercial and private use.
           "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and aggressively recycles intermediate image tensors, achieving an empirically verified leak slope of <= 0.000 MB/page over 1,000+ page runs."
+            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold."
           }
         },
         {
           "@type": "Question",
-          "name": "How does B.L.A.S.T. extract tables with 99.2% TEDS accuracy?",
+          "name": "How does B.L.A.S.T. extract tables?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "B.L.A.S.T. uses a specialized morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables."
+            "text": "B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator for regression testing."
           }
         },
         {
@@ -319,7 +323,7 @@ Distributed under the **MIT License**. Free for commercial and private use.
     },
     {
       "@type": "HowTo",
-      "@id": "https://blast-ocr.dev/#howto",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#howto",
       "name": "How to Process Multi-Page PDFs to Markdown with B.L.A.S.T. OCR",
       "description": "Step-by-step guide to installing and processing PDF documents to Markdown with high accuracy.",
       "step": [

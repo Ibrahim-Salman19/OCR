@@ -1,6 +1,6 @@
 ---
 name: blast-ocr-agent
-description: "AI Agent interface and operational skill for B.L.A.S.T. OCR Engine. Use when an autonomous agent needs to parse PDFs, images, PPTX, extract structured tables (TEDS 99.2%), detect mathematical formulas, redact PII, or stream high-throughput document intelligence with sub-second latency and zero memory leaks."
+description: "AI Agent interface and operational skill for B.L.A.S.T. OCR Engine. Use when an autonomous agent needs to parse PDFs, images, PPTX, extract structured tables, detect mathematical formulas, redact PII, or stream document intelligence with a bounded-memory streaming architecture (see docs/BENCHMARKS_2026.md for verified numbers)."
 version: 1.0.0
 tags:
   - ocr
@@ -20,7 +20,7 @@ tags:
 
 ### Key Capabilities Matrix for Agents
 - **⚡ Batched ONNX Inference**: Up to 30x faster than Tesseract/EasyOCR via vectorized SIMD preprocessing and dynamic aspect-ratio bucketing.
-- **📊 Table Extraction & TEDS Evaluation**: Converts complex borders and borderless tabular scans into clean GitHub Markdown and HTML tables with 99.2% TEDS accuracy.
+- **📊 Table Extraction & TEDS Evaluation**: Converts complex borders and borderless tabular scans into clean GitHub Markdown and HTML tables, scored with a built-in TEDS evaluator (no end-to-end corpus score recorded yet — see `docs/BENCHMARKS_2026.md`).
 - **📐 Mathematical Formulas**: Detects inline ($...$) and display (153232...153232) formulas and converts them into pristine KaTeX/LaTeX Markdown syntax.
 - **🌊 Bounded Streaming Memory**: Constant O(1) memory footprint (< 0.005 MB/page leak slope) for 1,000+ page archives.
 - **🛡️ Enterprise PII Redaction**: Automatic redaction of SSNs, emails, phone numbers, credit cards, IBANs, and API keys.

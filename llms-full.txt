@@ -1,18 +1,18 @@
 # B.L.A.S.T. OCR Engine: Complete Technical Specification & LLM Reference (llms-full.txt)
 
-> **Version**: 3.0.0 (2026 Enterprise Edition)  
-> **Status**: Certified Production-Grade (654/654 Tests Passing, 100% Deterministic)  
-> **Repository**: B.L.A.S.T. (Blueprint. Link. Architect. Stylize. Trigger.)  
-> **Primary Interfaces**: Python SDK, Model Context Protocol (MCP), FastAPI REST API, CLI, Streamlit Sovereign GUI, LangChain Loader, LlamaIndex Reader
+> **Version**: 3.0.0
+> **Status**: 677 automated tests, 675 passing / 2 skipped (verified 2026-08-29, `python3 -m pytest tests/ -q`)
+> **Repository**: `https://github.com/Ibrahim-Salman19/OCR` -- B.L.A.S.T. (Blueprint. Link. Architect. Stylize. Trigger.)
+> **Primary Interfaces**: Python SDK, Model Context Protocol (MCP), FastAPI REST API, CLI, Streamlit GUI, LangChain Loader, LlamaIndex Reader
 
 ---
 
 ## 1. System Overview & Architectural Invariants
 
-B.L.A.S.T. is an ultra-high-throughput, enterprise-scale OCR and document intelligence engine. It is engineered from the ground up to solve the three fatal flaws of legacy OCR pipelines:
-1. **Slow CPU/GPU Inference Latency**: Solved via vectorized SIMD batch preprocessing, dynamic aspect-ratio bucketing, and batched ONNX Runtime execution with automatic provider fallback (TensorRT -> CUDA -> DirectML -> CPU).
-2. **VRAM & RAM Accumulation Leaks on Large Books/Archives**: Solved via bounded sliding-window memory buffer chunking with an empirically verified leak slope of <= 0.000 MB/page across 1,000+ page runs.
-3. **Loss of Document Semantics (Broken Tables, Corrupted Math Formulas, Severed Headers)**: Solved via morphological table extraction with 99.2% TEDS accuracy, KaTeX/LaTeX formula recognition, running header/footer suppression, and hierarchical Table of Contents (TOC) extraction.
+B.L.A.S.T. is a self-hosted OCR and document intelligence engine. It targets three common failure modes of naive OCR pipelines:
+1. **Slow CPU Inference Latency**: Addressed via ONNX Runtime execution (RapidOCR/PP-OCRv4) with automatic provider fallback (CUDA -> DirectML -> CPU); measured 7.7x lower per-page CPU latency than an EasyOCR/PyTorch baseline on the project's 14-page gold corpus (ADR 0005). No GPU throughput has been benchmarked yet.
+2. **VRAM & RAM Accumulation on Large Books/Archives**: Addressed via bounded sliding-window memory buffer chunking; a 1,000-page streaming stress test measured a leak slope of 0.0002 MB/page (`eval/results/stress_report.json`).
+3. **Loss of Document Semantics (Broken Tables, Corrupted Math Formulas, Severed Headers)**: Addressed via morphological table extraction (scored with a built-in TEDS evaluator, no end-to-end corpus score recorded yet), KaTeX/LaTeX formula recognition, running header/footer suppression, and hierarchical Table of Contents (TOC) extraction.
 
 ### Architectural Philosophy: The A.N.T. Paradigm
 - **Layer 1: Architect (Protocols & SOPs)**: Defines schemas, priority policies, and state transitions.
@@ -23,20 +23,26 @@ B.L.A.S.T. is an ultra-high-throughput, enterprise-scale OCR and document intell
 
 ## 2. Quantitative Performance Benchmarks
 
-### 2.1 Benchmark Results (14-Page Gold Standard & 1,000-Page Stress Archive)
+### 2.1 In-Repo Engine Bake-Off (14-Page Gold Corpus, Reproducible via `python -m eval.run`)
 
-| Metric / Dimension | B.L.A.S.T. ONNX Engine | Tesseract 5.x | EasyOCR 1.7 | Docling | Marker/Nougat |
+This table compares OCR backends B.L.A.S.T. has actually run on its own corpus (source: `eval/results/rapidocr_candidate.json`, ADR 0005, ADR 0003). It does not include Docling, Marker, Surya, or AWS Textract, because those tools have never been run against this corpus -- see `docs/COMPETITIVE_LANDSCAPE.md` for properly-cited third-party numbers on those tools (different corpora/metrics, not directly comparable).
+
+| Metric | RapidOCR (current default) | EasyOCR (previous default) | Phase-0 (Tesseract-backed) |
+|---|---|---|---|
+| **Mean Character Error Rate (CER)** | **0.1916** | 0.2338 | 0.4992 |
+| **Mean Word Error Rate (WER)** | **0.4739** | 0.4968 | 0.7288 |
+| **Reading Order Tau Correlation** | **0.9758** | 0.9641 | n/a |
+| **Avg. CPU Latency/Page** | **~15.3s** | ~117.8s | n/a |
+
+Feature comparison (capability, not measured performance):
+
+| Feature | B.L.A.S.T. | Tesseract | EasyOCR | Docling | Marker |
 |---|---|---|---|---|---|
-| **Batched Throughput (GPU)** | **29.1 pages/sec** | N/A (CPU Only) | 1.9 pages/sec | 3.4 pages/sec | 0.5 pages/sec |
-| **Throughput (CPU)** | **4.2 pages/sec** | 0.8 pages/sec | 0.3 pages/sec | 2.1 pages/sec | N/A |
-| **Mean Character Error Rate (CER)** | **0.1916** | 0.4992 | 0.2338 | 0.2250 | 0.2104 |
-| **Mean Word Error Rate (WER)** | **0.4739** | 0.7288 | 0.4968 | 0.4910 | 0.4820 |
-| **Reading Order Tau Correlation** | **0.9758** | 0.6770 | 0.9641 | 0.9680 | 0.9510 |
-| **Table Extraction (TEDS Score)** | **99.2%** | 54.1% | 68.4% | 91.5% | 88.0% |
-| **1,000-Page Memory Leak Slope** | **<= 0.000 MB/page** | 0.120 MB/page | 0.480 MB/page | 0.080 MB/page | 0.350 MB/page |
 | **Searchable Sandwich PDF Output** | **Native PyMuPDF** | Basic PDF | Plugin Required | No | No |
-| **PII Redaction Redaction** | **Forensic 8-Class** | None | None | None | None |
+| **PII Redaction** | **Forensic 8-Class** | None | None | None | None |
 | **Native AI Agent MCP Server** | **Built-In (stdio/SSE)**| None | None | None | None |
+
+1,000-page streaming memory test: leak slope of **0.0002 MB/page** against a 0.005 MB/page fail threshold (`eval/results/stress_report.json`). GPU throughput and an end-to-end table-extraction TEDS score are not yet benchmarked -- see `docs/BENCHMARKS_2026.md` §5 for the full list of open gaps.
 
 ---
 
@@ -75,9 +81,9 @@ result = pipeline.process(
 #     "metadata": {
 #         "page_count": 48,
 #         "confidence": 0.942,
-#         "execution_time_seconds": 1.65,
-#         "pages_per_second": 29.1,
-#         "provider": "CUDAExecutionProvider"
+#         "execution_time_seconds": 734.4,  # ~15.3s/page CPU, single-stream; see docs/BENCHMARKS_2026.md
+#         "pages_per_second": 0.065,
+#         "provider": "CPUExecutionProvider"
 #     }
 # }
 ```
@@ -162,7 +168,7 @@ AI agents in Claude, Cursor, Windsurf, Devin, and Antigravity can connect via st
 
 ### Available MCP Tools:
 - `blast_ocr_process`: Complete document OCR extraction with multi-format generation.
-- `blast_ocr_extract_tables`: High-precision morphological table extraction (99.2% TEDS).
+- `blast_ocr_extract_tables`: Morphological table extraction to Markdown/HTML, scored with a built-in TEDS evaluator.
 - `blast_ocr_extract_formulas`: Mathematical formula detection & KaTeX LaTeX formatting.
 - `blast_ocr_semantic_chunk`: Structure-aware RAG chunking.
 - `blast_ocr_get_job_status`: Query queue status and download URLs.

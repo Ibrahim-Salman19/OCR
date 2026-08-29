@@ -2,16 +2,16 @@
   "schema_version": "v1",
   "name_for_human": "B.L.A.S.T. OCR Engine",
   "name_for_model": "blast_ocr",
-  "description_for_human": "Ultra-fast, enterprise-scale OCR, table extraction, and document intelligence engine.",
-  "description_for_model": "High-throughput document intelligence and OCR engine. Capable of batched ONNX extraction, 99.2% TEDS table extraction, KaTeX math parsing, bounded memory streaming, and PII masking for PDFs and images.",
+  "description_for_human": "Self-hosted OCR, table extraction, and document intelligence engine.",
+  "description_for_model": "Self-hosted document intelligence and OCR engine. Capable of ONNX-accelerated extraction, table structure extraction to Markdown/HTML, KaTeX math parsing, bounded memory streaming, and PII masking for PDFs and images.",
+  "x-status": "This project has no hosted deployment at a fixed domain, so 'api.url' below is intentionally relative -- it resolves once you self-host blast_ocr/api/app.py (FastAPI), which serves /openapi.json at its own root. AI agents should prefer the native MCP server (mcp.json) over this legacy ChatGPT-plugin-style manifest.",
   "auth": {
     "type": "none"
   },
   "api": {
     "type": "openapi",
-    "url": "https://blast-ocr.dev/openapi.json"
+    "url": "/openapi.json"
   },
-  "logo_url": "https://blast-ocr.dev/assets/logo.png",
-  "contact_email": "support@blast-ocr.dev",
-  "legal_info_url": "https://blast-ocr.dev/legal"
+  "contact_email": "hafiz.muhammad.ibrahim.salman@gmail.com",
+  "legal_info_url": "https://github.com/Ibrahim-Salman19/OCR/blob/main/LICENSE"
 }

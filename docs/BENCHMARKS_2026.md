@@ -1,56 +1,65 @@
-# 📊 2026 Document Intelligence & OCR Benchmark Report
+# 📊 Document Intelligence & OCR Benchmark Report
 
-> Comprehensive benchmark evaluation comparing **B.L.A.S.T. OCR (ONNX Engine)** against industry standard engines (Tesseract 5.x, EasyOCR 1.7, Marker/Nougat, Docling, Unstructured, Surya, and AWS Textract).
+> Reproducible internal benchmarks for **B.L.A.S.T. OCR**, generated from the committed evaluation harness (`eval/`). Every number below traces to a JSON result file checked into this repository — run the commands in Section 4 to reproduce them yourself.
 
 ---
 
 ## 1. Executive Summary
 
-- **Throughput**: B.L.A.S.T. batched ONNX engine delivers **29.1 pages/sec** on GPU and **4.2 pages/sec** on CPU (up to **30x faster** than legacy engines).
-- **Accuracy**: Character Error Rate (CER) of **0.1916** and Word Error Rate (WER) of **0.4739** on the 14-Page Gold Standard Corpus.
-- **Reading Order**: Kendall's Tau correlation of **0.9758** across multi-column scientific layouts.
-- **Table Extraction (TEDS)**: **99.2%** Tree Edit Distance based Similarity on PubTabNet morphological benchmarks.
-- **Memory Leak Stability**: **<= 0.000 MB/page** linear regression slope across continuous 1,000-page archive stress tests.
+- **Engine bake-off (14-page gold corpus)**: The default RapidOCR (ONNX) engine reduces mean Character Error Rate (CER) by **18%** versus the previous EasyOCR/PyTorch default (0.2338 → 0.1916) and cuts average CPU per-page latency by **7.7x** (117.8s → 15.3s). Source: [`eval/results/rapidocr_candidate.json`](../eval/results/rapidocr_candidate.json), [ADR 0005](adr/0005-phase3-engine-bakeoff.md).
+- **Reading order**: Kendall's Tau of **0.9758** on the same corpus (up from 0.9641 with EasyOCR).
+- **Memory stability**: A 1,000-page streaming stress test measured a linear growth slope of **0.0002 MB/page** against a 0.005 MB/page fail threshold — see [`eval/results/stress_report.json`](../eval/results/stress_report.json).
+- **Table extraction**: A Tree-Edit-Distance-based (TEDS) evaluator ships in `eval/teds_evaluator.py` and is unit-tested for correctness (`tests/test_teds_evaluator.py`), but there is **no recorded end-to-end TEDS score on a table corpus yet** — that run has not been done. Treat any TEDS percentage you see elsewhere for this project as aspirational until this file is updated with a real result.
+- **GPU throughput**: Every benchmark in this repository was run with `"gpu_available": false` (CPU-only environment). B.L.A.S.T. supports CUDA/DirectML execution providers via ONNX Runtime, but **no GPU throughput number has been measured here** — do not cite a GPU pages/sec figure for this project until one is recorded.
 
 ---
 
-## 2. Comparative Benchmark Matrix
+## 2. Engine Bake-Off Matrix (In-Repo, Reproducible)
 
-| Feature / Metric | B.L.A.S.T. OCR (2026) | Tesseract 5.3 | EasyOCR 1.7 | Docling (IBM) | Marker / Nougat | Surya OCR | AWS Textract (Cloud) |
-|---|---|---|---|---|---|---|---|
-| **GPU Pages/Sec** | **29.1** | N/A (CPU) | 1.9 | 3.4 | 0.5 | 4.8 | ~2.0 (API Bound) |
-| **CPU Pages/Sec** | **4.2** | 0.8 | 0.3 | 2.1 | 0.1 | 0.6 | N/A |
-| **Mean CER** | **0.1916** | 0.4992 | 0.2338 | 0.2250 | 0.2104 | 0.2015 | 0.1850 |
-| **Mean WER** | **0.4739** | 0.7288 | 0.4968 | 0.4910 | 0.4820 | 0.4790 | 0.4600 |
-| **Table TEDS Score** | **99.2%** | 54.1% | 68.4% | 91.5% | 88.0% | 93.2% | 95.0% |
-| **1k-Page Leak Slope**| **0.000 MB/p** | 0.120 MB/p | 0.480 MB/p | 0.080 MB/p | 0.350 MB/p | 0.210 MB/p | N/A |
-| **Dual-Layer PDF** | **Yes (PyMuPDF)** | Yes | No | No | No | No | Extra Cost |
-| **LaTeX Math Parser** | **Yes (Built-in)**| No | No | Partial | Yes | Yes | No |
-| **MCP Server Native** | **Yes (Built-in)**| No | No | No | No | No | No |
-| **Privacy / Offline** | **100% Local** | 100% Local | 100% Local | 100% Local | 100% Local | 100% Local | Cloud (Third-Party)|
+| Metric | **RapidOCR (current default)** | EasyOCR (previous default) | Phase-0 pipeline (Tesseract-backed) |
+|---|---|---|---|
+| **Mean CER** | **0.1916** | 0.2338 | 0.4992 |
+| **Mean WER** | **0.4739** | 0.4968 | 0.7288 |
+| **Reading Order τ** | **0.9758** | 0.9641 | n/a |
+| **Fact pass rate** | 40.4% (19/47) | 44.7% (21/47) | n/a |
+| **Avg. CPU latency/page** | **~15.3s** | ~117.8s | n/a |
 
----
+Sources: [`eval/results/rapidocr_candidate.json`](../eval/results/rapidocr_candidate.json) (promoted to `baseline.json`), [ADR 0005](adr/0005-phase3-engine-bakeoff.md), [ADR 0003](adr/0003-phase1-preprocessing-fixes.md) (Phase-0 baseline).
 
-## 3. Memory & VRAM Regression Slope Verification
-
-Memory stability was tested over a 1,000-page PDF document stream using `eval/stress_test.py`:
-- Initial RSS Memory: `142.4 MB`
-- Post-1,000-Page RSS Memory: `142.6 MB`
-- Linear Leak Slope: `+0.0002 MB/page` (Passing threshold: <= 0.005 MB/page)
-- Peak VRAM Allocation: Constant `0.0 MB` in CPU/RapidOCR mode, bounded buffer in CUDA mode.
+This table compares OCR backends **B.L.A.S.T. has actually run** on its own corpus. It is not a claim about how Docling, Marker, Surya, or AWS Textract perform — those tools have not been run against this corpus. For third-party-reported numbers on those tools (with original sources), see [`COMPETITIVE_LANDSCAPE.md`](COMPETITIVE_LANDSCAPE.md); note those sources use different corpora and metrics (e.g. olmOCR-bench pass rate), so they are not directly comparable to the CER/WER numbers above.
 
 ---
 
-## 4. Reproducing Benchmarks
+## 3. Memory & Streaming Architecture Verification
 
-Run the automated evaluation suite locally:
+Measured over a 1,000-page synthetic streaming run using `eval/stress_test.py` (validates the bounded-buffer chunking architecture; it does not run full OCR inference on all 1,000 pages, so this is a memory-bound test, not a throughput benchmark):
+- Initial RSS Memory: `35.57 MB`
+- Peak RSS Memory: `35.78 MB`
+- Linear Leak Slope: `0.00023 MB/page` (fail threshold: `0.005 MB/page`)
+- Zero-leak gate: **Passed**
+
+Source: [`eval/results/stress_report.json`](../eval/results/stress_report.json).
+
+---
+
+## 4. Reproducing These Benchmarks
+
 ```bash
-# Run latency & throughput suite
-python -m eval.benchmark_suite
+# Engine bake-off on the 14-page gold corpus (CER/WER/reading-order)
+python -m eval.run
 
-# Run 1,000-page memory leak stress suite
-python -m eval.stress_suite
+# 1,000-page streaming memory stress test
+python -m eval.stress_test
 
-# Run PubTabNet TEDS table evaluator
-python -m eval.teds_evaluator
+# TEDS metric unit tests (does not yet produce an end-to-end corpus score)
+python -m pytest tests/test_teds_evaluator.py -v
 ```
+
+## 5. What's Not Yet Benchmarked
+
+Being transparent about gaps is part of keeping this document trustworthy:
+- No GPU throughput has been measured (CPU-only development environment).
+- No end-to-end TEDS score exists for real scanned tables — only the metric implementation is tested.
+- No head-to-head run against Docling, Marker, Surya, or AWS Textract exists on B.L.A.S.T.'s own corpus.
+
+If you run any of these yourself, a PR adding the result JSON alongside this file is welcome.
