@@ -62,4 +62,4 @@ Being transparent about gaps is part of keeping this document trustworthy:
 - No end-to-end TEDS score exists for real scanned tables — only the metric implementation is tested.
 - No head-to-head run against Docling, Marker, Surya, or AWS Textract exists on B.L.A.S.T.'s own corpus.
 
-If you run any of these yourself, a PR adding the result JSON alongside this file is welcome.
+If you run any of these yourself, a PR adding the result JSON alongside this file is welcome. One thing to know before attempting it: a PyPI metadata check (no install) shows Marker pulls `torch`, `transformers`, and `surya-ocr` as hard dependencies — a multi-GB footprint — and this project's own `benchmark_report.json` already shows 2.9GB peak RSS at batch size 8 in an environment with 7.64GB total RAM. A 3-engine run in that envelope has a real chance of OOM before it has a chance of producing a number worth publishing; budget for more RAM or run it engine-by-engine rather than all at once. Docling's dependencies are extras-gated (`docling-slim[standard]`) and likely lighter, but weren't checked as deeply.

@@ -6,7 +6,7 @@
         "-m",
         "blast_ocr.mcp_server"
       ],
-      "description": "High-throughput document intelligence, table extraction, and OCR engine with ONNX Runtime acceleration."
+      "description": "Self-hosted document intelligence, table extraction, and OCR engine with ONNX Runtime acceleration."
     }
   }
 }

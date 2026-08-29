@@ -856,8 +856,8 @@ def render_landing_page() -> None:
         "</p>"
         '<div class="blast-landing-features">'
         '<div class="blast-feature-card"><div class="blast-feature-icon">&#9889;</div>'
-        "<h3>GPU-Accelerated Inference</h3>"
-        "<p>Batched ONNX tensor inference with dynamic sizing for sub-second page latency.</p></div>"
+        "<h3>ONNX Multi-Provider Inference</h3>"
+        "<p>Batched ONNX Runtime execution with CUDA, DirectML, and CPU provider fallback.</p></div>"
         '<div class="blast-feature-card"><div class="blast-feature-icon">&#128279;</div>'
         "<h3>Distributed Swarm Queue</h3>"
         "<p>Redis-backed priority queue with worker heartbeats, retry backoff, and dead-letter quarantine.</p></div>"

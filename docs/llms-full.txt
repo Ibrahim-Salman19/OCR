@@ -171,7 +171,8 @@ AI agents in Claude, Cursor, Windsurf, Devin, and Antigravity can connect via st
 - `blast_ocr_extract_tables`: Morphological table extraction to Markdown/HTML, scored with a built-in TEDS evaluator.
 - `blast_ocr_extract_formulas`: Mathematical formula detection & KaTeX LaTeX formatting.
 - `blast_ocr_semantic_chunk`: Structure-aware RAG chunking.
-- `blast_ocr_get_job_status`: Query queue status and download URLs.
+
+(Job-status querying is available via the REST API, `GET /v1/ocr/jobs/{job_id}` -- it is not currently exposed as its own MCP tool.)
 
 ---
 
