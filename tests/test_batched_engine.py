@@ -147,6 +147,35 @@ class TestBatchPreprocessor:
             f"16-bit mid-gray pixel saturated instead of rescaling: mean={loaded.mean()}"
         )
 
+    def test_load_image_cmyk_bytes_and_path_agree_and_are_not_saturated(self):
+        """GAP-11: a CMYK raster decoded via the bytes path and the on-disk
+        path must produce identical, non-saturated RGB (cv2's CMYK decode
+        behavior is undocumented/build-dependent; the fix routes CMYK
+        through a PIL decode + explicit color transform instead, which must
+        behave the same regardless of input form).
+        """
+        preprocessor = BatchPreprocessor()
+        cmyk_img = Image.new("CMYK", (16, 16), (102, 77, 51, 26))  # mid-tone, no embedded ICC
+
+        buf = io.BytesIO()
+        cmyk_img.save(buf, format="TIFF")
+        from_bytes = preprocessor.load_image(buf.getvalue())
+
+        with tempfile.NamedTemporaryFile(suffix=".tiff", delete=False) as f:
+            cmyk_img.save(f.name, format="TIFF")
+            tiff_path = f.name
+        try:
+            from_path = preprocessor.load_image(tiff_path)
+        finally:
+            os.unlink(tiff_path)
+
+        assert from_bytes.shape == from_path.shape == (16, 16, 3)
+        np.testing.assert_array_equal(from_bytes, from_path)
+        # A mid-tone patch must land well inside the range, not clipped to
+        # near-black or near-white.
+        mean = from_bytes.reshape(-1, 3).mean()
+        assert 20 < mean < 235, f"CMYK mid-tone patch was clipped/saturated: mean={mean}"
+
     def test_load_image_rejects_decompression_bomb(self):
         """GAP-02: Image.MAX_IMAGE_PIXELS only warns (doesn't raise) until 2x
         its configured ceiling, and cv2.imdecode enforces no pixel ceiling of

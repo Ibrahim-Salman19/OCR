@@ -74,3 +74,27 @@ def has_alpha_channel(source: Union[bytes, str, Path]) -> bool:
     except Exception:
         return False
     return mode in ("RGBA", "LA") or (mode == "P" and has_transparency_info)
+
+
+def is_cmyk(source: Union[bytes, str, Path]) -> bool:
+    """Peeks a raster's header (no pixel decode) to determine whether it
+    declares a CMYK color mode.
+
+    Used to route CMYK rasters through a PIL decode + explicit color-space
+    transform (blast_ocr.core.color_manager) instead of cv2's decode path,
+    whose CMYK handling is undocumented and build/codec dependent -- most
+    notably, whether an Adobe-produced CMYK JPEG's pre-inverted channels
+    (APP14 marker) get undone before color conversion varies by libjpeg
+    build. Returns False if the header can't be parsed by PIL.
+    """
+    try:
+        opened = (
+            Image.open(io.BytesIO(source))
+            if isinstance(source, (bytes, bytearray))
+            else Image.open(source)
+        )
+        with opened as probe:
+            mode = probe.mode
+    except Exception:
+        return False
+    return mode == "CMYK"

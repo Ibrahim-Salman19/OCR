@@ -18,7 +18,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from blast_ocr.security.image_sanitizer import enforce_pixel_ceiling, has_alpha_channel
+from blast_ocr.core.color_manager import ColorSpaceManager
+from blast_ocr.security.image_sanitizer import enforce_pixel_ceiling, has_alpha_channel, is_cmyk
 
 Image.MAX_IMAGE_PIXELS = 100_000_000  # 10,000 x 10,000 max pixels decompression protection
 MAX_IMAGE_DIMENSION = 10_000
@@ -140,6 +141,8 @@ class BatchPreprocessor:
             raise ValueError(f"Unsupported numpy image shape: {source.shape}")
 
         if isinstance(source, Image.Image):
+            if source.mode == "CMYK":
+                source = ColorSpaceManager.convert_cmyk_to_srgb(source)
             source = _normalize_pil_high_bit_depth(source)
             if source.mode in ("RGBA", "LA") or (source.mode == "P" and "transparency" in source.info):
                 rgba = np.array(source.convert("RGBA"))
@@ -155,12 +158,17 @@ class BatchPreprocessor:
             if buf.size == 0:
                 raise ValueError("Empty image buffer.")
             enforce_pixel_ceiling(source)
-            # IMREAD_COLOR is correct (and already handles CMYK/16-bit
-            # correctly) for the common case. Only switch to IMREAD_UNCHANGED
-            # -- which preserves the raw channel PIL's header confirmed is
-            # real alpha -- when the header actually declares transparency;
-            # guessing from a decoded array's channel count instead would
-            # misread a CMYK image's 4th (ink) channel as alpha.
+            if is_cmyk(source):
+                # cv2's CMYK decode path is build/codec dependent (GAP-11);
+                # decode via PIL and convert explicitly instead.
+                pil_img = Image.open(io.BytesIO(source))
+                return BatchPreprocessor.load_image(pil_img)
+            # IMREAD_COLOR is correct (and already handles 16-bit correctly)
+            # for the common case. Only switch to IMREAD_UNCHANGED -- which
+            # preserves the raw channel PIL's header confirmed is real alpha
+            # -- when the header actually declares transparency; guessing
+            # from a decoded array's channel count instead would misread a
+            # CMYK image's 4th (ink) channel as alpha.
             decode_flag = cv2.IMREAD_UNCHANGED if has_alpha_channel(source) else cv2.IMREAD_COLOR
             img = cv2.imdecode(buf, decode_flag)
             if img is None:
@@ -173,6 +181,10 @@ class BatchPreprocessor:
                 raise FileNotFoundError(f"Image file not found: {path_str}")
 
             enforce_pixel_ceiling(path_str)
+
+            if is_cmyk(path_str):
+                pil_img = Image.open(path_str)
+                return BatchPreprocessor.load_image(pil_img)
 
             decode_flag = cv2.IMREAD_UNCHANGED if has_alpha_channel(path_str) else cv2.IMREAD_COLOR
             img = cv2.imread(path_str, decode_flag)
