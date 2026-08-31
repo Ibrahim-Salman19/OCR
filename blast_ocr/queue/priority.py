@@ -33,6 +33,17 @@ class PriorityQueueManager:
     DLQ_KEY = "blast_ocr:queue:dlq"
     DELAYED_KEY = "blast_ocr:delayed_jobs"
 
+    # Anti-starvation aging (TAX-STR-02): dequeue() otherwise drains HIGH to
+    # empty before ever looking at DEFAULT/LOW. Under continuous HIGH-priority
+    # arrival -- the realistic failure mode, not a momentary burst -- that
+    # queue is never observed empty, so DEFAULT/LOW jobs wait forever. Once
+    # the oldest job in a lower queue has waited past its threshold, it is
+    # popped ahead of the strict sweep on the *next* dequeue() call,
+    # guaranteeing forward progress without changing the ordering a fresh
+    # (unaged) job experiences.
+    LOW_AGING_THRESHOLD_SECONDS: float = 60.0
+    DEFAULT_AGING_THRESHOLD_SECONDS: float = 30.0
+
     def __init__(self, redis_client=None):
         if redis_client is None:
             try:
@@ -77,13 +88,72 @@ class PriorityQueueManager:
             self.redis.lpush(key, json.dumps(payload))
         return payload
 
+    def _oldest_job_age_seconds(self, priority: str) -> Optional[float]:
+        """
+        Peeks (without popping) the oldest queued job's age for a priority
+        tier. RPOP consumes from the tail, so index -1 is exactly the item
+        the next rpop() would return -- peeking it via LRANGE(-1, -1) is
+        non-destructive. Uses LRANGE rather than LINDEX since it's the one
+        list-read primitive every Redis client/mock in this codebase (real
+        redis-py, fakeredis, and the in-memory test fallback) implements.
+        Returns None if the queue is empty or the entry can't be parsed
+        (treated by callers as "not aged", never as an error).
+        """
+        key = self.queue_key(priority)
+        try:
+            tail = self.redis.lrange(key, -1, -1)
+        except Exception:
+            return None
+        if not tail:
+            return None
+        raw = tail[0]
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        try:
+            payload = json.loads(raw)
+            enqueued_at = float(payload["enqueued_at"])
+        except Exception:
+            return None
+        return time.time() - enqueued_at
+
+    def _pop_aged_job(self, priority: str) -> Optional[Tuple[str, Dict[str, Any]]]:
+        """Pops the oldest job from a priority tier once it has been confirmed aged."""
+        key = self.queue_key(priority)
+        raw_payload = self.redis.rpop(key)
+        if raw_payload is None:
+            return None
+        if isinstance(raw_payload, bytes):
+            raw_payload = raw_payload.decode("utf-8")
+        try:
+            payload = json.loads(raw_payload)
+            if not isinstance(payload, dict):
+                payload = {"job_id": str(payload), "priority": priority}
+        except Exception:
+            payload = {"job_id": str(raw_payload), "raw": str(raw_payload), "priority": priority}
+        return priority, payload
+
     def dequeue(self, timeout: int = 1) -> Optional[Tuple[str, Dict[str, Any]]]:
         """
-        Dequeues next job strictly adhering to HIGH -> DEFAULT -> LOW priority order.
+        Dequeues the next job, strictly adhering to HIGH -> DEFAULT -> LOW
+        priority order UNLESS a lower-tier job has aged past its starvation
+        threshold, in which case that aged job is served first to guarantee
+        forward progress under sustained higher-priority load (TAX-STR-02).
         Returns (priority, job_payload_dict) or None if queues are empty.
         """
         if not self.redis:
             return None
+
+        # 0. Anti-starvation aging check (checked worst-tier-first: an aged
+        # LOW job takes precedence over an aged DEFAULT job).
+        for priority, threshold in (
+            (PriorityLevel.LOW, self.LOW_AGING_THRESHOLD_SECONDS),
+            (PriorityLevel.DEFAULT, self.DEFAULT_AGING_THRESHOLD_SECONDS),
+        ):
+            age = self._oldest_job_age_seconds(priority)
+            if age is not None and age >= threshold:
+                aged_result = self._pop_aged_job(priority)
+                if aged_result is not None:
+                    return aged_result
 
         keys = [self.queue_key(p) for p in PriorityLevel.ALL]
 

@@ -4,6 +4,7 @@ Opaque-box test suite verifying 3-tier priority levels (high, default, low),
 strict priority ordering via atomic BRPOP, payload serialization, and queue metrics.
 """
 
+import json
 import time
 import pytest
 
@@ -38,6 +39,44 @@ class TestPriorityQueueScheduling:
             actual_ids.append(payload["job_id"])
 
         assert actual_ids == expected_ids, f"Expected order {expected_ids}, got {actual_ids}"
+
+    def test_aged_low_priority_job_preempts_sustained_high_traffic(self, mock_redis):
+        """
+        GAP-10: strict HIGH -> DEFAULT -> LOW ordering starves LOW/DEFAULT
+        under continuous HIGH-priority arrival, since the HIGH queue is
+        never observed empty. A LOW job that has waited past
+        LOW_AGING_THRESHOLD_SECONDS must be served even while HIGH keeps
+        arriving, guaranteeing forward progress.
+        """
+        qm = PriorityQueueManager(redis_client=mock_redis)
+
+        # Enqueue a LOW job whose recorded enqueue time is already past the
+        # starvation threshold (simulating a job that has waited that long,
+        # without an actual real-time sleep in the test).
+        aged_payload = {
+            "job_id": "job_low_starved",
+            "source_path": "starved.pdf",
+            "priority": PriorityLevel.LOW,
+            "enqueued_at": time.time() - qm.LOW_AGING_THRESHOLD_SECONDS - 5.0,
+            "retry_count": 0,
+            "config_overrides": {},
+        }
+        mock_redis.lpush(qm.queue_key(PriorityLevel.LOW), json.dumps(aged_payload))
+
+        # Simulate sustained HIGH-priority load: more HIGH jobs keep arriving,
+        # so the HIGH queue is never empty across these dequeue() calls.
+        for i in range(3):
+            qm.enqueue(job_id=f"job_high_{i}", source_path=f"h{i}.pdf", priority=PriorityLevel.HIGH)
+
+        priority, payload = qm.dequeue(timeout=1)
+        assert (priority, payload["job_id"]) == (PriorityLevel.LOW, "job_low_starved")
+
+        # HIGH jobs are untouched and still dequeue normally afterward.
+        remaining_ids = []
+        for _ in range(3):
+            p, pl = qm.dequeue(timeout=1)
+            remaining_ids.append(pl["job_id"])
+        assert remaining_ids == ["job_high_0", "job_high_1", "job_high_2"]
 
     def test_priority_payload_structure_and_metadata(self, mock_redis):
         """
