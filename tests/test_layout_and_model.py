@@ -90,6 +90,55 @@ class TestLayoutEngine:
             "Right Col Line 2",
         ]
 
+    def test_spanning_header_does_not_collapse_two_columns(self):
+        """GAP-04: a full-width title/banner sitting above a two-column body
+        must not corrupt the column-gap sweep. Before the fix, the header's
+        own xmax participated in the gutter search alongside the column
+        spans, erasing the gap and merging both columns into reading order
+        as if they were one.
+        """
+        engine = LayoutEngine()
+        detections = [
+            {"text": "Chapter Title Spanning The Full Page Width", "bbox": [20, 10, 980, 40], "confidence": 0.99},
+            {"text": "Left Col Line 1", "bbox": [50, 100, 200, 120], "confidence": 0.99},
+            {"text": "Left Col Line 2", "bbox": [50, 150, 200, 170], "confidence": 0.99},
+            {"text": "Right Col Line 1", "bbox": [350, 100, 500, 120], "confidence": 0.99},
+            {"text": "Right Col Line 2", "bbox": [350, 150, 500, 170], "confidence": 0.99},
+        ]
+        page = engine.process_page_detections(detections, 1, 1000, 1000)
+        all_lines = [line.text for block in page.blocks for line in block.lines]
+
+        assert all_lines == [
+            "Chapter Title Spanning The Full Page Width",
+            "Left Col Line 1",
+            "Left Col Line 2",
+            "Right Col Line 1",
+            "Right Col Line 2",
+        ]
+
+    def test_segment_columns_is_a_permutation_of_input_spans(self):
+        """GAP-04 invariant: column segmentation must never drop or duplicate
+        a span, including a span straddling a spanning header's y position
+        and two spans that are field-for-field identical (which a naive
+        equality-based partition, e.g. `s not in already_placed`, would
+        remove as if they were the same instance twice).
+        """
+        engine = LayoutEngine()
+        header_bbox = BoundingBox(xmin=20, ymin=100, xmax=980, ymax=130)
+        header = Span(text="Spanning Header", bbox=header_bbox, confidence=0.99)
+        straddler_bbox = BoundingBox(xmin=50, ymin=90, xmax=200, ymax=140)
+        straddler = Span(text="Straddles Header Y Range", bbox=straddler_bbox, confidence=0.99)
+        dup_bbox = BoundingBox(xmin=50, ymin=200, xmax=200, ymax=220)
+        dup_a = Span(text="Duplicate Text", bbox=dup_bbox, confidence=0.99)
+        dup_b = Span(text="Duplicate Text", bbox=dup_bbox.model_copy(), confidence=0.99)
+
+        spans = [header, straddler, dup_a, dup_b]
+        columns = engine._segment_columns(spans, glyph_height=24.0, reference_width=1000.0)
+
+        flattened = [s for col in columns for s in col]
+        assert len(flattened) == len(spans)
+        assert sorted(s.text for s in flattened) == sorted(s.text for s in spans)
+
     def test_dual_page_spread_split(self):
         """Tests dual-page spread splitting where width > 1.2 * height."""
         engine = LayoutEngine()

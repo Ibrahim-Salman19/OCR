@@ -20,6 +20,15 @@ class LayoutEngine:
     from unstructured 2D bounding box detections.
     """
 
+    # A span at least this wide relative to the physical page is treated as a
+    # full-width spanning element (title, running header, banner) rather than
+    # column-body text. Anchored to the physical page width, not the bounding
+    # extent of the spans being segmented -- anchoring to the latter is
+    # self-referential and false-positives on a narrow single-column page,
+    # where the body text's own tight bounding box makes ordinary lines look
+    # "spanning" relative to it.
+    SPANNING_HEADER_WIDTH_RATIO: float = 0.82
+
     def __init__(self, default_glyph_height: float = 24.0):
         self.default_glyph_height = default_glyph_height
 
@@ -52,6 +61,12 @@ class LayoutEngine:
         # 2. Check for dual-page book spread split (central vertical gutter)
         sub_page_spans_list = self._split_book_spread(spans, width, height, eff_glyph_height)
 
+        # Each physical page a spread splits into occupies roughly half the
+        # combined spread width; anchoring the spanning-header ratio to that
+        # (rather than the un-split full width) keeps the "full-width header"
+        # definition meaningful per physical page after the split.
+        page_ref_width = float(width) if len(sub_page_spans_list) <= 1 else float(width) / 2.0
+
         all_blocks: List[Block] = []
         global_reading_index = 0
 
@@ -60,7 +75,7 @@ class LayoutEngine:
                 continue
 
             # 3. Column / Block Segmentation (Recursive XY-Cut on sub-page spans)
-            columns = self._segment_columns(sub_spans, eff_glyph_height)
+            columns = self._segment_columns(sub_spans, eff_glyph_height, page_ref_width)
 
             for col_idx, col_spans in enumerate(columns):
                 if not col_spans:
@@ -157,7 +172,63 @@ class LayoutEngine:
 
         return [left_spans, right_spans]
 
-    def _segment_columns(self, spans: List[Span], glyph_height: float) -> List[List[Span]]:
+    def _segment_columns(
+        self, spans: List[Span], glyph_height: float, reference_width: float
+    ) -> List[List[Span]]:
+        """
+        Isolates full-width spanning elements (titles, running headers/banners)
+        from column-body text before column-gap detection, then recursively
+        XY-cuts each resulting y-band independently.
+
+        Without this, a spanning span's own xmax/xmin participate in the
+        vertical-gutter gap sweep below alongside genuine column text; a
+        header that stretches across where the gutter would otherwise be
+        erases the gap entirely and collapses a real two-column page into one
+        column (TAX-LAY-01).
+        """
+        if len(spans) < 2:
+            return [spans]
+
+        spanning = sorted(
+            (
+                s
+                for s in spans
+                if reference_width > 0
+                and s.bbox.width >= self.SPANNING_HEADER_WIDTH_RATIO * reference_width
+            ),
+            key=lambda s: s.bbox.center[1],
+        )
+        if not spanning:
+            return self._gap_sweep_columns(spans, glyph_height)
+
+        # Identity-based partition (not equality/`in`) so two spans with
+        # identical text and geometry are never conflated: each span is
+        # assigned to exactly one bucket, so total span count across all
+        # returned columns always equals len(spans).
+        spanning_ids = {id(s) for s in spanning}
+        candidates = [s for s in spans if id(s) not in spanning_ids]
+
+        header_centers = [h.bbox.center[1] for h in spanning]
+        bands: List[List[Span]] = [[] for _ in range(len(spanning) + 1)]
+        for s in candidates:
+            cy = s.bbox.center[1]
+            band_idx = 0
+            for i, header_cy in enumerate(header_centers):
+                if cy >= header_cy:
+                    band_idx = i + 1
+            bands[band_idx].append(s)
+
+        result: List[List[Span]] = []
+        for i, header in enumerate(spanning):
+            if bands[i]:
+                result.extend(self._gap_sweep_columns(bands[i], glyph_height))
+            result.append([header])
+        if bands[-1]:
+            result.extend(self._gap_sweep_columns(bands[-1], glyph_height))
+
+        return result
+
+    def _gap_sweep_columns(self, spans: List[Span], glyph_height: float) -> List[List[Span]]:
         """
         Recursive XY-cut to identify vertical column gaps.
         A vertical gap must be wider than 2.0 * glyph_height (or ~40px) to form separate columns.
