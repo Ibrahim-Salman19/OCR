@@ -35,6 +35,7 @@ from blast_ocr.core.exceptions import (
 )
 from blast_ocr.core.healing import healer
 from blast_ocr.core.exporter import save_output, sanitize_for_xml, extract_from_pptx
+from blast_ocr.security.image_sanitizer import enforce_pixel_ceiling
 from blast_ocr.core.page_signal import estimate_glyph_height
 
 logger = logging.getLogger(__name__)
@@ -133,6 +134,11 @@ class RobustOCRExtractor:
             # Load using CV2
             with open(image_path, "rb") as f:
                 file_bytes = f.read()
+            # cv2.imdecode enforces no pixel ceiling of its own -- it fully
+            # decodes into memory before this call could inspect dimensions,
+            # so the check has to happen against the (lazy, header-only)
+            # PIL peek before decoding, not after.
+            enforce_pixel_ceiling(file_bytes)
             img = cv2.imdecode(
                 np.frombuffer(file_bytes, dtype=np.uint8), cv2.IMREAD_COLOR
             )

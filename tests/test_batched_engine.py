@@ -7,6 +7,7 @@ ONNX Multi-Provider Session Manager, Vectorized CTC Tensor Decoder,
 Parallel DBNet Post-Processing, and Batched RapidOCR Engine.
 """
 
+import io
 import os
 import tempfile
 import time
@@ -18,6 +19,7 @@ from PIL import Image
 import pytest
 
 from blast_ocr.core.batch_preprocessor import BatchPreprocessor
+from blast_ocr.core.exceptions import DecompressionBombError
 from blast_ocr.core.engines import BatchedRapidOCREngine, BaseOCREngine, get_engine
 from blast_ocr.core.onnx_session import ONNXSessionManager
 from blast_ocr.core.tensor_decoder import (
@@ -114,6 +116,49 @@ class TestBatchPreprocessor:
         loaded = preprocessor.load_image(pil_rgba)
         assert loaded.shape == (10, 10, 3)
         assert np.all(loaded == 255), "Fully transparent PIL RGBA must composite to white, not black"
+
+    def test_load_image_from_bytes_alpha_composites_over_white_not_black(self):
+        """The bytes-input decode path used the same cv2.IMREAD_COLOR route
+        as the numpy/PIL-object branches did before QW-5, silently dropping
+        alpha to black instead of compositing over white -- QW-5 only fixed
+        the numpy-array and PIL-Image-object input branches, not this one,
+        which is the actual hot path for uploaded file bytes (TAX-IMG-06).
+        """
+        preprocessor = BatchPreprocessor()
+        transparent = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+        buf = io.BytesIO()
+        transparent.save(buf, format="PNG")
+        loaded = preprocessor.load_image(buf.getvalue())
+        assert loaded.shape == (10, 10, 3)
+        assert np.all(loaded == 255), "Fully transparent bytes-decoded PNG must composite to white, not black"
+
+    def test_load_image_from_bytes_16bit_tiff_no_saturation(self):
+        """GAP-08: a 16-bit TIFF mid-gray pixel must rescale to ~half of
+        uint8 range, not saturate to white under a naive high-bit-truncating
+        cast/convert.
+        """
+        preprocessor = BatchPreprocessor()
+        arr16 = np.full((20, 20), 33098, dtype=np.uint16)  # ~50% of 65535
+        im = Image.fromarray(arr16, mode="I;16")
+        buf = io.BytesIO()
+        im.save(buf, format="TIFF")
+        loaded = preprocessor.load_image(buf.getvalue())
+        assert np.isclose(loaded.mean(), 129, atol=3), (
+            f"16-bit mid-gray pixel saturated instead of rescaling: mean={loaded.mean()}"
+        )
+
+    def test_load_image_rejects_decompression_bomb(self):
+        """GAP-02: Image.MAX_IMAGE_PIXELS only warns (doesn't raise) until 2x
+        its configured ceiling, and cv2.imdecode enforces no pixel ceiling of
+        its own -- an oversized image must be rejected before either decoder
+        fully decodes it into memory.
+        """
+        preprocessor = BatchPreprocessor()
+        oversized = Image.new("RGB", (11_000, 11_000), (1, 2, 3))  # 121M px > 100M ceiling
+        buf = io.BytesIO()
+        oversized.save(buf, format="PNG")
+        with pytest.raises(DecompressionBombError):
+            preprocessor.load_image(buf.getvalue())
 
     def test_load_image_from_pil(self, sample_text_image: np.ndarray):
         preprocessor = BatchPreprocessor()

@@ -55,6 +55,32 @@ def test_ingestion_gateway_validation(tmp_path):
     assert payload.safe_filepath.name != "test.png"  # UUID generated
 
 
+def test_ingestion_gateway_rejects_pdf_polyglots(tmp_path):
+    # GAP-01: %PDF- present but not at offset 0 in a .pdf upload is a
+    # header-offset evasion vector (spec-compliant readers scan for the
+    # marker within the first 1024 bytes, not just byte 0).
+    offset_pdf = tmp_path / "offset.pdf"
+    offset_pdf.write_bytes(b"JUNK-PREFIX-BYTES" + b"%PDF-1.4\n%%EOF")
+    with pytest.raises(SecurityValidationError):
+        IngestionGateway.validate(str(offset_pdf))
+
+    # GAP-01: a file with a valid PNG header at byte 0 that also embeds a
+    # PDF signature is a cross-format polyglot -- accepted as an image by
+    # a naive offset-0 check, but still parsed as an executable PDF by any
+    # downstream reader that scans for %PDF- within its tolerance window.
+    polyglot_png = tmp_path / "polyglot.png"
+    polyglot_png.write_bytes(
+        b"\x89PNG\r\n\x1a\n" + b"A" * 64 + b"%PDF-1.4\n" + b"B" * 32
+    )
+    with pytest.raises(SecurityValidationError):
+        IngestionGateway.validate(str(polyglot_png))
+
+    # A legitimate, non-polyglot PDF must still pass.
+    good_pdf = tmp_path / "good.pdf"
+    good_pdf.write_bytes(b"%PDF-1.4\n%%EOF")
+    IngestionGateway.validate(str(good_pdf))
+
+
 def test_job_state_machine_and_fingerprint():
     assert JobStateMachine.can_transition(JobState.RECEIVED, JobState.VALIDATING)
     assert JobStateMachine.can_transition(JobState.PROCESSING, JobState.POST_PROCESSING)

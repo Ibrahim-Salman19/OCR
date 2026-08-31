@@ -18,6 +18,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from blast_ocr.security.image_sanitizer import enforce_pixel_ceiling, has_alpha_channel
+
 Image.MAX_IMAGE_PIXELS = 100_000_000  # 10,000 x 10,000 max pixels decompression protection
 MAX_IMAGE_DIMENSION = 10_000
 MAX_RECOGNITION_CROP_WIDTH = 1536  # Clamp for extreme aspect-ratio crops (e.g. panorama headers)
@@ -50,6 +52,45 @@ def _composite_over_white(color: np.ndarray, alpha: np.ndarray) -> np.ndarray:
     color_f = color.astype(np.float32)
     alpha_f = alpha.astype(np.float32)[..., None] / 255.0
     return (color_f * alpha_f + 255.0 * (1.0 - alpha_f)).astype(np.uint8)
+
+
+def _normalize_bit_depth(arr: np.ndarray) -> np.ndarray:
+    """Rescales a decoded raster to uint8 using its dtype's true numeric range.
+
+    A downstream implicit cast to uint8 (e.g. via cv2.cvtColor or a bare
+    `.astype(np.uint8)`) truncates/saturates instead of linearly rescaling:
+    a 16-bit TIFF mid-gray pixel at 33098/65535 (~50% intensity) clips to
+    255 (pure white) under a naive cast instead of the correct ~129/255,
+    which can wash an entire scanned page to blank white before OCR ever
+    sees it.
+    """
+    if arr.dtype == np.uint8:
+        return arr
+    if arr.dtype == np.uint16:
+        return (arr >> 8).astype(np.uint8)
+    arr_f = arr.astype(np.float64)
+    lo, hi = float(arr_f.min()), float(arr_f.max())
+    if hi <= lo:
+        return np.zeros(arr.shape, dtype=np.uint8)
+    return (((arr_f - lo) / (hi - lo)) * 255.0).astype(np.uint8)
+
+
+_HIGH_BIT_DEPTH_PIL_MODES = ("I;16", "I;16B", "I;16L", "I;16N")
+
+
+def _normalize_pil_high_bit_depth(img: Image.Image) -> Image.Image:
+    """Rescales a 16-bit-per-channel PIL image (common for archival/scanner
+    TIFFs) into a proper 8-bit grayscale image before any further
+    `.convert()` call. Pillow's own `.convert('RGB')`/`.convert('L')` on
+    these modes does not rescale -- it truncates high-order bits, so e.g. a
+    mid-gray 16-bit pixel at 33098/65535 comes out as pure white (255)
+    instead of the correct ~129/255. Non-16-bit modes pass through
+    untouched.
+    """
+    if img.mode not in _HIGH_BIT_DEPTH_PIL_MODES:
+        return img
+    arr8 = _normalize_bit_depth(np.array(img, dtype=np.uint16))
+    return Image.fromarray(arr8, mode="L")
 
 
 class BatchPreprocessor:
@@ -85,15 +126,21 @@ class BatchPreprocessor:
         Load any image source into a standard BGR numpy uint8 array without intermediate disk writes.
         """
         if isinstance(source, np.ndarray):
+            source = _normalize_bit_depth(source)
             if source.ndim == 2:
                 return cv2.cvtColor(source, cv2.COLOR_GRAY2BGR)
             if source.ndim == 3 and source.shape[2] == 4:
                 return _composite_over_white(source[:, :, :3], source[:, :, 3])
+            if source.ndim == 3 and source.shape[2] == 2:
+                # Grayscale + alpha (e.g. cv2.IMREAD_UNCHANGED on a PNG "LA" image).
+                color3 = cv2.cvtColor(source[:, :, 0], cv2.COLOR_GRAY2BGR)
+                return _composite_over_white(color3, source[:, :, 1])
             if source.ndim == 3 and source.shape[2] == 3:
                 return source.copy()
             raise ValueError(f"Unsupported numpy image shape: {source.shape}")
 
         if isinstance(source, Image.Image):
+            source = _normalize_pil_high_bit_depth(source)
             if source.mode in ("RGBA", "LA") or (source.mode == "P" and "transparency" in source.info):
                 rgba = np.array(source.convert("RGBA"))
                 rgb = _composite_over_white(rgba[:, :, :3], rgba[:, :, 3])
@@ -107,17 +154,28 @@ class BatchPreprocessor:
             buf = np.frombuffer(source, dtype=np.uint8)
             if buf.size == 0:
                 raise ValueError("Empty image buffer.")
-            img = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+            enforce_pixel_ceiling(source)
+            # IMREAD_COLOR is correct (and already handles CMYK/16-bit
+            # correctly) for the common case. Only switch to IMREAD_UNCHANGED
+            # -- which preserves the raw channel PIL's header confirmed is
+            # real alpha -- when the header actually declares transparency;
+            # guessing from a decoded array's channel count instead would
+            # misread a CMYK image's 4th (ink) channel as alpha.
+            decode_flag = cv2.IMREAD_UNCHANGED if has_alpha_channel(source) else cv2.IMREAD_COLOR
+            img = cv2.imdecode(buf, decode_flag)
             if img is None:
                 raise ValueError("Failed to decode image from bytes buffer")
-            return img
+            return BatchPreprocessor.load_image(img)
 
         if isinstance(source, (str, Path)):
             path_str = str(source)
             if not os.path.exists(path_str):
                 raise FileNotFoundError(f"Image file not found: {path_str}")
 
-            img = cv2.imread(path_str, cv2.IMREAD_COLOR)
+            enforce_pixel_ceiling(path_str)
+
+            decode_flag = cv2.IMREAD_UNCHANGED if has_alpha_channel(path_str) else cv2.IMREAD_COLOR
+            img = cv2.imread(path_str, decode_flag)
             if img is None:
                 # Fallback to PIL decode for formats OpenCV might not natively support
                 with open(path_str, "rb") as f:
@@ -125,17 +183,18 @@ class BatchPreprocessor:
                 if len(data) == 0:
                     raise ValueError("Empty image file.")
                 buf = np.frombuffer(data, dtype=np.uint8)
-                img = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+                decode_flag = cv2.IMREAD_UNCHANGED if has_alpha_channel(data) else cv2.IMREAD_COLOR
+                img = cv2.imdecode(buf, decode_flag)
                 if img is None:
-                    pil_img = Image.open(io.BytesIO(data)).convert("RGB")
-                    img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                    pil_img = Image.open(io.BytesIO(data))
+                    return BatchPreprocessor.load_image(pil_img)
 
-            if img is not None and (img.shape[0] > MAX_IMAGE_DIMENSION or img.shape[1] > MAX_IMAGE_DIMENSION):
+            if img.shape[0] > MAX_IMAGE_DIMENSION or img.shape[1] > MAX_IMAGE_DIMENSION:
                 raise ValueError(
                     f"Image dimensions {img.shape[1]}x{img.shape[0]} exceed maximum safe dimension "
                     f"({MAX_IMAGE_DIMENSION}x{MAX_IMAGE_DIMENSION}). Possible decompression bomb."
                 )
-            return img
+            return BatchPreprocessor.load_image(img)
 
         raise TypeError(f"Unsupported image input type: {type(source)}")
 

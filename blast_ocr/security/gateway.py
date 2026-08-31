@@ -55,10 +55,56 @@ BIDI_OVERRIDE_CHARS = frozenset(
     "‪‫‬‭‮⁦⁧⁨⁩"
 )
 
+# PDF readers (per ISO 32000) tolerate the "%PDF-" marker anywhere within the
+# first 1024 bytes of a file, not just at offset 0. That tolerance is what
+# makes PDF/X polyglots possible: a payload whose byte 0 satisfies some other
+# format's magic-byte check (e.g. a PNG or ZIP header) while a spec-compliant
+# PDF reader still finds "%PDF-" later in the same stream and treats the
+# whole file as an executable PDF (embedded JavaScript, /Launch actions,
+# etc). Scanning this same window for every upload, regardless of its
+# declared extension, closes that bypass.
+PDF_POLYGLOT_SIGNATURE = b"%PDF-"
+PDF_POLYGLOT_SCAN_WINDOW = 1024
+
+# Cross-format polyglot detection (a non-.pdf file embedding a PDF signature)
+# is restricted to formats with a fixed-layout binary header, where a
+# literal "%PDF-" this early in the file is genuinely anomalous. ZIP-based
+# containers (.pptx) and text formats can legitimately contain that 5-byte
+# ASCII sequence in an entry name or file path within the same window
+# without being a polyglot payload, so they're excluded to avoid rejecting
+# legitimate uploads.
+RASTER_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".webp"}
+
 
 class SecurityValidationError(Exception):
     """Raised when an ingested file violates security policies."""
     pass
+
+
+def _check_pdf_polyglot(sample: bytes, ext: str) -> None:
+    """Rejects PDF magic-header offset evasion and cross-format PDF polyglots.
+
+    A `.pdf` upload must present its header at byte 0 -- an offset match means
+    the true PDF signature is hiding behind attacker-controlled leading bytes.
+    Any non-`.pdf` upload that contains a PDF signature within the same
+    reader-tolerated window is a polyglot payload smuggled under a different
+    declared extension.
+    """
+    offset = sample.find(PDF_POLYGLOT_SIGNATURE)
+    if offset == -1:
+        return
+    if ext == ".pdf":
+        if offset != 0:
+            raise SecurityValidationError(
+                f"PDF magic header found at offset {offset} instead of 0 "
+                "(polyglot / evasion vector)"
+            )
+        return
+    if ext in RASTER_IMAGE_EXTENSIONS:
+        raise SecurityValidationError(
+            f"File declared as '{ext}' contains an embedded PDF signature at byte "
+            f"{offset} (polyglot payload)"
+        )
 
 
 def _scan_text_sample(sample: bytes, ext: str) -> None:
@@ -115,17 +161,17 @@ class IngestionGateway:
                 f"File size {file_size} bytes exceeds maximum ceiling of {cls.MAX_FILE_SIZE_BYTES} bytes"
             )
 
+        with open(src, "rb") as f:
+            sample = f.read(PDF_POLYGLOT_SCAN_WINDOW)
+        _check_pdf_polyglot(sample, ext)
+
         if ext in MAGIC_BYTES:
-            with open(src, "rb") as f:
-                header = f.read(16)
-            matched = any(header.startswith(sig) for sig in MAGIC_BYTES[ext])
+            matched = any(sample.startswith(sig) for sig in MAGIC_BYTES[ext])
             if not matched:
                 raise SecurityValidationError(
                     f"File header magic bytes do not match expected signature for extension '{ext}'"
                 )
         elif ext in {".txt", ".md", ".markdown"}:
-            with open(src, "rb") as f:
-                sample = f.read(1024)
             _scan_text_sample(sample, ext)
 
     @classmethod
@@ -152,18 +198,18 @@ class IngestionGateway:
                 f"File size {file_size} bytes exceeds maximum ceiling of {cls.MAX_FILE_SIZE_BYTES} bytes"
             )
 
-        # Validate magic bytes
+        # Validate magic bytes and PDF polyglot evasion
+        with open(src, "rb") as f:
+            sample = f.read(PDF_POLYGLOT_SCAN_WINDOW)
+        _check_pdf_polyglot(sample, ext)
+
         if ext in MAGIC_BYTES:
-            with open(src, "rb") as f:
-                header = f.read(16)
-            matched = any(header.startswith(sig) for sig in MAGIC_BYTES[ext])
+            matched = any(sample.startswith(sig) for sig in MAGIC_BYTES[ext])
             if not matched:
                 raise SecurityValidationError(
                     f"File header magic bytes do not match expected signature for extension '{ext}'"
                 )
         elif ext in {".txt", ".md", ".markdown"}:
-            with open(src, "rb") as f:
-                sample = f.read(1024)
             _scan_text_sample(sample, ext)
 
         # Compute SHA256 file fingerprint

@@ -10,6 +10,20 @@ class ImageLoadError(BLASTOCRException):
     pass
 
 
+class DecompressionBombError(ImageLoadError):
+    """Image pixel dimensions exceed the safe decode ceiling before any raster
+    decode is attempted; rejects the file instead of decoding it."""
+
+    def __init__(self, width: int, height: int, limit: int):
+        self.width = width
+        self.height = height
+        self.limit = limit
+        super().__init__(
+            f"Image {width}x{height} ({width * height} pixels) exceeds the "
+            f"{limit} pixel decompression-bomb ceiling"
+        )
+
+
 class OCREngineError(BLASTOCRException):
     """OCR engine initialization or processing failed"""
 
