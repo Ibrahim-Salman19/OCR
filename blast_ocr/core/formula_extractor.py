@@ -12,6 +12,13 @@ from dataclasses import dataclass
 from blast_ocr.core.document_model import Block, BlockType, Span, Line
 
 
+class _UnbalancedMathExpressionError(Exception):
+    """Raised internally when OCR'd math text has unmatched delimiters
+    (e.g. a dropped closing paren from a misread glyph). Never escapes
+    FormulaExtractor -- callers get the original text back unchanged
+    instead of a best-effort LaTeX string with unbalanced braces."""
+
+
 @dataclass
 class FormulaMatch:
     raw_text: str
@@ -33,7 +40,13 @@ class FormulaExtractor:
     }
 
     MATH_OPERATORS = {
-        "sum": "\\sum", "int": "\\int", "prod": "\\prod", "sqrt": "\\sqrt",
+        # "sqrt" is deliberately absent: it's handled exclusively by the
+        # balanced-paren sqrt(...) -> \sqrt{...} scanner below. Leaving it
+        # here would double-process it, since \bsqrt\b still matches the
+        # "sqrt" substring inside an already-converted "\sqrt{" (a leading
+        # backslash is a non-word character, so the word boundary doesn't
+        # care that it's there), producing "\\sqrt{" instead of "\sqrt{".
+        "sum": "\\sum", "int": "\\int", "prod": "\\prod",
         "+-": "\\pm", "<=": "\\le", ">=": "\\ge", "!=": "\\neq",
         "approx": "\\approx", "infty": "\\infty", "->": "\\rightarrow",
         "<->": "\\leftrightarrow", "times": "\\times", "div": "\\div",
@@ -67,18 +80,81 @@ class FormulaExtractor:
 
         return False
 
+    _SQRT_OPEN_PATTERN = re.compile(r"\bsqrt\s*\(")
+
+    @classmethod
+    def _convert_sqrt_balanced(cls, text: str) -> str:
+        """
+        Converts sqrt(...) -> \\sqrt{...} using explicit paren-depth tracking
+        instead of a non-greedy regex, so nested parentheses inside the
+        argument (e.g. "sqrt((a+b)/(c+d))") are matched to their true closing
+        paren rather than the first ")" encountered. Nested sqrt(...) calls
+        are converted recursively. Raises _UnbalancedMathExpressionError if a
+        "sqrt(" is never closed, rather than emitting a truncated argument.
+        """
+        result = []
+        i = 0
+        n = len(text)
+        while i < n:
+            match = cls._SQRT_OPEN_PATTERN.match(text, i)
+            if match:
+                paren_idx = match.end() - 1
+                depth = 1
+                j = paren_idx + 1
+                while j < n and depth > 0:
+                    if text[j] == "(":
+                        depth += 1
+                    elif text[j] == ")":
+                        depth -= 1
+                    j += 1
+                if depth != 0:
+                    raise _UnbalancedMathExpressionError(
+                        f"Unclosed sqrt( starting at offset {i}"
+                    )
+                inner = text[paren_idx + 1 : j - 1]
+                result.append("\\sqrt{" + cls._convert_sqrt_balanced(inner) + "}")
+                i = j
+            else:
+                result.append(text[i])
+                i += 1
+        return "".join(result)
+
+    @staticmethod
+    def _braces_balanced(text: str) -> bool:
+        depth = 0
+        for ch in text:
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth < 0:
+                    return False
+        return depth == 0
+
     @classmethod
     def convert_to_latex(cls, text: str) -> str:
         """
         Converts pseudo-math or OCR ASCII text into clean LaTeX syntax.
+
+        On any input whose delimiters can't be resolved (a dropped closing
+        paren, or a brace-balance mismatch that would otherwise surface as
+        broken LaTeX downstream), returns the original text unchanged rather
+        than a best-effort but structurally invalid conversion -- honest raw
+        text beats confidently wrong markup for OCR'd math.
         """
-        latex = text.strip()
+        stripped = text.strip()
 
-        # 1. Standardize fractions: a/b -> \frac{a}{b} when bounded
+        try:
+            # 1. Convert square roots first (balanced-paren scan), so a
+            # fraction living inside sqrt(...) -- e.g. "sqrt(a/b)" -- is
+            # still visible to the fraction pass below once it's wrapped in
+            # \sqrt{...}, instead of the naive regex ever seeing raw parens.
+            latex = cls._convert_sqrt_balanced(stripped)
+        except _UnbalancedMathExpressionError:
+            return stripped
+
+        # 2. Standardize fractions: a/b -> \frac{a}{b} when bounded
         latex = re.sub(r"([A-Za-z0-9_\^]+)\s*\/\s*([A-Za-z0-9_\^]+)", r"\\frac{\1}{\2}", latex)
-
-        # 2. Convert square roots: sqrt(x) -> \sqrt{x}
-        latex = re.sub(r"sqrt\s*\((.*?)\)", r"\\sqrt{\1}", latex)
 
         # 3. Standardize Greek names
         for g_name, g_latex in cls.GREEK_SYMBOLS.items():
@@ -95,6 +171,9 @@ class FormulaExtractor:
         latex = re.sub(r"\^([A-Za-z0-9]{2,})", r"^{\1}", latex)
         # 6. Handle subscripts: x_1 -> x_{1}, x_max -> x_{max}
         latex = re.sub(r"_([A-Za-z0-9]{2,})", r"_{\1}", latex)
+
+        if not cls._braces_balanced(latex):
+            return stripped
 
         return latex
 
