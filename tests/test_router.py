@@ -29,6 +29,21 @@ def test_get_ocr_engine_params():
     assert ScriptRouter.get_ocr_engine_params("unknown_script") == ["en"]
 
 
+def test_urdu_and_sibling_scripts_are_supported():
+    """Urdu ('ur') plus its Perso-Arabic sibling scripts were previously
+    absent from both tables entirely, so a detected 'ur' document silently
+    fell back to the ['en'] English-only language profile -- which cannot
+    recognize Perso-Arabic script glyphs at all (confirmed against a real
+    EasyOCR Reader: an ['en'] reader on real Urdu text returns only page
+    numbers and garbage, while ['en', 'ur'] correctly reads the words)."""
+    assert "ur" in ScriptRouter.SUPPORTED_SCRIPTS
+    assert "fa" in ScriptRouter.SUPPORTED_SCRIPTS
+    assert "ug" in ScriptRouter.SUPPORTED_SCRIPTS
+    assert ScriptRouter.get_ocr_engine_params("ur") == ["en", "ur"]
+    assert ScriptRouter.get_ocr_engine_params("fa") == ["en", "fa"]
+    assert ScriptRouter.get_ocr_engine_params("ug") == ["en", "ug"]
+
+
 def test_apply_auto_routing():
     mock_pipeline = MagicMock()
     mock_pipeline._config.ocr_languages = ["en"]

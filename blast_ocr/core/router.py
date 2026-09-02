@@ -19,6 +19,9 @@ class ScriptRouter:
         "pt": "portuguese",
         "zh": "chinese_sim",
         "ar": "arabic",
+        "ur": "urdu",
+        "fa": "persian",
+        "ug": "uyghur",
     }
 
     @staticmethod
@@ -49,6 +52,9 @@ class ScriptRouter:
             "es": ["en", "es"],
             "pt": ["en", "pt"],
             "ar": ["en", "ar"],
+            "ur": ["en", "ur"],
+            "fa": ["en", "fa"],
+            "ug": ["en", "ug"],
             "zh": ["en", "ch_sim"],
             "zh-cn": ["en", "ch_sim"],
             "zh-tw": ["en", "ch_tra"],
