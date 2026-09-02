@@ -33,11 +33,22 @@ import hashlib
 import logging
 import os
 import tempfile
+import threading
 import urllib.request
 from pathlib import Path
 from typing import Tuple
 
 logger = logging.getLogger(__name__)
+
+# Guards the whole check-download-verify-replace sequence in _ensure_file.
+# RapidOCREngine instances are created per worker thread (blast_ocr.core.
+# parallel's ThreadPoolExecutor), so several threads can call
+# ensure_arabic_model() concurrently on a cold cache -- without this lock,
+# two threads in the same process race on the same tmp_dest path (its name
+# is only unique per-process, via os.getpid(), not per-thread) and can
+# interleave writes into it before either side's os.replace() runs. Same
+# class of bug as image_sanitizer.py's _pil_ceiling_lock.
+_download_lock = threading.Lock()
 
 # Perso-Arabic script family: distinct languages, shared base script and
 # character repertoire, all covered by the same PP-OCRv5 Arabic-script model.
@@ -110,34 +121,35 @@ def _sha256_file(path: Path) -> str:
 
 
 def _ensure_file(dest: Path, url: str, expected_sha256: str) -> None:
-    if dest.exists() and _sha256_file(dest) == expected_sha256:
-        return
-    if not _download_enabled():
-        raise ArabicModelUnavailableError(
-            f"{dest.name} not found in cache ({dest.parent}) and "
-            "BLAST_OCR_RAPIDOCR_MODEL_DOWNLOAD_ENABLED disables fetching it. "
-            f"Pre-populate the cache or download manually from {url}"
-        )
-    if not url.startswith("https://"):
-        raise ArabicModelUnavailableError(f"Refusing non-HTTPS model URL: {url}")
-
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp_dest = dest.with_suffix(dest.suffix + f".tmp{os.getpid()}")
-    logger.info("Downloading Arabic-script OCR model asset: %s", url)
-    try:
-        # url is one of this module's own hardcoded HTTPS constants (never
-        # user input), and the scheme is checked above.
-        urllib.request.urlretrieve(url, tmp_dest)  # nosec B310
-        actual = _sha256_file(tmp_dest)
-        if actual != expected_sha256:
+    with _download_lock:
+        if dest.exists() and _sha256_file(dest) == expected_sha256:
+            return
+        if not _download_enabled():
             raise ArabicModelUnavailableError(
-                f"Downloaded {dest.name} failed checksum verification "
-                f"(expected {expected_sha256}, got {actual}) -- refusing to use a "
-                "possibly corrupted or tampered OCR model file."
+                f"{dest.name} not found in cache ({dest.parent}) and "
+                "BLAST_OCR_RAPIDOCR_MODEL_DOWNLOAD_ENABLED disables fetching it. "
+                f"Pre-populate the cache or download manually from {url}"
             )
-        os.replace(tmp_dest, dest)
-    finally:
-        tmp_dest.unlink(missing_ok=True)
+        if not url.startswith("https://"):
+            raise ArabicModelUnavailableError(f"Refusing non-HTTPS model URL: {url}")
+
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp_dest = dest.with_suffix(dest.suffix + f".tmp{os.getpid()}")
+        logger.info("Downloading Arabic-script OCR model asset: %s", url)
+        try:
+            # url is one of this module's own hardcoded HTTPS constants
+            # (never user input), and the scheme is checked above.
+            urllib.request.urlretrieve(url, tmp_dest)  # nosec B310
+            actual = _sha256_file(tmp_dest)
+            if actual != expected_sha256:
+                raise ArabicModelUnavailableError(
+                    f"Downloaded {dest.name} failed checksum verification "
+                    f"(expected {expected_sha256}, got {actual}) -- refusing to "
+                    "use a possibly corrupted or tampered OCR model file."
+                )
+            os.replace(tmp_dest, dest)
+        finally:
+            tmp_dest.unlink(missing_ok=True)
 
 
 def ensure_arabic_model() -> Tuple[str, str]:

@@ -37,7 +37,6 @@ class RapidOCREngine(BaseOCREngine):
     def __init__(self):
         self._engine = None
         self._arabic_engine = None
-        self._active_is_arabic = False
 
     def _wants_rtl_script(self) -> bool:
         return any(lang in RTL_SCRIPT_LANGUAGES for lang in config.ocr_languages)
@@ -84,10 +83,8 @@ class RapidOCREngine(BaseOCREngine):
         self._warn_if_unsupported_language()
         if self._wants_rtl_script():
             self._init_arabic_engine()
-            self._active_is_arabic = True
             return self._arabic_engine
         self._init_engine()
-        self._active_is_arabic = False
         return self._engine
 
     @property
@@ -95,7 +92,11 @@ class RapidOCREngine(BaseOCREngine):
         return "rapidocr"
 
     def metadata(self) -> Dict[str, Any]:
-        if self._active_is_arabic:
+        # Derived from live config rather than a cached flag from the last
+        # process_page() call, so a caller reading metadata() before the
+        # first page (e.g. for job provenance at enqueue time) still sees
+        # which model will actually be used.
+        if self._wants_rtl_script():
             return {
                 "engine": self.engine_name,
                 "backend": "onnxruntime",
@@ -117,8 +118,8 @@ class RapidOCREngine(BaseOCREngine):
         page_number: int,
         glyph_height: Optional[float] = None,
     ) -> Dict[str, Any]:
+        is_rtl = self._wants_rtl_script()
         engine = self._active_engine()
-        is_rtl = self._active_is_arabic
 
         start_time = time.monotonic()
         img = cv2.imread(image_path)
