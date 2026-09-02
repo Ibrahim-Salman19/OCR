@@ -7,18 +7,23 @@ was silently dropped, because RapidOCR's bundled default model is trained on
 Chinese+English only and has no Arabic-script characters in its recognition
 dictionary at all.
 
-The fix (blast_ocr.core.engines.rapidocr_engine.RapidOCREngine) swaps in a
-dedicated Arabic-script recognition model (covering Arabic/Urdu/Persian/
-Uyghur) whenever `config.ocr_languages` requests one of those languages,
-and corrects for that model's raw left-to-right CTC output order (it needs
-a per-line reversal to read correctly as RTL text).
+The fix (blast_ocr.core.engines.rapidocr_engine.RapidOCREngine, and
+blast_ocr.core.engines.batched_rapidocr.BatchedRapidOCREngine -- the
+opt-in high-throughput engine selectable via config.ocr_engine, which has
+its own separate hand-rolled ONNX session/CTC-decode path and would hit the
+identical bug if left unwired) swaps in a dedicated Arabic-script
+recognition model (covering Arabic/Urdu/Persian/Uyghur) whenever
+`config.ocr_languages` requests one of those languages, and corrects for
+that model's raw left-to-right CTC output order (it needs a per-line
+reversal to read correctly as RTL text).
 
 Tests below are split into:
-- Wiring tests (always run, no network): mock `RapidOCR` itself and assert
-  the engine selects the right model path and reverses text only when it
-  should. These pin the actual bug fix and must never be skipped.
-- A real end-to-end test against a committed ground-truth fixture image,
-  which downloads the real ~8MB model on first use -- skipped (not failed)
+- Wiring tests (always run, no network): mock the underlying engine/model
+  loading and assert the right model path is selected and text is reversed
+  only when it should be. These pin the actual bug fix and must never be
+  skipped.
+- Real end-to-end tests against a committed ground-truth fixture image,
+  which download the real ~8MB model on first use -- skipped (not failed)
   if that download is unreachable, mirroring tests/test_queue.py's pattern
   for optional real-infra dependencies.
 """
@@ -29,6 +34,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from blast_ocr.config import config
+from blast_ocr.core.engines.batched_rapidocr import BatchedRapidOCREngine
 from blast_ocr.core.engines.rapidocr_engine import RapidOCREngine
 
 FIXTURE_IMAGE = str(Path(__file__).parent / "fixtures" / "urdu_ocr_sample.png")
@@ -163,5 +169,88 @@ def test_real_ppocrv5_arabic_model_reads_urdu_fixture():
     assert "اردو" in result["text"]
     # The page number is pure Latin digits on an otherwise-RTL page: it must
     # NOT be reversed along with the Arabic-script text next to it.
+    assert "12" in result["text"]
+    assert "21" not in result["text"]
+
+
+def test_batched_engine_urdu_language_routes_to_arabic_model():
+    """Same bug, second engine: BatchedRapidOCREngine has its own hand-rolled
+    ONNX session/CTC-decode path (it doesn't use RapidOCREngine at all), so
+    it needed the identical fix independently -- someone with
+    ocr_engine='batched_rapidocr' would otherwise still hit the original
+    bug untouched by the rapidocr_engine.py fix."""
+    config.ocr_languages = ["ur"]
+
+    with patch(
+        "blast_ocr.core.engines.batched_rapidocr.ensure_arabic_model",
+        return_value=("/fake/arabic_rec.onnx", "/fake/arabic_dict.txt"),
+    ), patch.object(
+        BatchedRapidOCREngine, "_wants_rtl_script", return_value=True
+    ), patch(
+        "blast_ocr.core.onnx_session.ONNXSessionManager.get_or_create_session",
+        return_value=MagicMock(),
+    ), patch(
+        "blast_ocr.core.tensor_decoder.VectorizedTensorDecoder.__init__",
+        return_value=None,
+    ):
+        engine = BatchedRapidOCREngine(preferred_provider="cpu")
+        engine._init_engine()
+
+    assert engine.rec_model_path == "/fake/arabic_rec.onnx"
+    assert engine.character_path == "/fake/arabic_dict.txt"
+    assert engine._is_arabic is True
+
+
+def test_batched_engine_does_not_override_explicit_rec_model_path():
+    """An explicit rec_model_path/character_path passed by the caller (e.g.
+    someone already using a custom model for a different purpose) must not
+    be silently clobbered by the Arabic-script auto-selection."""
+    config.ocr_languages = ["ur"]
+
+    with patch.object(
+        BatchedRapidOCREngine, "_wants_rtl_script", return_value=True
+    ), patch(
+        "blast_ocr.core.onnx_session.ONNXSessionManager.get_or_create_session",
+        return_value=MagicMock(),
+    ), patch(
+        "blast_ocr.core.tensor_decoder.VectorizedTensorDecoder.__init__",
+        return_value=None,
+    ):
+        engine = BatchedRapidOCREngine(
+            preferred_provider="cpu",
+            rec_model_path="/custom/rec.onnx",
+            character_path="/custom/dict.txt",
+        )
+        engine._init_engine()
+
+    assert engine.rec_model_path == "/custom/rec.onnx"
+    assert engine.character_path == "/custom/dict.txt"
+    assert engine._is_arabic is False
+
+
+@pytest.mark.real_arabic_model
+def test_batched_engine_real_ppocrv5_arabic_model_reads_urdu_fixture():
+    """End-to-end proof for the second engine path, mirroring
+    test_real_ppocrv5_arabic_model_reads_urdu_fixture above: real downloaded
+    model, real fixture image, no mocks. Skipped (not failed) if the model
+    can't be downloaded."""
+    from blast_ocr.core.engines.script_models import (
+        ArabicModelUnavailableError,
+        ensure_arabic_model,
+    )
+
+    try:
+        ensure_arabic_model()
+    except Exception as e:
+        pytest.skip(f"Arabic PP-OCRv5 model unavailable (no network?): {e}")
+
+    config.ocr_languages = ["ur"]
+    engine = BatchedRapidOCREngine(preferred_provider="cpu")
+    try:
+        result = engine.process_page(FIXTURE_IMAGE, page_number=1)
+    except ArabicModelUnavailableError as e:
+        pytest.skip(f"Arabic PP-OCRv5 model unavailable (no network?): {e}")
+
+    assert "اردو" in result["text"]
     assert "12" in result["text"]
     assert "21" not in result["text"]

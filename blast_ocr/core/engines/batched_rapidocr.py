@@ -21,6 +21,11 @@ from PIL import Image
 from blast_ocr.config import get_settings
 from blast_ocr.core.batch_preprocessor import BatchPreprocessor
 from blast_ocr.core.engines.base import BaseOCREngine
+from blast_ocr.core.engines.script_models import (
+    RTL_SCRIPT_LANGUAGES,
+    contains_rtl_script,
+    ensure_arabic_model,
+)
 from blast_ocr.core.layout import LayoutEngine
 from blast_ocr.core.onnx_session import ONNXSessionManager
 from blast_ocr.core.page_signal import estimate_glyph_height
@@ -123,11 +128,31 @@ class BatchedRapidOCREngine(BaseOCREngine):
         self._rec_input_name = None
         self._tensor_decoder = None
         self._layout_engine = LayoutEngine()
+        self._is_arabic = False
+
+    def _wants_rtl_script(self) -> bool:
+        settings = get_settings()
+        return any(lang in RTL_SCRIPT_LANGUAGES for lang in settings.ocr_languages)
 
     def _init_engine(self) -> None:
         """Lazily initialize ONNX sessions and decoder models."""
         if self._det_session is not None and self._rec_session is not None:
             return
+
+        # Same fix as RapidOCREngine: the bundled default recognition model
+        # is Chinese+English only and has no Arabic-script characters at
+        # all. Only auto-select the Arabic-script model when the caller
+        # hasn't already pinned an explicit rec_model_path/character_path
+        # of their own.
+        if (
+            self.rec_model_path is None
+            and self.character_path is None
+            and self._wants_rtl_script()
+        ):
+            rec_path, dict_path = ensure_arabic_model()
+            self.rec_model_path = rec_path
+            self.character_path = dict_path
+            self._is_arabic = True
 
         resolved_det = self.det_model_path or self.session_manager.resolve_model_path("det")
         resolved_rec = self.rec_model_path or self.session_manager.resolve_model_path("rec")
@@ -360,6 +385,13 @@ class BatchedRapidOCREngine(BaseOCREngine):
 
             if not text or conf < self.text_score:
                 continue
+
+            if self._is_arabic and contains_rtl_script(text):
+                # See RapidOCREngine.process_page for why this is gated per
+                # detection rather than applied to the whole page: a
+                # page number or footnote marker recognized alongside RTL
+                # text must not be reversed along with it.
+                text = text[::-1]
 
             per_page_detections[p_idx].append(
                 {
