@@ -152,6 +152,13 @@ class FormulaExtractor:
             latex = cls._convert_sqrt_balanced(stripped)
         except _UnbalancedMathExpressionError:
             return stripped
+        except RecursionError:
+            # Pathologically deep nested sqrt(sqrt(sqrt(...))) -- e.g. from
+            # garbled OCR of a repeated glyph -- recurses one Python frame
+            # per nesting level in _convert_sqrt_balanced. Past ~1000 levels
+            # that exceeds the interpreter's recursion limit; treat it the
+            # same as an unbalanced expression rather than crashing the page.
+            return stripped
 
         # 2. Standardize fractions: a/b -> \frac{a}{b} when bounded
         latex = re.sub(r"([A-Za-z0-9_\^]+)\s*\/\s*([A-Za-z0-9_\^]+)", r"\\frac{\1}{\2}", latex)

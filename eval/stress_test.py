@@ -79,16 +79,25 @@ class StressTestRunner:
         total_pages: int = 100,
         batch_size: int = 8,
         max_allowed_slope_mb_per_page: float = 0.05,
+        use_engine: bool = True,
     ) -> Dict[str, Any]:
         """
         Processes pages in continuous batches and performs linear regression on RSS memory.
+
+        `use_engine=False` skips loading the real ONNX det/rec sessions (each
+        init is several hundred MB and multiple seconds) so this can run as a
+        fast CI/unit-test gate; the memory-accounting loop around it is
+        otherwise identical, matching the `use_engine` seam already used by
+        `eval/stress_suite.py`'s `run_1000_page_stress_test`.
         """
         logger.info(
             "Starting continuous memory leak stress test: %d pages (batch size %d)...",
             total_pages,
             batch_size,
         )
-        engine = BatchedRapidOCREngine()
+        engine = None
+        if use_engine:
+            engine = BatchedRapidOCREngine()
         dummy_img = np.full((1200, 800, 3), 255, dtype=np.uint8)
 
         proc = psutil.Process(os.getpid())
@@ -102,7 +111,8 @@ class StressTestRunner:
             current_batch_count = min(batch_size, total_pages - pages_processed)
             batch = [dummy_img.copy() for _ in range(current_batch_count)]
 
-            engine.process_batch(batch, batch_size=current_batch_count)
+            if engine is not None:
+                engine.process_batch(batch, batch_size=current_batch_count)
             pages_processed += current_batch_count
 
             current_rss = proc.memory_info().rss / (1024 * 1024)
@@ -194,10 +204,11 @@ def main():
     parser = argparse.ArgumentParser(description="B.L.A.S.T. OCR Continuous Stress Test Runner")
     parser.add_argument("--output", default="eval/results", help="Directory for stress report output")
     parser.add_argument("--pages", type=int, default=50, help="Total pages for continuous memory test")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate execution without loading heavy OCR models")
     args = parser.parse_args()
 
     runner = StressTestRunner(output_dir=args.output)
-    runner.run_memory_leak_stress_test(total_pages=args.pages)
+    runner.run_memory_leak_stress_test(total_pages=args.pages, use_engine=not args.dry_run)
     runner.run_worker_fault_recovery_test(num_failing_tasks=10)
     runner.save_report()
 

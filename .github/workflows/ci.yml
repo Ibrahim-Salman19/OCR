@@ -107,6 +107,17 @@ jobs:
       # fresh scorecard for this run, per pytest.ini's eval_regression marker.
       - run: python eval/run.py --engine rapidocr || true
       - run: python -m pytest tests/test_eval_regression.py -v
+      # Tier 4 memory-leak/DLQ invalidation gate (docs/HARDENING_BLUEPRINT_
+      # AND_TEST_SPECS.md §5.4), CLI entry point only. `--dry-run` skips the
+      # real ONNX engine (not guaranteed available on every CI runner, and
+      # ~30s/1GB+ RSS per run) while still exercising the actual `python -m
+      # eval.stress_test` invocation end-to-end -- this step is NOT `|| true`
+      # since it costs nothing and a crash here is a real regression, not a
+      # missing-model false positive. The engine-backed memory-leak slope
+      # itself is measured locally per docs/BENCHMARKS_2026.md, and the
+      # dry-run accounting logic already runs unconditionally in the `test`
+      # job via tests/test_stress_test_runner.py.
+      - run: python -m eval.stress_test --pages 30 --dry-run
 
   docker-build:
     name: Build container image
