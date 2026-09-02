@@ -211,8 +211,15 @@ def _load_config() -> OCRConfig:
                 os.environ[key] = saved_val
 
         if bad_keys:
-            logging.getLogger(__name__).warning(
-                "Removed invalid environment variable overrides: %s (error: %s)",
+            logging.getLogger(__name__).error(
+                "IGNORING invalid environment variable override(s): %s (parse error: "
+                "%s). The application will start with the DEFAULT value for each of "
+                "these settings instead of what you configured -- this is often "
+                "invisible until output looks wrong (e.g. BLAST_OCR_OCR_LANGUAGES "
+                "must be a JSON array like '[\"en\", \"ur\"]', not a comma-separated "
+                "string like 'en,ur', or it silently falls back to just ['en'] and "
+                "every non-English word gets dropped from OCR output). Fix the "
+                "value(s) above and restart.",
                 ", ".join(bad_keys),
                 err,
             )
