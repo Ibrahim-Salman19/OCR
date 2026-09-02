@@ -12,6 +12,7 @@ import numpy as np
 from blast_ocr.core.document_model import (
     Page, Block, Line, Span, BoundingBox, BlockType
 )
+from blast_ocr.core.script_detection import contains_rtl_script
 
 
 class LayoutEngine:
@@ -293,9 +294,16 @@ class LayoutEngine:
             else:
                 lines.append(Line(spans=[span], bbox=span.bbox))
 
-        # Sort spans within each line left-to-right
+        # Sort spans within each line left-to-right -- except an RTL-script
+        # line (Arabic/Urdu/Persian/Uyghur), which reads right-to-left: the
+        # per-character reversal in rapidocr_engine.py only fixes each
+        # detection's own text, it says nothing about the order multiple
+        # detections on the same line get concatenated in. Without this, two
+        # Urdu words on one line still come out in the wrong order relative
+        # to each other, even though each word individually reads correctly.
         for line in lines:
-            line.spans.sort(key=lambda s: s.bbox.xmin)
+            is_rtl_line = any(contains_rtl_script(s.text) for s in line.spans)
+            line.spans.sort(key=lambda s: s.bbox.xmin, reverse=is_rtl_line)
 
         # Sort lines top-to-bottom
         lines.sort(key=lambda l: l.bbox.ymin)

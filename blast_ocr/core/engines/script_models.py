@@ -38,6 +38,11 @@ import urllib.request
 from pathlib import Path
 from typing import Tuple
 
+from blast_ocr.core.script_detection import (  # noqa: F401 (re-exported)
+    RTL_SCRIPT_LANGUAGES,
+    contains_rtl_script,
+)
+
 logger = logging.getLogger(__name__)
 
 # Guards the whole check-download-verify-replace sequence in _ensure_file.
@@ -49,35 +54,6 @@ logger = logging.getLogger(__name__)
 # interleave writes into it before either side's os.replace() runs. Same
 # class of bug as image_sanitizer.py's _pil_ceiling_lock.
 _download_lock = threading.Lock()
-
-# Perso-Arabic script family: distinct languages, shared base script and
-# character repertoire, all covered by the same PP-OCRv5 Arabic-script model.
-RTL_SCRIPT_LANGUAGES = {"ar", "ur", "fa", "ug"}
-
-# Unicode blocks covering Arabic-script letters (Arabic, Arabic Supplement,
-# Arabic Extended-A, Arabic Presentation Forms A/B -- the ranges that
-# actually appear in Arabic/Persian/Urdu/Uyghur text, including the
-# Urdu/Persian-specific letters PP-OCRv5's dictionary emits).
-_ARABIC_SCRIPT_RANGES = (
-    (0x0600, 0x06FF),
-    (0x0750, 0x077F),
-    (0x08A0, 0x08FF),
-    (0xFB50, 0xFDFF),
-    (0xFE70, 0xFEFF),
-)
-
-
-def contains_rtl_script(text: str) -> bool:
-    """True if `text` contains at least one Arabic-script codepoint.
-
-    Used to decide whether a single detected text line needs the RTL
-    left-to-right-output reversal fixup -- a page shot through the
-    Arabic-script recognition model can still contain pure-Latin/digit
-    fragments (page numbers, footnote markers) that must NOT be reversed.
-    """
-    return any(
-        any(lo <= ord(ch) <= hi for lo, hi in _ARABIC_SCRIPT_RANGES) for ch in text
-    )
 
 _REC_URL = (
     "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/"

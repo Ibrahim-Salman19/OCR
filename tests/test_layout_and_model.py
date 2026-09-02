@@ -139,6 +139,44 @@ class TestLayoutEngine:
         assert len(flattened) == len(spans)
         assert sorted(s.text for s in flattened) == sorted(s.text for s in spans)
 
+    def test_rtl_line_orders_multiple_spans_right_to_left(self):
+        """A single Arabic/Urdu-script line detected as two separate spans
+        (common: OCR detects each word/cluster independently) must be
+        concatenated in right-to-left reading order -- the visually
+        rightmost span read first -- not left-to-right like a Latin line.
+
+        Regression for a second-level instance of the original Urdu bug:
+        rapidocr_engine.py already reverses each span's own characters for
+        correct RTL glyph order, but that says nothing about the order
+        multiple spans on the same line get joined in. Using `in` /
+        substring assertions here would pass regardless of order, so this
+        checks the exact position of each word instead.
+        """
+        engine = LayoutEngine()
+        detections = [
+            # Visually rightmost (higher x) -- must be read first in RTL.
+            # Horizontal gap to the other span is kept below the column-gap
+            # threshold so both stay on one line/column, not split into two.
+            {"text": "کتاب", "bbox": [200, 50, 320, 80], "confidence": 0.99},
+            # Visually leftmost (lower x) -- must be read second in RTL.
+            {"text": "اردو", "bbox": [50, 50, 170, 80], "confidence": 0.99},
+        ]
+        page = engine.process_page_detections(detections, 1, 1000, 200)
+        lines = [line.text for block in page.blocks for line in block.lines]
+        assert lines == ["کتاب اردو"]
+
+    def test_ltr_line_ordering_unchanged_by_rtl_fix(self):
+        """Backward-compat guard: a pure-Latin line must still concatenate
+        left-to-right exactly as before the RTL ordering fix."""
+        engine = LayoutEngine()
+        detections = [
+            {"text": "World", "bbox": [200, 50, 320, 80], "confidence": 0.99},
+            {"text": "Hello", "bbox": [50, 50, 170, 80], "confidence": 0.99},
+        ]
+        page = engine.process_page_detections(detections, 1, 1000, 200)
+        lines = [line.text for block in page.blocks for line in block.lines]
+        assert lines == ["Hello World"]
+
     def test_dual_page_spread_split(self):
         """Tests dual-page spread splitting where width > 1.2 * height."""
         engine = LayoutEngine()
