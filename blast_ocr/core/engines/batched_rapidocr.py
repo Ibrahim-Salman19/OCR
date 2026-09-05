@@ -29,6 +29,7 @@ from blast_ocr.core.engines.script_models import (
 from blast_ocr.core.layout import LayoutEngine
 from blast_ocr.core.onnx_session import ONNXSessionManager
 from blast_ocr.core.page_signal import estimate_glyph_height
+from blast_ocr.core.script_detection import reorder_rtl_visual_to_logical
 from blast_ocr.core.tensor_decoder import VectorizedTensorDecoder
 
 logger = logging.getLogger(__name__)
@@ -225,9 +226,20 @@ class BatchedRapidOCREngine(BaseOCREngine):
         image_path: Union[str, np.ndarray],
         page_number: int = 1,
         glyph_height: Optional[float] = None,
+        languages: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Process a single image page conforming to BaseOCREngine contract.
+
+        `languages` is accepted for interface parity with the other
+        engines but not yet wired: unlike RapidOCREngine (which
+        re-evaluates its RTL-script decision fresh on every call), this
+        engine picks its recognition model once at `_init_engine()` and
+        caches the ONNX session for the lifetime of the instance, so a
+        per-call override would require re-initializing sessions
+        mid-batch. Construct a fresh instance (or use `RapidOCREngine`,
+        which does support per-call `languages`) when per-job language
+        selection matters.
         """
         results = self.process_batch(
             images=[image_path],
@@ -387,11 +399,12 @@ class BatchedRapidOCREngine(BaseOCREngine):
                 continue
 
             if self._is_arabic and contains_rtl_script(text):
-                # See RapidOCREngine.process_page for why this is gated per
-                # detection rather than applied to the whole page: a
-                # page number or footnote marker recognized alongside RTL
-                # text must not be reversed along with it.
-                text = text[::-1]
+                # See RapidOCREngine._recognize_pass for why this is a
+                # run-aware reorder rather than a blind reversal: a page
+                # number, footnote marker, or an English word/number
+                # embedded mid-line must not be reversed along with the
+                # surrounding RTL text.
+                text = reorder_rtl_visual_to_logical(text)
 
             per_page_detections[p_idx].append(
                 {

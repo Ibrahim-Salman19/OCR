@@ -40,6 +40,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from blast_ocr.tools.cost_calculator import calculate_roi
+
 # EasyOCR reads EASYOCR_MODULE_PATH (preferred) or MODULE_PATH. Set this before any
 # project import can transitively import EasyOCR.
 _EASYOCR_HOME = Path(tempfile.gettempdir()) / ".EasyOCR"
@@ -62,31 +64,167 @@ st.set_page_config(
 )
 
 # Inject Canonical SEO / GEO Meta Tags and Schema.org JSON-LD for Web Crawlers & AI Indexing
-_SEO_META_TAGS = """
+_SEO_META_TAGS = """<div id="seo-metadata" style="display:none;" aria-hidden="true">
 <!-- B.L.A.S.T. OCR Engine - SEO, GEO & AEO Discovery Tags -->
 <meta name="description" content="Self-hosted ONNX OCR and document intelligence engine. Native MCP server, table extraction, LaTeX formula parsing, and a bounded-memory streaming architecture.">
 <meta name="keywords" content="Python OCR, ONNX OCR, PDF to Markdown, Table Extraction, Model Context Protocol, Sandwich PDF, LangChain OCR, LlamaIndex OCR">
 <meta name="author" content="B.L.A.S.T. OCR Project">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<link rel="canonical" href="https://ocr-book.streamlit.app/">
 <meta property="og:title" content="B.L.A.S.T. OCR Engine — Sovereign Edition">
 <meta property="og:description" content="Self-hosted ONNX OCR engine for multi-page PDFs, PPTX, and scanned documents, with a native MCP server for AI agents.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ocr-book.streamlit.app/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="B.L.A.S.T. OCR Engine">
+<meta name="twitter:title" content="B.L.A.S.T. OCR Engine — Enterprise ONNX Document Intelligence">
 <meta name="twitter:description" content="Self-hosted ONNX OCR engine with table extraction, a native MCP server, and a bounded-memory streaming architecture.">
 <link rel="describedby" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms.txt">
 <link rel="alternate" type="text/markdown" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "B.L.A.S.T. OCR Engine",
-  "description": "Self-hosted OCR and document intelligence engine with ONNX acceleration and a native MCP server.",
-  "applicationCategory": "DeveloperApplication",
-  "operatingSystem": "Linux, Windows, macOS",
-  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://ocr-book.streamlit.app/#software",
+      "name": "B.L.A.S.T. OCR Engine",
+      "alternateName": "BLAST OCR",
+      "description": "Self-hosted ONNX OCR and document intelligence engine with bounded-memory streaming, table structure extraction, LaTeX formula recognition, and native AI Agent MCP integration.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Linux, Windows, macOS",
+      "softwareVersion": "3.0.0",
+      "downloadUrl": "https://github.com/Ibrahim-Salman19/OCR",
+      "installUrl": "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": {"@id": "https://ibrahimsalman.vercel.app/#person"},
+      "creator": {"@id": "https://ibrahimsalman.vercel.app/#person"},
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU)",
+        "Table structure extraction to Markdown and HTML with built-in TEDS evaluator",
+        "LaTeX Mathematical Formula Recognition (inline and display)",
+        "Bounded streaming memory architecture (0.0002 MB/page growth slope, measured)",
+        "Dual-Layer Selectable Sandwich PDF Generation",
+        "Native Model Context Protocol (MCP) Server for AI Agents",
+        "LangChain and LlamaIndex Document Loaders",
+        "Forensic 8-Class PII Redaction",
+        "Distributed 3-Tier Priority Queue Swarm with Heartbeats and Zombie Reaper"
+      ]
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#sourcecode",
+      "name": "B.L.A.S.T. OCR Source Code",
+      "programmingLanguage": "Python",
+      "runtimePlatform": "Python 3.9, 3.10, 3.11, 3.12, 3.13",
+      "codeRepository": "https://github.com/Ibrahim-Salman19/OCR",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": {"@id": "https://ibrahimsalman.vercel.app/#person"}
+    },
+    {
+      "@type": "TechArticle",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#documentation",
+      "headline": "B.L.A.S.T. OCR Engine: Technical Architecture and Performance Benchmarks",
+      "description": "Complete architectural overview, reproducible benchmark harness, and integration guide for B.L.A.S.T. OCR.",
+      "keywords": "Python OCR, ONNX OCR, Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
+      "inLanguage": "en-US",
+      "author": {"@id": "https://ibrahimsalman.vercel.app/#person"},
+      "publisher": {
+        "@type": "Organization",
+        "name": "B.L.A.S.T. OCR Project",
+        "url": "https://github.com/Ibrahim-Salman19/OCR"
+      }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://ibrahimsalman.vercel.app/#person",
+      "name": "Ibrahim Salman",
+      "alternateName": "Ibrahim-Salman19",
+      "url": "https://ibrahimsalman.vercel.app",
+      "jobTitle": "Software Engineer",
+      "sameAs": [
+        "https://github.com/Ibrahim-Salman19",
+        "https://www.linkedin.com/in/ibrahim-salman-dev/",
+        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://ocr-book.streamlit.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why is B.L.A.S.T. OCR faster than EasyOCR?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with CUDA -> DirectML -> CPU fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while reducing mean CER by 18%. See ADR 0005 in the repository for the full methodology and raw results."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. extract tables?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator for regression testing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I connect B.L.A.S.T. OCR to Claude Desktop, Cursor, or Antigravity?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "B.L.A.S.T. includes a native Model Context Protocol (MCP) server. Run 'python -m blast_ocr.mcp_server' or configure mcp.json to expose blast_ocr_process, blast_ocr_extract_tables, blast_ocr_extract_formulas, and blast_ocr_semantic_chunk tools with zero configuration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. generate dual-layer sandwich PDFs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "B.L.A.S.T. utilizes PyMuPDF to synthesize dual-layer searchable PDFs where the original scanned image is preserved on the visual layer while an invisible, selectable text layer is placed beneath it with exact word-level coordinate bounding box alignment."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "@id": "https://ocr-book.streamlit.app/#howto",
+      "name": "How to Process Multi-Page PDFs to Markdown with B.L.A.S.T. OCR",
+      "description": "Step-by-step guide to installing and processing PDF documents to Markdown with high accuracy.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Install B.L.A.S.T. OCR",
+          "text": "Install core dependencies using pip install -r requirements.txt"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Initialize Pipeline",
+          "text": "Instantiate OCRPipeline(engine='rapidocr', secure_mode=True)"
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Execute Document Processing",
+          "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])"
+        }
+      ]
+    }
+  ]
 }
 </script>
+</div>
 """
 st.markdown(_SEO_META_TAGS, unsafe_allow_html=True)
 
@@ -533,9 +671,11 @@ def _make_download_reader(path: str) -> Any:
     return _reader
 
 
-def _build_zip_bytes(output_files: Sequence[tuple[str, str]]) -> Any:
-    """Build a collision-safe bundle and spill large archives to disk automatically."""
-    buffer = tempfile.SpooledTemporaryFile(max_size=16 * 1024 * 1024, mode="w+b")
+def _build_zip_bytes(output_files: Sequence[tuple[str, str]]) -> io.BytesIO:
+    """Build a collision-safe bundle and return as BytesIO for Streamlit download_button."""
+    import io
+
+    buffer = io.BytesIO()
     used_names: set[str] = set()
     with zipfile.ZipFile(buffer, "w", allowZip64=True) as archive:
         for index, (_fmt, raw_path) in enumerate(output_files, 1):
@@ -827,13 +967,8 @@ def load_css() -> None:
 
 
 def inject_seo_metadata() -> None:
-    """Inject SEO metadata tags for search crawlers."""
-    st.markdown(
-        """<div id="seo-metadata" style="display:none;" aria-hidden="true">
-        <meta name="description" content="B.L.A.S.T. OCR Sovereign Edition - Enterprise OCR Operations Console">
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    """Inject Canonical SEO, GEO, and schema.org JSON-LD metadata for crawlers and AI agents."""
+    st.markdown(_SEO_META_TAGS, unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -873,7 +1008,7 @@ def render_landing_page() -> None:
         unsafe_allow_html=True,
     )
 
-    _, cta_col, _ = _pad_columns(st.columns([1, 1.2, 1]), 3)
+    _, cta_col, _ = _pad_columns(st.columns([1, 1.8, 1]), 3)
     with cta_col:
         if st.button(
             "ENTER MISSION CONTROL",
@@ -1414,7 +1549,10 @@ def handle_file_upload(
         batch_errors = _validate_upload_batch(uploaded_files, allowed_extensions)
         valid_files = [
             f for f in uploaded_files
-            if Path(str(getattr(f, "name", ""))).suffix.lower() in allowed_extensions
+            if (
+                Path(str(getattr(f, "name", ""))).suffix.lower() in allowed_extensions
+                and _signature_matches(f, Path(str(getattr(f, "name", ""))).suffix.lower()) is not False
+            )
         ]
 
         total_bytes = sum(max(0, _safe_int(getattr(f, "size", 0), 0)) for f in uploaded_files)
@@ -2610,6 +2748,55 @@ def render_telemetry_tab(db: Any, settings: Any, options: EngineOptions) -> None
                 _safe_rerun()
             except OSError as exc:
                 st.error(f"Session cleanup failed: {exc}")
+
+    st.divider()
+    _render_roi_calculator_section()
+
+
+def _render_roi_calculator_section() -> None:
+    st.markdown("### 💰 CLOUD OCR COST VS. LOCAL HARDWARE ROI CALCULATOR")
+    st.caption("Benchmark your current or projected cloud OCR invoices (AWS Textract, Google Document AI, Azure) against self-hosted B.L.A.S.T. execution.")
+
+    calc_c1, calc_c2, calc_c3 = _pad_columns(st.columns([2, 1, 1], gap="medium"), 3)
+    with calc_c1:
+        pages_vol = st.slider(
+            "MONTHLY DOCUMENT VOLUME (PAGES)",
+            min_value=10_000,
+            max_value=5_000_000,
+            value=250_000,
+            step=10_000,
+            key="roi_calc_pages",
+        )
+    with calc_c2:
+        provider_key = st.selectbox(
+            "CLOUD BENCHMARK",
+            options=["textract", "google_docai", "azure_di"],
+            format_func=lambda k: {"textract": "AWS Textract", "google_docai": "Google Document AI", "azure_di": "Azure Doc Intel"}.get(k, k),
+            key="roi_calc_provider",
+        )
+    with calc_c3:
+        tables_opt = st.checkbox(
+            "TABLES & FORMS",
+            value=True,
+            key="roi_calc_tables",
+            help="Include table structure and key-value form extraction",
+        )
+
+    roi_data = calculate_roi(
+        pages_per_month=pages_vol,
+        cloud_provider=provider_key,
+        include_tables=tables_opt,
+    )
+
+    r1, r2, r3, r4 = _pad_columns(st.columns(4, gap="small"), 4)
+    r1.metric("CLOUD MONTHLY BILL", f"${roi_data['cloud_monthly_cost_usd']:,.2f}")
+    r2.metric("LOCAL INFRA COST", f"${roi_data['blast_monthly_infra_usd']:,.2f}")
+    r3.metric("NET ANNUAL SAVINGS", f"${roi_data['annual_savings_usd']:,.2f}")
+    r4.metric("MARGIN BOOST", f"{roi_data['savings_percentage']:.1f}%")
+    st.caption(
+        f"💡 Payback period: **{roi_data['payback_period_days']:.1f} days** | "
+        f"Public network data transit avoided: **{roi_data['gb_transit_avoided']:,.1f} GB**"
+    )
 
 
 # -----------------------------------------------------------------------------

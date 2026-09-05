@@ -168,6 +168,8 @@ async def get_schema_jsonld():
                 "downloadUrl": "https://github.com/Ibrahim-Salman19/OCR",
                 "installUrl": "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md",
                 "license": "https://opensource.org/licenses/MIT",
+                "author": {"@id": "https://ibrahimsalman.vercel.app/#person"},
+                "creator": {"@id": "https://ibrahimsalman.vercel.app/#person"},
                 "offers": {
                     "@type": "Offer",
                     "price": "0",
@@ -193,6 +195,7 @@ async def get_schema_jsonld():
                 "runtimePlatform": "Python 3.9, 3.10, 3.11, 3.12, 3.13",
                 "codeRepository": "https://github.com/Ibrahim-Salman19/OCR",
                 "license": "https://opensource.org/licenses/MIT",
+                "author": {"@id": "https://ibrahimsalman.vercel.app/#person"},
             },
             {
                 "@type": "TechArticle",
@@ -201,11 +204,25 @@ async def get_schema_jsonld():
                 "description": "Complete architectural overview, reproducible benchmark harness, and integration guide for B.L.A.S.T. OCR.",
                 "keywords": "Python OCR, ONNX OCR, Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
                 "inLanguage": "en-US",
+                "author": {"@id": "https://ibrahimsalman.vercel.app/#person"},
                 "publisher": {
                     "@type": "Organization",
                     "name": "B.L.A.S.T. OCR Project",
                     "url": "https://github.com/Ibrahim-Salman19/OCR",
                 },
+            },
+            {
+                "@type": "Person",
+                "@id": "https://ibrahimsalman.vercel.app/#person",
+                "name": "Ibrahim Salman",
+                "alternateName": "Ibrahim-Salman19",
+                "url": "https://ibrahimsalman.vercel.app",
+                "jobTitle": "Software Engineer",
+                "sameAs": [
+                    "https://github.com/Ibrahim-Salman19",
+                    "https://www.linkedin.com/in/ibrahim-salman-dev/",
+                    "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8",
+                ],
             },
             {
                 "@type": "FAQPage",
@@ -275,6 +292,14 @@ async def get_schema_jsonld():
                         "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])",
                     },
                 ],
+            },
+            {
+                "@type": "Dataset",
+                "@id": "https://github.com/Ibrahim-Salman19/OCR#benchmark-dataset",
+                "name": "B.L.A.S.T. OCR Gold Standard Evaluation Corpus",
+                "description": "14-page multi-layout evaluation corpus with ground truth text, table geometries, reading order permutations, and character error rate (CER) baselines.",
+                "license": "https://opensource.org/licenses/MIT",
+                "measurementTechnique": "Character Error Rate (CER), Word Error Rate (WER), Kendall's Tau Reading Order, Tree-Edit-Distance (TEDS)",
             },
         ],
     }

@@ -99,3 +99,6 @@ def auto_patch_redis(request, mock_redis):
     else:
         with patch("blast_ocr.queue.client.get_redis_connection", return_value=mock_redis):
             yield mock_redis
+
+
+pytest_plugins = ["tests.playwright_fixtures"]

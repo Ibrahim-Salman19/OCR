@@ -96,12 +96,16 @@ def test_env_vars_override_defaults():
         from importlib import reload
         import blast_ocr.config as cfg_module
 
-        reload(cfg_module)
+        orig_config = cfg_module.config
+        try:
+            reload(cfg_module)
 
-        assert cfg_module.config.min_confidence == 0.42, (
-            f"Env var BLAST_OCR_MIN_CONFIDENCE not picked up: {cfg_module.config.min_confidence}"
-        )
-        assert cfg_module.config.max_workers == 1
+            assert cfg_module.config.min_confidence == 0.42, (
+                f"Env var BLAST_OCR_MIN_CONFIDENCE not picked up: {cfg_module.config.min_confidence}"
+            )
+            assert cfg_module.config.max_workers == 1
+        finally:
+            cfg_module.config = orig_config
 
 
 # ── Test 7: contrast_boost=0.0 (would black out the image) ───────────────

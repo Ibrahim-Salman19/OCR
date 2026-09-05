@@ -4,7 +4,7 @@ blast_ocr.core.engines.easyocr_engine
 EasyOCR Engine Adapter implementation wrapping RobustOCRExtractor.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 from blast_ocr.core.engines.base import BaseOCREngine
 from blast_ocr.core.extractor import RobustOCRExtractor
 
@@ -40,7 +40,15 @@ class EasyOCREngine(BaseOCREngine):
         image_path: str,
         page_number: int,
         glyph_height: Optional[float] = None,
+        languages: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
+        # RobustOCRExtractor initializes its EasyOCR reader from the
+        # process-global config.ocr_languages at construction time (see
+        # blast_ocr.core.extractor) rather than accepting a per-call
+        # override, so a per-job `languages` list can't be honored here
+        # without re-initializing the (expensive) reader per call. Not
+        # wired up yet -- accepted for interface parity with the other
+        # engines.
         res_dict = self.extractor.process_page(image_path, page_number)
         res_dict["engine"] = self.engine_name
         return res_dict

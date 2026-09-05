@@ -137,15 +137,17 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+.block-container,
+[data-testid="stAppViewBlockContainer"],
 [data-testid="stMainBlockContainer"] {
-    width: min(100%, var(--blast-content-max));
-    max-width: var(--blast-content-max);
-    margin-inline: auto;
-    padding-top: clamp(1rem, 2vw, 1.5rem) !important;
-    padding-right: clamp(1rem, 2.6vw, 2.25rem) !important;
-    padding-bottom: 3rem !important;
-    padding-left: clamp(1rem, 2.6vw, 2.25rem) !important;
-    min-width: 0;
+    width: min(100%, var(--blast-content-max)) !important;
+    max-width: var(--blast-content-max) !important;
+    margin-inline: auto !important;
+    padding-top: clamp(0.75rem, 2vw, 1.5rem) !important;
+    padding-right: clamp(0.75rem, 2.6vw, 2.25rem) !important;
+    padding-bottom: 2.5rem !important;
+    padding-left: clamp(0.75rem, 2.6vw, 2.25rem) !important;
+    min-width: 0 !important;
 }
 
 /* Scope typography to the Streamlit shell instead of globally mutating every span/div. */
@@ -658,8 +660,8 @@ section[data-testid="stSidebar"] {
     letter-spacing: 0.052em !important;
     text-align: center;
     text-transform: uppercase;
-    white-space: normal !important;
-    overflow-wrap: anywhere;
+    white-space: nowrap !important;
+    overflow-wrap: normal;
 }
 
 /* Primary buttons */
@@ -1309,23 +1311,190 @@ button[aria-disabled="true"] {
 }
 
 /* ============================================================
-   20. RESPONSIVE HARDENING
+   20. RESPONSIVE HARDENING & UNIVERSAL DEVICE ADAPTATION
    ============================================================ */
 
-@media (max-width: 768px) {
+/* Mobile Safe-Area Insets for notched displays, dynamic islands, and home indicators */
+@supports (padding: max(0px)) {
+    .block-container,
+    [data-testid="stAppViewBlockContainer"],
     [data-testid="stMainBlockContainer"] {
+        padding-top: max(clamp(0.75rem, 2vw, 1.5rem), env(safe-area-inset-top)) !important;
+        padding-right: max(clamp(0.75rem, 2.6vw, 2.25rem), env(safe-area-inset-right)) !important;
+        padding-bottom: max(2.5rem, env(safe-area-inset-bottom)) !important;
+        padding-left: max(clamp(0.75rem, 2.6vw, 2.25rem), env(safe-area-inset-left)) !important;
+    }
+    [data-testid="stHeader"] {
+        padding-top: env(safe-area-inset-top) !important;
+        padding-left: env(safe-area-inset-left) !important;
+        padding-right: env(safe-area-inset-right) !important;
+    }
+}
+
+/* Touch Device Interaction Polish (WCAG 2.5.5 Min 44x44px Touch Targets) */
+@media (pointer: coarse) {
+    button,
+    [role="button"],
+    [role="tab"],
+    .stButton > button,
+    [data-testid="stDownloadButton"] button,
+    [data-baseweb="tab"],
+    [data-baseweb="tab-list"] [role="tab"] {
+        min-height: 44px !important;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Tactile physical response on mobile tap */
+    button:active,
+    [role="button"]:active,
+    [role="tab"]:active {
+        transform: scale(0.97) !important;
+        transition: transform 60ms ease-out !important;
+    }
+
+    /* Radio and checkbox touch target comfort */
+    [data-testid="stRadio"] label,
+    [data-testid="stCheckbox"] label {
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding-block: 0.25rem !important;
+        touch-action: manipulation;
+    }
+
+    /* Slider thumb touch area */
+    [role="slider"] {
+        min-width: 28px !important;
+        min-height: 28px !important;
+        touch-action: pan-x;
+    }
+}
+
+/* 4K UHD & Ultra-Wide Workstation Displays (>= 2560px) */
+@media (min-width: 2560px) {
+    :root {
+        --blast-content-max: 1680px;
+    }
+
+    .blast-title {
+        font-size: 3.75rem !important;
+    }
+
+    .blast-landing-title {
+        font-size: 5.25rem !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 2.15rem !important;
+    }
+
+    .blast-landing-tagline {
+        font-size: 1.35rem !important;
+        max-width: 72ch !important;
+    }
+}
+
+/* Laptops / Tablets Landscape / Small Desktops (<= 1024px) */
+@media (max-width: 1024px) {
+    .blast-landing-features {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.85rem !important;
+    }
+}
+
+/* Tablets Portrait & Foldables (<= 860px) */
+@media (max-width: 860px) {
+    .block-container,
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stMainBlockContainer"] {
+        padding-right: 1.15rem !important;
+        padding-left: 1.15rem !important;
+        padding-bottom: 2.5rem !important;
+    }
+
+    /* Tabs calibration to ensure all 4 tabs fit across 768px without truncation */
+    [data-baseweb="tab"],
+    [data-baseweb="tab-list"] [role="tab"] {
+        padding-inline: 0.65rem !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 0.04em !important;
+    }
+
+    /* Stack Engine Configuration and Ingestion Gateway for full-width comfort */
+    [data-testid="stHorizontalBlock"]:has([data-testid="stFileUploader"]) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.25rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has([data-testid="stFileUploader"]) > [data-testid="column"] {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Stack Layout Inspector SVG and Classification Table */
+    [data-testid="stHorizontalBlock"]:has(.layout-heatmap-wrap) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.25rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.layout-heatmap-wrap) > [data-testid="column"] {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    /* Landing Page CTA: center with comfortable width and no wrapping */
+    [data-testid="stHorizontalBlock"]:has(button[key="landing_enter_cta"]),
+    [data-testid="stHorizontalBlock"]:has(button:has-text("ENTER MISSION CONTROL")) {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(button:has-text("ENTER MISSION CONTROL")) > [data-testid="column"]:empty {
+        display: none !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(button:has-text("ENTER MISSION CONTROL")) > [data-testid="column"]:not(:empty) {
+        width: min(100%, 380px) !important;
+        min-width: min(100%, 280px) !important;
+        flex: 0 1 auto !important;
+    }
+
+    /* Responsive download buttons grid */
+    [data-testid="stHorizontalBlock"]:has([data-testid="stDownloadButton"]) {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)) !important;
+        gap: 0.5rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has([data-testid="stDownloadButton"]) > [data-testid="column"] {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+/* Mobile Devices & Mobile Landscape (<= 768px) */
+@media (max-width: 768px) {
+    .block-container,
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 0.75rem !important;
         padding-right: 1rem !important;
         padding-left: 1rem !important;
         padding-bottom: 2rem !important;
     }
 
     .blast-header {
-        padding-top: 0.7rem;
-        margin-bottom: 1rem;
+        padding-top: 0.5rem;
+        margin-bottom: 0.85rem;
     }
 
     .blast-title {
-        font-size: clamp(1.8rem, 11vw, 2.6rem) !important;
+        font-size: clamp(1.85rem, 8vw, 2.75rem) !important;
         letter-spacing: -0.035em !important;
     }
 
@@ -1345,49 +1514,162 @@ button[aria-disabled="true"] {
         padding: 1rem;
     }
 
-    [data-baseweb="tab"],
-    [data-baseweb="tab-list"] [role="tab"] {
-        padding-inline: 0.8rem !important;
-        font-size: 0.73rem !important;
-    }
-
     [data-testid="stFileUploaderDropzone"] {
-        min-height: 138px !important;
-        padding: 1.2rem 0.9rem !important;
+        min-height: 128px !important;
+        padding: 1rem 0.85rem !important;
     }
 
     .download-grid {
         grid-template-columns: 1fr;
     }
-}
 
-@media (max-width: 480px) {
-    .blast-badge-row {
-        align-items: flex-start;
+    /* Prevent iOS Safari automatic zoom on form input focus */
+    input, select, textarea {
+        font-size: 16px !important;
     }
 
-    /* Keep badges as compact pills on small screens — do NOT stretch to full width */
+    /* Audit logs controls stacking */
+    [data-testid="stHorizontalBlock"]:has(input[aria-label*="SEARCH"]) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.65rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(input[aria-label*="SEARCH"]) > [data-testid="column"] {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+}
+
+/* Mobile Portrait & Compact Screens (<= 680px) */
+@media (max-width: 680px) {
+    /* 2x2 Clean Grid for Metrics instead of 4 full-width stacked rows */
+    [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.55rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) > [data-testid="column"] {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+    }
+
+    [data-testid="stMetric"] {
+        min-height: 76px !important;
+        padding: 0.65rem 0.8rem !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 1.22rem !important;
+    }
+
+    [data-testid="stMetricLabel"] p {
+        font-size: 0.68rem !important;
+    }
+
+    /* Smooth horizontal tab scrolling with touch momentum */
+    [data-baseweb="tab-list"] {
+        gap: 0.2rem;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+    }
+
+    [data-baseweb="tab"],
+    [data-baseweb="tab-list"] [role="tab"] {
+        padding: 0.55rem 0.75rem !important;
+        font-size: 0.71rem !important;
+        scroll-snap-align: start;
+    }
+}
+
+/* Compact Mobile Screens (<= 480px) */
+@media (max-width: 480px) {
+    .block-container,
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stMainBlockContainer"] {
+        padding-right: 0.75rem !important;
+        padding-left: 0.75rem !important;
+        padding-top: 0.5rem !important;
+    }
+
+    .blast-badge-row {
+        align-items: flex-start;
+        gap: 0.45rem;
+    }
+
     .status-badge,
     .engine-pill,
     .engine-pill--ready,
     .engine-pill--lazy {
         white-space: normal;
         max-width: max-content;
+        font-size: 0.68rem;
+        padding: 0.25rem 0.6rem;
     }
 
     [data-testid="stMetric"] {
-        min-height: 88px;
-        padding: 0.9rem;
+        min-height: 72px !important;
+        padding: 0.55rem 0.65rem !important;
     }
 
     [data-testid="stMetricValue"] {
-        font-size: 1.28rem !important;
+        font-size: 1.12rem !important;
     }
 
     .doc-stat-pill {
         width: 100%;
         justify-content: space-between;
     }
+
+    .blast-landing-features {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Ultra-Small Mobile Devices e.g. Galaxy Fold Cover (<= 340px) */
+@media (max-width: 340px) {
+    .block-container,
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stMainBlockContainer"] {
+        padding-right: 0.45rem !important;
+        padding-left: 0.45rem !important;
+    }
+
+    [data-testid="stHorizontalBlock"]:has([data-testid="stMetric"]) {
+        gap: 0.35rem !important;
+    }
+
+    [data-testid="stMetric"] {
+        min-height: 68px !important;
+        padding: 0.45rem 0.5rem !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-size: 1.02rem !important;
+    }
+
+    .blast-title {
+        font-size: 1.65rem !important;
+    }
+
+    button,
+    [role="button"] {
+        font-size: 0.72rem !important;
+        padding-inline: 0.5rem !important;
+    }
+}
+
+/* Table and Dataframe Horizontal Overflow Container */
+.stDataFrame,
+[data-testid="stTable"],
+.dataframe,
+div:has(> table) {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
 /* ============================================================

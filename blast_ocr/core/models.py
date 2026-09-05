@@ -6,9 +6,9 @@ Implements frozen dataclasses and Pydantic models for thread safety,
 explicit configuration isolation, and auditable data flow.
 """
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Dict, List, Optional, Any
 from enum import Enum
 
 
@@ -42,6 +42,7 @@ class JobConfig:
     enable_tier0_routing: bool = True
     enable_book_intelligence: bool = True
     language: str = "en"
+    ocr_languages: List[str] = field(default_factory=lambda: ["en"])
     secure_mode: bool = False
     denoise_level: int = 0
     contrast_boost: float = 1.0
@@ -66,6 +67,7 @@ class JobConfig:
             "enable_tier0_routing": self.enable_tier0_routing,
             "enable_book_intelligence": self.enable_book_intelligence,
             "language": self.language,
+            "ocr_languages": self.ocr_languages,
             "secure_mode": self.secure_mode,
             "denoise_level": self.denoise_level,
             "contrast_boost": self.contrast_boost,

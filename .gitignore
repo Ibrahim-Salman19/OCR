@@ -41,6 +41,7 @@ blast_ocr.db
 # PyCharm / IDE settings
 .idea/
 .vscode/
+.claude/
 
 # Excel / Word temporary files
 ~$*.xlsx

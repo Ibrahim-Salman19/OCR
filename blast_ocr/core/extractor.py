@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 from pathlib import Path
 import logging
 import cv2
@@ -48,13 +48,22 @@ logger = logging.getLogger(__name__)
 _ocr_global_lock = threading.Lock()
 
 
-def get_cache_namespace(engine_name: str = "easyocr") -> str:
+def get_cache_namespace(engine_name: str = "easyocr", languages: Optional[List[str]] = None) -> str:
     """Fingerprint of everything besides raw file bytes that can change what
     OCR produces for a given image: engine identity/version, GPU/quantization
     mode, languages, and the preprocessing knobs applied before pixels reach
     the engine. See FIX(F-07) in blast_ocr.cache.manager.OCRCache.get_cache_key
     -- cache entries are keyed on file content combined with this namespace so
     changing any of these can never silently serve a stale answer.
+
+    `languages`, when given, overrides the process-global
+    `config.ocr_languages` for the language component of the namespace --
+    callers processing a per-job language override (see
+    blast_ocr.core.worker.process_page_wrapper) must pass it, otherwise two
+    concurrent/sequential jobs requesting different languages for the same
+    image would collide on the same cache namespace (keyed on the stale
+    global default) and one job could be silently served the other's
+    wrong-language cached result.
     """
     try:
         from importlib.metadata import version as _pkg_version
@@ -65,12 +74,14 @@ def get_cache_namespace(engine_name: str = "easyocr") -> str:
     except Exception:
         engine_version = "unknown"
 
+    effective_languages = languages if languages is not None else config.ocr_languages
+
     parts = [
         engine_name.lower(),
         engine_version,
         f"gpu={bool(config.ocr_gpu)}",
         f"quantize={not bool(config.ocr_gpu)}",
-        f"langs={','.join(sorted(config.ocr_languages))}",
+        f"langs={','.join(sorted(effective_languages))}",
         f"denoise={config.denoise_level}",
         f"contrast={config.contrast_boost}",
         f"deskew={config.auto_deskew}",

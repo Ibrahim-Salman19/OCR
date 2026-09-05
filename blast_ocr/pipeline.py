@@ -59,6 +59,7 @@ class BlastPipeline:
         # Build immutable per-job configuration safely
         cfg_dict = {
             "ocr_engine": getattr(self._config, "ocr_engine", "rapidocr"),
+            "ocr_languages": getattr(self._config, "ocr_languages", ["en"]),
             "enable_tier0_routing": getattr(self._config, "enable_tier0_routing", True),
             "enable_book_intelligence": getattr(self._config, "enable_book_intelligence", True),
             "secure_mode": getattr(self._config, "secure_mode", False),
@@ -333,6 +334,22 @@ class BlastPipeline:
         final_results = []
         for i, r in enumerate(results):
             conf = r.get("confidence", 0.0)
+            # A suspected-but-unresolved script mismatch (see
+            # RapidOCREngine._is_low_yield / script_fallback_error) is
+            # deliberately NOT added to the reflexion trigger below: the
+            # engine already attempted the opposite-script model and
+            # failed (typically because it's unreachable -- no network),
+            # and reflexion only varies image restoration/denoising before
+            # re-running the SAME engine path, which would hit the exact
+            # same unreachable-model failure again. Re-running full OCR
+            # plus a second failed download attempt on every affected page
+            # of a large book for zero recovered text is a real cost, not
+            # a hypothetical one. The flag is still surfaced -- see
+            # had_page_errors below, which marks the job
+            # SUCCEEDED_WITH_WARNINGS instead of a silent clean success --
+            # just not through this retry path. It's still consulted in
+            # the comparison below in case reflexion fires anyway for an
+            # unrelated low-confidence reason on the same page.
             if conf < self.job_config.min_confidence and r.get("text"):
                 logger.info(
                     f"Reflexion triggered for Page {r['page']} (Conf: {conf:.2f})"
@@ -343,9 +360,30 @@ class BlastPipeline:
                 reflexion_path = restore_page_image(
                     original_restored_path, temp_dir, mode="reflexion"
                 )
-                reflex_r = process_page_wrapper(reflexion_path, r["page"])
+                # job_config must be threaded through here: without it this
+                # retry silently falls back to the process-global default
+                # engine/language instead of the job's actual configuration
+                # (e.g. an explicit ocr_engine="batched_rapidocr" or
+                # ocr_languages=["ur"] override), which would otherwise
+                # undo the very engine/language selection that made this a
+                # legitimate job in the first place.
+                reflex_r = process_page_wrapper(
+                    reflexion_path, r["page"], job_config=self.job_config
+                )
 
-                if reflex_r.get("confidence", 0.0) > conf:
+                # Confidence alone isn't a reliable comparison when the
+                # original result carried a suspected script mismatch --
+                # that failure mode can hold a normal-looking confidence
+                # score while most of the page's text is simply missing.
+                # Prefer whichever side doesn't have an unresolved mismatch
+                # flag before falling back to a confidence comparison.
+                r_mismatch = bool(r.get("script_fallback_error"))
+                reflex_mismatch = bool(reflex_r.get("script_fallback_error"))
+                if r_mismatch and not reflex_mismatch:
+                    r = reflex_r
+                elif reflex_mismatch and not r_mismatch:
+                    pass
+                elif reflex_r.get("confidence", 0.0) > conf:
                     r = reflex_r
 
                 try:
@@ -685,7 +723,26 @@ class BlastPipeline:
                 except Exception as os_err:
                     logger.warning(f"Object storage mirror failed (outputs remain available locally): {os_err}")
 
-            had_page_errors = any(r.get("error") for r in results)
+            # A page carrying an unresolved script_fallback_error (see
+            # RapidOCREngine) means the engine itself suspected a
+            # script/recognition mismatch -- lots of visible text, almost
+            # none recognized -- and couldn't confirm or fix it (e.g. the
+            # Arabic-script fallback model was unreachable). Even after the
+            # reflexion retry above, that suspicion must surface as a
+            # warning rather than a clean success: the alternative is a job
+            # that reports SUCCEEDED while silently missing most of a
+            # page's actual text. engine_disagreement (ConsensusEnsembleEngine,
+            # ocr_engine="ensemble") is the same philosophy for a different
+            # signal: two independently-architected engines substantially
+            # disagreeing on a page, discovered because RapidOCR's own
+            # confidence was measured to NOT correlate with actual accuracy
+            # (0.91-0.96 confidence regardless of whether real CER was 4%
+            # or 67%, see ensemble_engine.py) -- confidence alone cannot be
+            # trusted to report this job as a clean success either.
+            had_page_errors = any(
+                r.get("error") or r.get("script_fallback_error") or r.get("engine_disagreement")
+                for r in results
+            )
             self.db.update_job_status(
                 job_id,
                 JobState.SUCCEEDED_WITH_WARNINGS if had_page_errors else JobState.SUCCEEDED,

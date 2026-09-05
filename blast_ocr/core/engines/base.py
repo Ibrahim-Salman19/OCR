@@ -58,10 +58,16 @@ class BaseOCREngine(ABC):
         image_path: str,
         page_number: int,
         glyph_height: Optional[float] = None,
+        languages: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Process a single image page and return result dictionary containing extracted
         text, confidence, details, processing time, and structured page_model.
+
+        `languages`, when given, is a per-call language override (e.g. a
+        per-job language list from JobConfig) that takes precedence over
+        any process-global language configuration. Engines that don't
+        support per-call language selection may ignore it.
         """
         pass
 

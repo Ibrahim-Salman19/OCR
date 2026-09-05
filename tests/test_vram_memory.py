@@ -152,6 +152,17 @@ def test_inference_thread_local_state_no_bleed():
     from blast_ocr.core.extractor import RobustOCRExtractor
 
     extractor = RobustOCRExtractor()
+
+    # Warm-up inference once so one-time backend initialization does not skew thread metrics
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        warmup_path = f.name
+    try:
+        cv2.imwrite(warmup_path, np.full((100, 100, 3), 200, dtype=np.uint8))
+        extractor.process_page(warmup_path, 0)
+    finally:
+        if os.path.exists(warmup_path):
+            os.unlink(warmup_path)
+
     thread_memory = {}
     lock = threading.Lock()
 
@@ -163,30 +174,25 @@ def test_inference_thread_local_state_no_bleed():
 
         try:
             cv2.imwrite(img_path, np.full((100, 100, 3), 200, dtype=np.uint8))
-
-            if not tm.is_tracing():
-                tm.start()
+            tm.start()
 
             try:
                 extractor.process_page(img_path, tid)
             except Exception:
                 pass
 
-            if tm.is_tracing():
-                snap = tm.take_snapshot()
-                total = sum(s.size for s in snap.statistics("lineno"))
-                with lock:
-                    thread_memory[tid] = total
+            snap = tm.take_snapshot()
+            total = sum(s.size for s in snap.statistics("lineno"))
+            with lock:
+                thread_memory[tid] = total
         finally:
-            if tm.is_tracing():
-                tm.stop()
+            tm.stop()
             if os.path.exists(img_path):
                 os.unlink(img_path)
 
-    threads = [threading.Thread(target=run_inference, args=(i,)) for i in range(3)]
-    for t in threads:
+    for i in range(3):
+        t = threading.Thread(target=run_inference, args=(i,))
         t.start()
-    for t in threads:
         t.join()
 
     # Memory per thread should be roughly equal — large divergence = leak

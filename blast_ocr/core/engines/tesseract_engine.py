@@ -6,7 +6,7 @@ Integrates pytesseract when installed on the host system, providing
 standard hOCR/image_to_data bounding box parsing into Document Models.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 import time
 import logging
 import cv2
@@ -54,6 +54,7 @@ class TesseractEngine(BaseOCREngine):
         image_path: str,
         page_number: int,
         glyph_height: Optional[float] = None,
+        languages: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         self._init_engine()
         if not self._available:
@@ -61,7 +62,7 @@ class TesseractEngine(BaseOCREngine):
             from blast_ocr.core.engines.rapidocr_engine import RapidOCREngine
             logger.info("Tesseract unavailable on system, falling back to RapidOCR.")
             rapid = RapidOCREngine()
-            res = rapid.process_page(image_path, page_number, glyph_height)
+            res = rapid.process_page(image_path, page_number, glyph_height, languages=languages)
             res["engine"] = f"tesseract_fallback_to_{rapid.engine_name}"
             return res
 

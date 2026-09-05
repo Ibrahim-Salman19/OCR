@@ -6,6 +6,7 @@ Implements worker-local engine registry, cache lookup, forensic image restoratio
 and thread-safe task processing wrapper.
 """
 
+import inspect
 import logging
 import os
 import time
@@ -17,6 +18,26 @@ from blast_ocr.config import config
 from blast_ocr.core.engines import get_engine, BaseOCREngine
 from blast_ocr.core.extractor import get_cache_namespace, RobustOCRExtractor
 from blast_ocr.cache.manager import cache_manager
+
+
+def _engine_accepts_languages(engine: Any) -> bool:
+    """
+    True if `engine.process_page` will accept a `languages=` keyword arg.
+
+    Checked by introspection rather than assumed, because `process_page`
+    is a public adapter interface -- callers (including tests) may supply
+    minimal engine doubles implementing only the pre-existing
+    `(image_path, page_number, glyph_height=None)` signature, and forcing
+    a `languages` kwarg on those would break them for no benefit, since
+    they don't do any language-aware routing to receive it.
+    """
+    try:
+        params = inspect.signature(engine.process_page).parameters
+    except (TypeError, ValueError):
+        return False
+    return "languages" in params or any(
+        p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
+    )
 
 
 class EngineRegistry:
@@ -73,11 +94,14 @@ def process_page_wrapper(image_path: str, page_num: int, job_config: Optional[An
     """
     logger = logging.getLogger(__name__)
 
-    # Extract target engine choice from JobConfig or fallback to config
+    # Extract target engine choice (and language override) from JobConfig,
+    # falling back to process-global config for legacy/direct callers.
     if job_config is not None:
         target_engine = getattr(job_config, "ocr_engine", getattr(config, "ocr_engine", "rapidocr"))
+        languages = getattr(job_config, "ocr_languages", None)
     else:
         target_engine = getattr(config, "ocr_engine", "rapidocr")
+        languages = None
 
     is_mock_extractor = (
         hasattr(get_worker_extractor, "_mock_name")
@@ -92,7 +116,7 @@ def process_page_wrapper(image_path: str, page_num: int, job_config: Optional[An
 
     cache_key = None
     try:
-        namespace = get_cache_namespace(engine_name)
+        namespace = get_cache_namespace(engine_name, languages=languages)
         cache_key = cache_manager.get_cache_key(image_path, namespace)
         cached = cache_manager.get(cache_key)
         if cached:
@@ -110,7 +134,10 @@ def process_page_wrapper(image_path: str, page_num: int, job_config: Optional[An
             result = mock_ext.process_page(image_path, page_num)
         else:
             engine = get_worker_engine(target_engine)
-            result = engine.process_page(image_path, page_num)
+            if languages is not None and _engine_accepts_languages(engine):
+                result = engine.process_page(image_path, page_num, languages=languages)
+            else:
+                result = engine.process_page(image_path, page_num)
 
         duration = time.monotonic() - start_time
         result["processing_time"] = duration

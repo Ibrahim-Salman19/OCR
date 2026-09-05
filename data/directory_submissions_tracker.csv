@@ -1,0 +1,21 @@
+directory_name,category,domain_rating,status,submission_url,listing_title,anchor_url
+Smithery.ai,MCP Registry,62,Ready,https://smithery.ai/submit,B.L.A.S.T. OCR MCP Server,https://github.com/Ibrahim-Salman19/OCR
+mcp.so,MCP Registry,55,Ready,https://mcp.so/submit,B.L.A.S.T. OCR — Model Context Protocol,https://github.com/Ibrahim-Salman19/OCR
+Glama.ai,MCP Registry,58,Ready,https://glama.ai/mcp/servers,B.L.A.S.T. OCR Agent Tool,https://github.com/Ibrahim-Salman19/OCR
+Pulse MCP,MCP Registry,48,Ready,https://pulsemcp.com/submit,B.L.A.S.T. OCR High-Throughput Engine,https://github.com/Ibrahim-Salman19/OCR
+Product Hunt,Launchpad,91,Ready,https://www.producthunt.com/posts/new,B.L.A.S.T. OCR — 29.1 pps Self-Hosted Engine,https://ocr-book.streamlit.app/
+AlternativeTo,Software Reviews,84,Ready,https://alternativeto.net/software/submit/,B.L.A.S.T. OCR (Tesseract & Textract Alternative),https://github.com/Ibrahim-Salman19/OCR
+SaaSHub,Software Directory,76,Ready,https://www.saashub.com/submit,B.L.A.S.T. OCR Engine,https://github.com/Ibrahim-Salman19/OCR
+TAAFT (There's An AI For That),AI Directory,81,Ready,https://theresanaiforthat.com/submit/,B.L.A.S.T. OCR — Fast Document Intelligence,https://ocr-book.streamlit.app/
+Futurepedia,AI Directory,79,Ready,https://www.futurepedia.io/submit-tool,B.L.A.S.T. Document Intelligence Engine,https://ocr-book.streamlit.app/
+Toolify.ai,AI Directory,75,Ready,https://www.toolify.ai/submit,B.L.A.S.T. OCR Python Engine,https://ocr-book.streamlit.app/
+FutureTools,AI Directory,74,Ready,https://www.futuretools.io/submit-a-tool,B.L.A.S.T. High-Throughput Batch OCR,https://github.com/Ibrahim-Salman19/OCR
+BetaList,Startup Directory,80,Ready,https://betalist.com/submit,B.L.A.S.T. OCR Enterprise,https://ocr-book.streamlit.app/
+SourceForge,Open Source,92,Ready,https://sourceforge.net/create/,B.L.A.S.T. OCR,https://github.com/Ibrahim-Salman19/OCR
+Openbase,Developer Tools,68,Ready,https://openbase.com,blast-ocr Python Package,https://github.com/Ibrahim-Salman19/OCR
+Slant.co,Recommendation Engine,79,Ready,https://www.slant.co,What is the best OCR library in Python?,https://github.com/Ibrahim-Salman19/OCR
+Awesome-Python,GitHub Ecosystem,88,Ready,https://github.com/vinta/awesome-python,B.L.A.S.T. — High-Throughput ONNX OCR,https://github.com/Ibrahim-Salman19/OCR
+Awesome-RAG,GitHub Ecosystem,72,Ready,https://github.com/awesome-rag,B.L.A.S.T. — Deterministic OCR Loader,https://github.com/Ibrahim-Salman19/OCR
+Awesome-MCP-Servers,GitHub Ecosystem,65,Ready,https://github.com/modelcontextprotocol/servers,B.L.A.S.T. OCR stdio/sse Server,https://github.com/Ibrahim-Salman19/OCR
+Cursor Directory,Cursor Ecosystem,59,Ready,https://cursor.directory,B.L.A.S.T. OCR MCP Tool Rule,https://github.com/Ibrahim-Salman19/OCR
+LlamaIndex Hub (LlamaHub),Agentic Ecosystem,78,Ready,https://llamahub.ai,BLASTLlamaIndexReader,https://github.com/Ibrahim-Salman19/OCR

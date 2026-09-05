@@ -269,3 +269,48 @@ def test_marketing_skills_registry():
         assert "name:" in text
         assert "description:" in text
 
+
+def test_cost_calculator_tool():
+    from blast_ocr.tools.cost_calculator import calculate_roi, format_report_markdown
+
+    zero_roi = calculate_roi(0)
+    assert zero_roi["cloud_monthly_cost_usd"] == 0.0
+    assert zero_roi["blast_instances_needed"] == 0
+
+    roi = calculate_roi(500_000, cloud_provider="textract", include_tables=True)
+    assert roi["cloud_monthly_cost_usd"] == 25_000.0
+    assert roi["blast_monthly_infra_usd"] > 0
+    assert roi["monthly_savings_usd"] > 24_000.0
+    assert roi["savings_percentage"] > 95.0
+    assert roi["payback_period_days"] < 1.0
+
+    report_md = format_report_markdown(roi)
+    assert "Cloud OCR vs. Self-Hosted B.L.A.S.T. ROI Report" in report_md
+    assert "Gross Margin Increase" in report_md
+
+
+def test_comparisons_and_conversions_hub_integrity():
+    comparisons_dir = ROOT_DIR / "docs/comparisons"
+    assert (comparisons_dir / "index.md").exists()
+    assert (comparisons_dir / "blast-vs-tesseract.md").exists()
+    assert (comparisons_dir / "blast-vs-aws-textract.md").exists()
+
+    conversions_dir = ROOT_DIR / "docs/conversions"
+    assert (conversions_dir / "index.md").exists()
+    assert (conversions_dir / "pdf-to-markdown.md").exists()
+    assert (conversions_dir / "scanned-pdf-to-docx.md").exists()
+
+    integrations_dir = ROOT_DIR / "docs/integrations"
+    assert (integrations_dir / "index.md").exists()
+    assert (integrations_dir / "langchain-rag.md").exists()
+    assert (integrations_dir / "cursor-mcp-setup.md").exists()
+
+    whitepapers_dir = ROOT_DIR / "docs/whitepapers"
+    assert (whitepapers_dir / "enterprise-ocr-memory-architecture.md").exists()
+
+    # Verify author entity provenance link across all newly created guides
+    for folder in [comparisons_dir, conversions_dir, integrations_dir, whitepapers_dir]:
+        for doc in folder.glob("*.md"):
+            content = doc.read_text(encoding="utf-8")
+            assert "ibrahimsalman.vercel.app" in content, f"Missing author portfolio in {doc}"
+

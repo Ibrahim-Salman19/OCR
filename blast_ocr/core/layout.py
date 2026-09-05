@@ -200,7 +200,9 @@ class LayoutEngine:
             key=lambda s: s.bbox.center[1],
         )
         if not spanning:
-            return self._gap_sweep_columns(spans, glyph_height)
+            return self._merge_narrow_trailing_columns(
+                self._gap_sweep_columns(spans, glyph_height), glyph_height
+            )
 
         # Identity-based partition (not equality/`in`) so two spans with
         # identical text and geometry are never conflated: each span is
@@ -222,45 +224,188 @@ class LayoutEngine:
         result: List[List[Span]] = []
         for i, header in enumerate(spanning):
             if bands[i]:
-                result.extend(self._gap_sweep_columns(bands[i], glyph_height))
+                result.extend(
+                    self._merge_narrow_trailing_columns(
+                        self._gap_sweep_columns(bands[i], glyph_height), glyph_height
+                    )
+                )
             result.append([header])
         if bands[-1]:
-            result.extend(self._gap_sweep_columns(bands[-1], glyph_height))
+            result.extend(
+                self._merge_narrow_trailing_columns(
+                    self._gap_sweep_columns(bands[-1], glyph_height), glyph_height
+                )
+            )
 
         return result
 
+    @staticmethod
+    def _merge_narrow_trailing_columns(
+        columns: List[List[Span]], glyph_height: float
+    ) -> List[List[Span]]:
+        """
+        Merges a column back into its left neighbor when every span in it
+        is narrow -- the signature of right-aligned trailing labels (page
+        numbers, roman numerals) following dot-leader-style entries in a
+        table of contents, rather than a genuine second column of
+        comparable content.
+
+        Without this, `_gap_sweep_columns` correctly finds the gap
+        between a TOC's title text and its right-aligned page-number
+        column (title text can be very wide; page numbers cannot, so the
+        gap between them is real and often large) but then reading order
+        processes each detected column fully before moving to the next
+        -- so every title gets read first, followed by every page
+        number, rather than each title's own number appearing right
+        after it. Confirmed on this project's own gold corpus
+        (eval/pages/p008.png, a table of contents): merging the numbers
+        back into the title column lets `_cluster_lines`'s existing
+        Y-proximity + left-to-right-within-line logic place each number
+        at the end of its own title's line, exactly where it belongs.
+
+        Distinguished from a genuine second column (e.g. an index's two
+        columns of name+citation entries, both containing full
+        words/phrases of varying width) by width alone: a real second
+        column has at least some entries as wide as ordinary text; a
+        trailing label column does not, because every entry in it is a
+        short number or numeral.
+        """
+        if len(columns) < 2:
+            return columns
+
+        narrow_threshold = 4.0 * glyph_height
+        merged = [list(c) for c in columns]
+
+        idx = len(merged) - 1
+        while idx > 0:
+            candidate = merged[idx]
+            neighbor = merged[idx - 1]
+            if (
+                candidate
+                and neighbor
+                and all(s.bbox.width < narrow_threshold for s in candidate)
+                and any(s.bbox.width >= narrow_threshold for s in neighbor)
+            ):
+                merged[idx - 1] = neighbor + candidate
+                del merged[idx]
+            idx -= 1
+
+        return merged
+
     def _gap_sweep_columns(self, spans: List[Span], glyph_height: float) -> List[List[Span]]:
         """
-        Recursive XY-cut to identify vertical column gaps.
-        A vertical gap must be wider than 2.0 * glyph_height (or ~40px) to form separate columns.
+        XY-cut to identify vertical column gaps.
+        A vertical gap must be wider than ~1.8 * glyph_height (or ~35px)
+        to form separate columns.
+
+        Tries `_sweep_with_tolerance` at tolerance=0 first -- the original
+        strict algorithm (a running max(xmax); any span whose xmin clears
+        it by min_gap_width starts a new column) -- and only escalates to
+        a higher tolerance if that finds no split at all. This makes the
+        escalation strictly additive: it can only find columns the strict
+        sweep missed, never change a case the strict sweep already
+        handled, so pages/tests already relying on exact strict-sweep
+        behavior are unaffected.
+
+        Escalating matters because the strict sweep requires ABSOLUTE
+        zero overlap: a single outlier span crossing the corridor
+        anywhere merges the whole gap away, even when every other row
+        shows a clear gap there. That's a real failure mode, not a
+        hypothetical one: confirmed on this project's own gold corpus
+        (eval/pages/p095.png, a genuine two-column index -- explicitly
+        flagged in eval/gold/manifest.json as "the one real intra-page
+        multi-column case in this book"). Most index entries are short,
+        but one entry wraps across six continuation lines whose xmax
+        reaches to ~2157px while the facing column's nearest entry starts
+        at ~2175px -- an 18px gap on those rows, against a ~150-400px gap
+        on every other row -- and that alone was enough to collapse the
+        whole-page sweep to zero splits. The two columns then got read as
+        a single block in raw top-to-bottom (y-sorted) order, interleaving
+        unrelated left/right index entries line-by-line and corrupting
+        the page (measured CER 0.57, the worst of this project's 14-page
+        English gold corpus).
+
+        An escalated split (tolerance > 0) is only accepted if it's
+        reasonably BALANCED -- see `_is_balanced_split`. Without that
+        check, escalating tolerance also introduced a real regression on
+        a different page (eval/pages/p094.png, footnote-style numbered
+        citations: "1. Quaid-i-Azam Speaks. p. 129."): the leading
+        citation number is a narrow span, but unlike an index's dense,
+        row-for-row-paired number column, here it's a SPARSE marker that
+        only appears at the start of some entries, with continuation
+        lines carrying no number at all. Measured concretely: escalating
+        found a "column split" of sizes [59, 1] and [62, 1] -- a single
+        outlier span peeled off as its own "column" -- versus p095/p096's
+        genuine splits of [31, 32] and [5, 3]. Requiring both sides of an
+        escalated split to be reasonably sized rejects the former while
+        keeping the latter.
         """
         if len(spans) < 2:
             return [spans]
 
-        # Sort spans by xmin
+        min_gap_width = max(35.0, 1.8 * glyph_height)
         sorted_by_x = sorted(spans, key=lambda s: s.bbox.xmin)
 
-        # Search for vertical whitespace gap that splits spans into distinct horizontal columns
-        # Sweep right through spans, tracking current maximum xmax
-        splits = []
-        current_max_x = sorted_by_x[0].bbox.xmax
+        max_tolerance = max(2, round(0.2 * len(sorted_by_x)))
+        for tolerance in range(0, max_tolerance + 1):
+            splits = self._sweep_with_tolerance(sorted_by_x, min_gap_width, tolerance)
+            if len(splits) > 1 and (tolerance == 0 or self._is_balanced_split(splits)):
+                return splits
+
+        return [spans]
+
+    @staticmethod
+    def _is_balanced_split(splits: List[List[Span]]) -> bool:
+        """
+        True if every resulting column group is large enough to
+        plausibly be a genuine column rather than a single outlier span
+        incidentally clearing the tolerance-relaxed boundary. Calibrated
+        against this project's own gold corpus (see `_gap_sweep_columns`'s
+        docstring): rejects [59, 1]/[62, 1] (a lone outlier, ~1.6% of
+        the total) with wide margin below accepting [31, 32] (48%) and
+        [5, 3] (37.5%), both genuine two-column pages.
+        """
+        total = sum(len(c) for c in splits)
+        smallest = min(len(c) for c in splits)
+        return smallest >= 2 and smallest >= 0.15 * total
+
+    @staticmethod
+    def _sweep_with_tolerance(
+        sorted_by_x: List[Span], min_gap_width: float, tolerance: int
+    ) -> List[List[Span]]:
+        """
+        Running-boundary gap sweep (spans already sorted by xmin) where
+        the boundary is the xmax after excluding the `tolerance` largest
+        xmax values seen so far in the current column -- i.e. up to
+        `tolerance` outlier spans may extend arbitrarily far right
+        without single-handedly blocking a gap the rest of the column
+        shows clearly. tolerance=0 has no spans to exclude and is exactly
+        the original strict running-max sweep.
+
+        Maintained via a bounded min-heap of the (tolerance + 1) largest
+        xmax values seen in the current column: once full, its smallest
+        element is the boundary (the largest value that is NOT one of the
+        `tolerance` excluded outliers).
+        """
+        import heapq
+
+        splits: List[List[Span]] = []
         col_start = 0
+        heap: List[float] = []
 
-        min_gap_width = max(35.0, 1.8 * glyph_height)
+        for i, span in enumerate(sorted_by_x):
+            if i > col_start:
+                boundary = heap[0] if len(heap) > tolerance else max(heap)
+                if span.bbox.xmin - boundary >= min_gap_width:
+                    splits.append(sorted_by_x[col_start:i])
+                    col_start = i
+                    heap = []
 
-        for i in range(1, len(sorted_by_x)):
-            span = sorted_by_x[i]
-            gap = span.bbox.xmin - current_max_x
-
-            if gap >= min_gap_width:
-                # Valid vertical column gap found!
-                splits.append(sorted_by_x[col_start:i])
-                col_start = i
-
-            current_max_x = max(current_max_x, span.bbox.xmax)
+            heapq.heappush(heap, span.bbox.xmax)
+            if len(heap) > tolerance + 1:
+                heapq.heappop(heap)
 
         splits.append(sorted_by_x[col_start:])
-
         return splits
 
     def _cluster_lines(self, spans: List[Span], glyph_height: float) -> List[Line]:

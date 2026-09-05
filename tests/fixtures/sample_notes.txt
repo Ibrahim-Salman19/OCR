@@ -1,0 +1,3 @@
+B.L.A.S.T. OCR Native Text Ingestion Test
+Section 1: Heterogeneous Batch Pipeline
+Verification of plain text parsing without neural inference overhead.
