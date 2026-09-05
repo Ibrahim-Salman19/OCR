@@ -229,3 +229,13 @@ Dedicated technical reference guides featuring 40–60 word direct citation answ
 - [Zero-Leak Streaming Memory Blueprint](docs/whitepapers/enterprise-ocr-memory-architecture.md): 0.0002 MB/page streaming memory buffer architecture.
 - [Evaluating Table Extraction with TEDS](docs/whitepapers/teds-table-extraction-benchmark.md): Tree-Edit-Distance benchmark across 500 financial tables.
 - [Enterprise Cloud OCR Migration Playbook](docs/whitepapers/cloud-to-local-migration-playbook.md): Roadmap for slashing 90%+ AWS Textract expenses.
+
+## Author & Engineering Provenance
+- Engineered & Maintained by: [Ibrahim Salman](https://ibrahimsalman.vercel.app)
+- Role: Full-Stack Software Engineer & AI Systems Architect (Alumnus of University of Engineering and Technology, Taxila)
+- Portfolio & Technical Writeups: https://ibrahimsalman.vercel.app
+- B.L.A.S.T. Architecture Case Study: https://ibrahimsalman.vercel.app/projects/blast
+- GitHub: https://github.com/Ibrahim-Salman19
+- LinkedIn: https://www.linkedin.com/in/ibrahim-salman-dev/
+- Upwork Verified Specialist: https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8
+- Direct Inquiries & Consulting: ibrahim.pk848@gmail.com | https://ibrahimsalman.vercel.app/contact

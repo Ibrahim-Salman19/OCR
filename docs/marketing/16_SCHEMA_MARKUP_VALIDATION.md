@@ -50,11 +50,41 @@ The structured data is embedded directly into the live DOM via Streamlit (`blast
         "price": "0.00",
         "priceCurrency": "USD"
       },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.98",
-        "ratingCount": "142"
+      "author": {
+        "@id": "https://ibrahimsalman.vercel.app/#person"
       }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://ibrahimsalman.vercel.app/#person",
+      "name": "Ibrahim Salman",
+      "alternateName": ["Ibrahim-Salman19", "Ibrahim Salman Dev"],
+      "url": "https://ibrahimsalman.vercel.app",
+      "image": "https://ibrahimsalman.vercel.app/profile.jpg",
+      "jobTitle": "Full-Stack Software Engineer & AI Systems Architect",
+      "email": "mailto:ibrahim.pk848@gmail.com",
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "University of Engineering and Technology, Taxila",
+        "url": "https://uettaxila.edu.pk/",
+        "sameAs": "https://www.wikidata.org/wiki/Q10854449"
+      },
+      "knowsAbout": [
+        "Optical Character Recognition (OCR)",
+        "Retrieval-Augmented Generation (RAG)",
+        "Document Intelligence",
+        "Computer Vision",
+        "ONNX Runtime Multi-Provider Acceleration",
+        "Distributed Task Queues & Swarms",
+        "Python",
+        "TypeScript"
+      ],
+      "sameAs": [
+        "https://github.com/Ibrahim-Salman19",
+        "https://www.linkedin.com/in/ibrahim-salman-dev/",
+        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8",
+        "https://x.com/ibrahim_salman19"
+      ]
     },
     {
       "@type": "SoftwareSourceCode",

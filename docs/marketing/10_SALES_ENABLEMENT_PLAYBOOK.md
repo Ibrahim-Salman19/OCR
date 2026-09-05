@@ -148,7 +148,7 @@ Web: https://github.com/Ibrahim-Salman19/OCR • Docs: /v1/docs • License: ent
     "encryption_at_rest": "Tiered cache artifacts can be written to AES-256 encrypted volumes or S3/MinIO SSE-KMS buckets.",
     "vulnerability_management": "Zero known vulnerabilities (0 Bandit issues, 100% clean Ruff linting, pinned dependencies).",
     "sandboxing_jail": "Path traversal jail strictly rejects file paths outside configured base directories or UUID-sandboxed session roots.",
-    "magic_byte_validation": "File extensions are verified against binary file signatures (PDF %PDF-, PNG \x89PNG, JPG \xFF\xD8\xFF). Spoofed payloads are immediately rejected.",
+    "magic_byte_validation": "File extensions are verified against binary file signatures (PDF %PDF-, PNG \\x89PNG, JPG \\xFF\\xD8\\xFF). Spoofed payloads are immediately rejected.",
     "decompression_bomb_protection": "PIL MAX_IMAGE_PIXELS capped at 100,000,000 to prevent algorithmic complexity and zip-bomb DoS attacks.",
     "process_isolation": "Swarm workers run in isolated sub-processes with dedicated memory tracking and automatic recycling.",
     "audit_logging": "Structured JSON logging with ISO-8601 timestamps, job IDs, execution latencies, and zero PII logging.",

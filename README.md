@@ -235,11 +235,17 @@ The test harness guarantees:
 
 ## 👤 Author & Engineering Provenance
 
-Engineered by **[Ibrahim Salman](https://ibrahimsalman.vercel.app/)** ([@Ibrahim-Salman19](https://github.com/Ibrahim-Salman19)), Software Engineer specializing in high-throughput OCR systems, RAG architectures, and resilient automation pipelines.
-- **Portfolio**: [ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app/)
-- **Live Demos**: [UET GPT](https://uet-gpt.vercel.app) • [B.L.A.S.T. Mission Control](https://ocr-book.streamlit.app/)
+Engineered by **[Ibrahim Salman](https://ibrahimsalman.vercel.app/)** ([@Ibrahim-Salman19](https://github.com/Ibrahim-Salman19)), Full-Stack Software Engineer & AI Systems Architect (Alumnus of [University of Engineering and Technology, Taxila](https://uettaxila.edu.pk/)). Specializes in high-throughput OCR systems, RAG architectures, ONNX neural inference, and resilient distributed pipelines.
+
+- **Portfolio & Case Studies**: [ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app/)
+- **B.L.A.S.T. Technical Case Study**: [ibrahimsalman.vercel.app/projects/blast](https://ibrahimsalman.vercel.app/projects/blast)
+- **Live Production Systems**: [UET GPT](https://uet-gpt.vercel.app) • [B.L.A.S.T. Mission Control](https://ocr-book.streamlit.app/)
 - **LinkedIn**: [linkedin.com/in/ibrahim-salman-dev](https://www.linkedin.com/in/ibrahim-salman-dev/)
-- **Upwork**: [Ibrahim Salman Profile](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)
+- **GitHub**: [@Ibrahim-Salman19](https://github.com/Ibrahim-Salman19)
+- **Upwork Verified Specialist**: [Ibrahim Salman Profile](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)
+- **Direct Contact & Inquiries**: [ibrahim.pk848@gmail.com](mailto:ibrahim.pk848@gmail.com) • [Contact Portal](https://ibrahimsalman.vercel.app/contact)
+
+*"Make it work. Prove it works. Make it survive production."*
 
 ---
 
@@ -316,13 +322,35 @@ Distributed under the **MIT License**. Free for commercial and private use.
       "@type": "Person",
       "@id": "https://ibrahimsalman.vercel.app/#person",
       "name": "Ibrahim Salman",
-      "alternateName": "Ibrahim-Salman19",
+      "alternateName": [
+        "Ibrahim-Salman19",
+        "Ibrahim Salman Dev"
+      ],
       "url": "https://ibrahimsalman.vercel.app",
-      "jobTitle": "Software Engineer",
+      "image": "https://ibrahimsalman.vercel.app/profile.jpg",
+      "jobTitle": "Full-Stack Software Engineer & AI Systems Architect",
+      "email": "mailto:ibrahim.pk848@gmail.com",
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "University of Engineering and Technology, Taxila",
+        "url": "https://uettaxila.edu.pk/",
+        "sameAs": "https://www.wikidata.org/wiki/Q10854449"
+      },
+      "knowsAbout": [
+        "Optical Character Recognition (OCR)",
+        "Retrieval-Augmented Generation (RAG)",
+        "Document Intelligence",
+        "Computer Vision",
+        "ONNX Runtime Multi-Provider Acceleration",
+        "Distributed Task Queues & Swarms",
+        "Python",
+        "TypeScript"
+      ],
       "sameAs": [
         "https://github.com/Ibrahim-Salman19",
         "https://www.linkedin.com/in/ibrahim-salman-dev/",
-        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8"
+        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8",
+        "https://x.com/ibrahim_salman19"
       ]
     },
     {

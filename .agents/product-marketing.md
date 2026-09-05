@@ -131,13 +131,20 @@
 **Current metrics:** 737 tests passed, 24/24 evaluation scenarios verified, 0.1916 CER on gold standard corpus.
 
 ## Creator & Engineering Authority
-**Author & Lead Architect:** [Ibrahim Salman](https://ibrahimsalman.vercel.app)
-**Portfolio & Case Studies:** [https://ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app)
-**Project Showcase:** [https://ibrahimsalman.vercel.app/projects/blast](https://ibrahimsalman.vercel.app/projects/blast)
-**GitHub:** [https://github.com/Ibrahim-Salman19](https://github.com/Ibrahim-Salman19)
-**LinkedIn:** [https://www.linkedin.com/in/ibrahim-salman-dev/](https://www.linkedin.com/in/ibrahim-salman-dev/)
-**Upwork:** [https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)
-**Background & Expertise:** Software engineer and systems architect specializing in high-throughput data processing pipelines, computer vision, ONNX neural inference runtime optimization, and agentic RAG architectures. Engineered B.L.A.S.T. OCR to eliminate production memory leaks and multi-thousand dollar cloud OCR API dependencies for developer teams.
+**Author & Lead Architect:** [Ibrahim Salman](https://ibrahimsalman.vercel.app)  
+**Engineering Provenance:** Full-Stack Software Engineer & AI Systems Architect, alumnus of [University of Engineering and Technology (UET), Taxila](https://uettaxila.edu.pk/) (Wikidata: [Q10854449](https://www.wikidata.org/wiki/Q10854449)).  
+**Standard O*NET Occupations:** 15-1252.00 (Software Developers), 15-1299.08 (Computer Systems Engineers/Architects).  
+**Portfolio & Technical Writeups:** [https://ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app)  
+**B.L.A.S.T. Production Case Study:** [https://ibrahimsalman.vercel.app/projects/blast](https://ibrahimsalman.vercel.app/projects/blast)  
+**Live Production Systems:**  
+- [UET GPT](https://uet-gpt.vercel.app): Full-stack production AI assistant (Next.js 15, TypeScript, Convex, Clerk, Vercel AI SDK).  
+- [B.L.A.S.T. Mission Control](https://ocr-book.streamlit.app/): Self-hosted document intelligence web app with SVG heatmaps and batch processing.  
+- Production Marketplace Monitoring: Multi-source event-driven pipeline backed by 299 unit tests across 4 Python versions.  
+**LinkedIn:** [https://www.linkedin.com/in/ibrahim-salman-dev/](https://www.linkedin.com/in/ibrahim-salman-dev/)  
+**GitHub:** [https://github.com/Ibrahim-Salman19](https://github.com/Ibrahim-Salman19)  
+**Upwork Enterprise Profile:** [Upwork Verified Specialist](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)  
+**Direct Contact & Consulting:** [ibrahim.pk848@gmail.com](mailto:ibrahim.pk848@gmail.com) • [Contact Portal](https://ibrahimsalman.vercel.app/contact)  
+**Engineering Philosophy:** *"Make it work. Prove it works. Make it survive production."*
 
 ## Changelog
 *Newest first. One line per revision: what changed and why.*

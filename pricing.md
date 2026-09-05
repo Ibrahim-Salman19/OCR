@@ -88,7 +88,13 @@
 ---
 
 ## 📞 Purchasing & Licensing Contacts
-- **Author & Engineering Inquiries**: [Ibrahim Salman](https://ibrahimsalman.vercel.app) (Direct Portfolio: [https://ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app) | [Contact Form](https://ibrahimsalman.vercel.app/#contact))
-- **Self-Serve OSS**: https://github.com/Ibrahim-Salman19/OCR
-- **Enterprise Licensing**: `enterprise@blast-ocr.io`
+- **Author & Engineering Inquiries**: [Ibrahim Salman](https://ibrahimsalman.vercel.app)  
+  *Full-Stack Software Engineer & AI Systems Architect (UET Taxila)*  
+  - **Portfolio & Case Studies**: [https://ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app)  
+  - **B.L.A.S.T. Architecture Case Study**: [https://ibrahimsalman.vercel.app/projects/blast](https://ibrahimsalman.vercel.app/projects/blast)  
+  - **LinkedIn**: [linkedin.com/in/ibrahim-salman-dev](https://www.linkedin.com/in/ibrahim-salman-dev/)  
+  - **Upwork Enterprise Profile**: [Upwork Verified Specialist](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)  
+  - **Direct Inquiry**: [ibrahim.pk848@gmail.com](mailto:ibrahim.pk848@gmail.com) • [Contact Portal](https://ibrahimsalman.vercel.app/contact)
+- **Self-Serve Open Source (MIT)**: https://github.com/Ibrahim-Salman19/OCR
+- **Enterprise Licensing & Custom SLAs**: `enterprise@blast-ocr.io`
 - **Schedule Staging Pilot**: https://cal.com/blast-ocr/pilot-review

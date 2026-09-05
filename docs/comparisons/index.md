@@ -42,11 +42,14 @@ For the full catalog of engineering specs, conversion guides, and whitepapers, v
 
 ## 👨‍💻 Author & Engineering Authority
 
-**Engineered & Authored by**: [Ibrahim Salman](https://ibrahimsalman.vercel.app)  
-*Software Engineer & Systems Architect*  
-- **Portfolio & Case Studies**: [https://ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app)  
-- **Project Provenance**: [https://ibrahimsalman.vercel.app/projects/blast](https://ibrahimsalman.vercel.app/projects/blast)  
+**Engineered & Maintained by**: [Ibrahim Salman](https://ibrahimsalman.vercel.app)  
+*Full-Stack Software Engineer & AI Systems Architect (UET Taxila)*  
+- **Portfolio & Technical Writeups**: [https://ibrahimsalman.vercel.app](https://ibrahimsalman.vercel.app)  
+- **B.L.A.S.T. Architecture Case Study**: [https://ibrahimsalman.vercel.app/projects/blast](https://ibrahimsalman.vercel.app/projects/blast)  
+- **LinkedIn**: [linkedin.com/in/ibrahim-salman-dev](https://www.linkedin.com/in/ibrahim-salman-dev/)  
 - **GitHub**: [@Ibrahim-Salman19](https://github.com/Ibrahim-Salman19)  
-- **LinkedIn**: [Ibrahim Salman](https://www.linkedin.com/in/ibrahim-salman-dev/)  
-- **Upwork**: [Profile](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)  
+- **Upwork Verified Specialist**: [Ibrahim Salman Profile](https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8)  
+- **Direct Contact & Inquiries**: [ibrahim.pk848@gmail.com](mailto:ibrahim.pk848@gmail.com) • [Contact Portal](https://ibrahimsalman.vercel.app/contact)  
+
+*"Make it work. Prove it works. Make it survive production."*
 
