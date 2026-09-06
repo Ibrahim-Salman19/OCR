@@ -342,11 +342,18 @@ def test_extract_document_groups(tmp_path):
 
 
 def test_resource_snapshot():
-    cpu, mem = _resource_snapshot()
-    if cpu is not None:
-        assert cpu >= 0.0
-    if mem is not None:
-        assert mem > 0.0
+    # _resource_snapshot returns (memory_mb, cpu_percent), in that order -- matching
+    # its only call site at web_app.py:2772. This test had the names backwards,
+    # which silently swapped the assertions: it was really checking
+    # `cpu_percent > 0.0`, which is not a safe invariant (a process can legitimately
+    # read 0% CPU between two samples), while never checking that RSS is positive
+    # (which, for a live process, always should be). Caught in CI (not locally) when
+    # a quiet moment made cpu_percent read exactly 0.0.
+    memory_mb, cpu_percent = _resource_snapshot()
+    if memory_mb is not None:
+        assert memory_mb > 0.0
+    if cpu_percent is not None:
+        assert cpu_percent >= 0.0
 
 
 def test_ui_table_and_padding():

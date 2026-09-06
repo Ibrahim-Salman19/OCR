@@ -75,8 +75,14 @@ class TesseractEngine(BaseOCREngine):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
         eff_glyph_height = glyph_height or estimate_glyph_height(gray) or 24.0
 
-        from pytesseract import Output
-        data = self._pytesseract.image_to_data(gray, output_type=Output.DICT)
+        # Read Output.DICT off the already-resolved pytesseract reference (set by
+        # _init_engine, or injected directly by tests) rather than re-importing the
+        # top-level `pytesseract` package here -- a fresh `from pytesseract import
+        # Output` made this method require the real package to be installed even
+        # when a caller had already supplied a working self._pytesseract.
+        data = self._pytesseract.image_to_data(
+            gray, output_type=self._pytesseract.Output.DICT
+        )
 
         raw_detections = []
         text_parts = []
