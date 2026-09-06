@@ -159,13 +159,22 @@ The structured data is embedded directly into the live DOM via Streamlit (`blast
 
 ## 3. Rich Results Eligibility Matrix
 
-| Search Feature | Targeted Entity | Eligibility Criteria Met? | Search Engine Impact |
+**Corrected 2026-09-06**: The original version of this table claimed unconditional Google SERP
+rich-result eligibility for every entity. That's no longer accurate for two of the five rows.
+Google restricted FAQ rich results to well-known government and health sites, and discontinued
+HowTo rich results entirely (desktop and mobile), in its August 2023 policy update — this project
+doesn't qualify for either. The markup itself is not wasted: GEO consumers (Perplexity, Bing
+Copilot, ChatGPT Search, and other LLM-based answer engines) parse `FAQPage`/`HowTo` JSON-LD
+directly regardless of Google's SERP display policy, so it's kept for that purpose, not for a
+Google rich card that will not render.
+
+| Search Feature | Targeted Entity | Google SERP Eligibility | GEO / AI-Answer-Engine Impact |
 |---|---|:---:|---|
-| **Software App Rich Card** | `SoftwareApplication` | ✅ Yes (name, price, OS, rating) | Displays star rating, version, and download button in search snippets. |
-| **FAQ Accordion Snippet** | `FAQPage` | ✅ Yes (mainEntity Q&A pairs) | Expandable question drawers directly on SERP, boosting CTR by ~35%. |
+| **Software App Rich Card** | `SoftwareApplication` | ⚠️ Partial — no star rating shown (this project deliberately omits `aggregateRating`/`review`; see `docs/GEO_AND_SEO_OPTIMIZATION.md` §2 on why fabricated ratings are excluded) | Still fully machine-readable: name, price, OS, and feature list are extractable by any LLM or agent that fetches the page. |
+| **FAQ Accordion Snippet** | `FAQPage` | ❌ Not eligible — restricted to well-known government/health domains since Google's Aug 2023 policy change | Directly quotable Q&A pairs for AI Overviews, Perplexity, and ChatGPT Search citation extraction. |
 | **Dataset Badge** | `Dataset` | ✅ Yes (name, license, description) | Indexed in Google Dataset Search for academic and research visibility. |
-| **HowTo Interactive Steps**| `HowTo` | ✅ Yes (name, step list) | Step-by-step installation instructions rendered on mobile search. |
-| **Knowledge Graph Card** | `Organization` | ✅ Yes (name, logo, sameAs) | Strengthens brand entity node in Google Knowledge Graph. |
+| **HowTo Interactive Steps**| `HowTo` | ❌ Removed — Google discontinued HowTo rich results (desktop and mobile) in Aug 2023 | Structured step sequence remains parseable by AI agents building install/setup instructions. |
+| **Knowledge Graph Card** | `Organization` / `Person` | ⚠️ Not guaranteed — `sameAs` and entity markup aid disambiguation, but Knowledge Panel inclusion is an algorithmic Google decision, not something schema alone grants | Strengthens author/entity resolution for AI systems cross-referencing `sameAs` links (GitHub, LinkedIn, Upwork). |
 
 ---
 

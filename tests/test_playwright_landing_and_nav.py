@@ -56,6 +56,45 @@ def test_landing_page_hero_and_seo(page: Page, streamlit_app_url: str) -> None:
     expect(cta).to_be_enabled()
 
 
+def test_landing_page_seo_tags_land_in_real_head(page: Page, streamlit_app_url: str) -> None:
+    """Verifies canonical/meta/OG tags are relocated into the real <head>, not left in the body.
+
+    Streamlit renders st.markdown content into the app body via dangerouslySetInnerHTML, so
+    <meta>/<link> tags placed there never reach <head> on their own -- and Google explicitly
+    ignores a rel=canonical link found outside <head>. This checks the actual rendered DOM
+    (not a mocked call) to guard against a fix that only proves the injection call happened.
+    """
+    page.goto(streamlit_app_url, wait_until="networkidle")
+    page.wait_for_selector(".blast-landing-title", timeout=15000)
+    page.wait_for_function(
+        "document.head.querySelector('[data-blast-seo]') !== null", timeout=10000
+    )
+
+    head_tags = page.evaluate(
+        """
+        () => {
+            const head = document.head;
+            const canonical = head.querySelector('link[rel="canonical"][data-blast-seo]');
+            const ogImage = head.querySelector('meta[property="og:image"][data-blast-seo]');
+            const description = head.querySelector('meta[name="description"][data-blast-seo]');
+            return {
+                canonicalHref: canonical ? canonical.getAttribute('href') : null,
+                ogImageContent: ogImage ? ogImage.getAttribute('content') : null,
+                hasDescription: !!description,
+                markerCount: head.querySelectorAll('[data-blast-seo]').length,
+            };
+        }
+        """
+    )
+    assert head_tags["canonicalHref"] == "https://ocr-book.streamlit.app/"
+    assert head_tags["ogImageContent"] == (
+        "https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png"
+    )
+    assert head_tags["hasDescription"] is True
+    # Guards against the dedup marker failing to prevent re-injection across Streamlit reruns.
+    assert head_tags["markerCount"] == 19
+
+
 def test_landing_page_cta_transition(page: Page, streamlit_app_url: str) -> None:
     """Verifies that clicking ENTER MISSION CONTROL transitions to the operations console."""
     page.goto(streamlit_app_url, wait_until="networkidle")

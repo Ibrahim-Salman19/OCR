@@ -48,6 +48,7 @@ _EASYOCR_HOME = Path(tempfile.gettempdir()) / ".EasyOCR"
 os.environ.setdefault("EASYOCR_MODULE_PATH", str(_EASYOCR_HOME))
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 # Keep this as the first Streamlit command.
 st.set_page_config(
@@ -217,6 +218,30 @@ _SEO_META_TAGS = """<div id="seo-metadata" style="display:none;" aria-hidden="tr
             "@type": "Answer",
             "text": "B.L.A.S.T. utilizes PyMuPDF to synthesize dual-layer searchable PDFs where the original scanned image is preserved on the visual layer while an invisible, selectable text layer is placed beneath it with exact word-level coordinate bounding box alignment."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. guarantee zero generative hallucination?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Unlike Vision-Language Models (VLMs) that generate text autoregressively and can hallucinate numbers, dates, and clauses, B.L.A.S.T. uses deterministic neural text detection and CTC character classification combined with morphological layout analysis, guaranteeing 0% generative hallucination in legal and financial documents."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does B.L.A.S.T. run 100% offline in air-gapped secure environments?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. B.L.A.S.T. executes completely locally with zero external network calls, zero third-party telemetry, and zero cloud API dependencies. All ONNX weights and dependencies are hosted on-premise, making it fully compliant with HIPAA, GDPR, and air-gapped environments."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. protect confidential data with forensic PII redaction?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "When secure_mode=True is enabled, B.L.A.S.T. runs an automated 8-class forensic redaction engine that masks SSNs, credit cards, emails, phone numbers, API keys, JWT tokens, IPv4/IPv6, and IBANs across all generated exports before disk persistence."
+          }
         }
       ]
     },
@@ -242,13 +267,79 @@ _SEO_META_TAGS = """<div id="seo-metadata" style="display:none;" aria-hidden="tr
           "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])"
         }
       ]
+    },
+    {
+      "@type": "Dataset",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#benchmark-dataset",
+      "name": "B.L.A.S.T. OCR Gold Standard Evaluation Corpus",
+      "description": "14-page multi-layout evaluation corpus with ground truth text, table geometries, reading order permutations, and character error rate (CER) baselines.",
+      "license": "https://opensource.org/licenses/MIT",
+      "measurementTechnique": "Character Error Rate (CER), Word Error Rate (WER), Kendall's Tau Reading Order, Tree-Edit-Distance (TEDS)"
     }
   ]
 }
 </script>
 </div>
 """
+
+# Real <head> placement for tags where DOM position is semantically required.
+# `st.markdown(..., unsafe_allow_html=True)` renders into the app body (a Streamlit
+# markdown container), never into <head> -- Google explicitly ignores a rel=canonical
+# link found outside <head>, and non-JS-executing crawlers (GPTBot, ClaudeBot,
+# PerplexityBot, and social-card unfurl bots) never see body-injected tags at all,
+# since Streamlit serves an empty shell until its JS bundle renders. This block runs
+# inside a Streamlit component iframe, which Streamlit grants same-origin access to
+# its parent window, and relocates real <meta>/<link> nodes into the parent <head> for
+# any crawler or renderer that does execute JavaScript (Googlebot, Bingbot).
+_SEO_HEAD_TAGS_HTML = """<meta data-blast-seo="1" name="description" content="Self-hosted ONNX OCR and document intelligence engine. Native MCP server, table extraction, LaTeX formula parsing, and a bounded-memory streaming architecture.">
+<meta data-blast-seo="1" name="keywords" content="Python OCR, ONNX OCR, PDF to Markdown, Table Extraction, Model Context Protocol, Sandwich PDF, LangChain OCR, LlamaIndex OCR">
+<meta data-blast-seo="1" name="author" content="B.L.A.S.T. OCR Project">
+<meta data-blast-seo="1" name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<link data-blast-seo="1" rel="canonical" href="https://ocr-book.streamlit.app/">
+<meta data-blast-seo="1" property="og:title" content="B.L.A.S.T. OCR Engine — Sovereign Edition">
+<meta data-blast-seo="1" property="og:description" content="Self-hosted ONNX OCR engine for multi-page PDFs, PPTX, and scanned documents, with a native MCP server for AI agents.">
+<meta data-blast-seo="1" property="og:type" content="website">
+<meta data-blast-seo="1" property="og:url" content="https://ocr-book.streamlit.app/">
+<meta data-blast-seo="1" property="og:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<meta data-blast-seo="1" property="og:image:width" content="1200">
+<meta data-blast-seo="1" property="og:image:height" content="630">
+<meta data-blast-seo="1" property="og:image:alt" content="B.L.A.S.T. OCR landing screen: ONNX multi-provider inference, distributed swarm queue, bounded memory streaming, and hardened security gateway.">
+<meta data-blast-seo="1" name="twitter:card" content="summary_large_image">
+<meta data-blast-seo="1" name="twitter:title" content="B.L.A.S.T. OCR Engine — Enterprise ONNX Document Intelligence">
+<meta data-blast-seo="1" name="twitter:description" content="Self-hosted ONNX OCR engine with table extraction, a native MCP server, and a bounded-memory streaming architecture.">
+<meta data-blast-seo="1" name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<link data-blast-seo="1" rel="describedby" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms.txt">
+<link data-blast-seo="1" rel="alternate" type="text/markdown" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt">
+"""
+
+
+def _inject_head_tags(head_html: str) -> None:
+    """Relocate <meta>/<link> tags from a Streamlit component iframe into the real <head>.
+
+    Streamlit grants its `components.v1.html` iframe same-origin access to the parent
+    document, which is what makes this reachable at all. If a future Streamlit release
+    sandboxes that iframe, `window.parent.document` throws and this becomes a silent
+    no-op -- the tags simply stay absent from <head>, same as before this function existed.
+    """
+    payload = json.dumps(head_html)
+    script = f"""<script>
+(function() {{
+  try {{
+    var doc = window.parent.document;
+    if (doc.head.querySelector('[data-blast-seo]')) {{ return; }}
+    var holder = doc.createElement('div');
+    holder.innerHTML = {payload};
+    Array.prototype.slice.call(holder.children).forEach(function(node) {{
+      doc.head.appendChild(node);
+    }});
+  }} catch (err) {{ /* parent DOM unreachable: leave head untouched */ }}
+}})();
+</script>"""
+    components.html(script, height=0, width=0)
+
+
 st.markdown(_SEO_META_TAGS, unsafe_allow_html=True)
+_inject_head_tags(_SEO_HEAD_TAGS_HTML)
 
 
 def _streamlit_version_tuple(value: str) -> tuple[int, int, int]:
@@ -991,6 +1082,7 @@ def load_css() -> None:
 def inject_seo_metadata() -> None:
     """Inject Canonical SEO, GEO, and schema.org JSON-LD metadata for crawlers and AI agents."""
     st.markdown(_SEO_META_TAGS, unsafe_allow_html=True)
+    _inject_head_tags(_SEO_HEAD_TAGS_HTML)
 
 
 # -----------------------------------------------------------------------------

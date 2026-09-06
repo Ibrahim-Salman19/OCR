@@ -83,6 +83,10 @@ User-agent: DuckAssistBot
 Allow: /
 
 # Canonical Sitemaps & Discovery Layers
-# Note: takes effect once served from a web root (GitHub Pages, custom domain, or REST API).
-# See docs/GEO_AND_SEO_OPTIMIZATION.md for current canonical URLs.
+# This file itself is only reachable by a crawler once served from a real web root.
+# As of 2026-09-06 that's https://ibrahim-salman19.github.io/OCR/robots.txt (GitHub Pages,
+# static, no JavaScript required) -- see docs/GEO_AND_SEO_OPTIMIZATION.md for the full
+# canonical-surface breakdown, including why the Streamlit demo is not a reliable place
+# for a non-JS crawler to find this file.
+Sitemap: https://ibrahim-salman19.github.io/OCR/sitemap.xml
 Sitemap: https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/sitemap.xml

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>B.L.A.S.T. OCR Engine — Self-Hosted ONNX Document AI</title>
+<meta name="description" content="Self-hosted, offline ONNX OCR engine for PDFs and scans: table extraction, LaTeX formulas, bounded-memory streaming, and a native MCP server for AI agents.">
+<meta name="keywords" content="Python OCR, ONNX OCR, PDF to Markdown, Table Extraction, Model Context Protocol, Sandwich PDF, LangChain OCR, LlamaIndex OCR, self-hosted OCR, offline OCR">
+<meta name="author" content="Ibrahim Salman">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<link rel="canonical" href="https://ibrahim-salman19.github.io/OCR/">
+<meta property="og:title" content="B.L.A.S.T. OCR Engine — Sovereign Edition">
+<meta property="og:description" content="Self-hosted ONNX OCR engine for multi-page PDFs, PPTX, and scanned documents, with a native MCP server for AI agents.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ibrahim-salman19.github.io/OCR/">
+<meta property="og:site_name" content="B.L.A.S.T. OCR Engine">
+<meta property="og:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="B.L.A.S.T. OCR landing screen: ONNX multi-provider inference, distributed swarm queue, bounded memory streaming, and hardened security gateway.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="B.L.A.S.T. OCR Engine — Enterprise ONNX Document Intelligence">
+<meta name="twitter:description" content="Self-hosted ONNX OCR engine with table extraction, a native MCP server, and a bounded-memory streaming architecture.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<link rel="describedby" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms.txt">
+<link rel="alternate" type="text/markdown" href="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #09090b;
+    --surface: #141417;
+    --surface-raised: #1c1c20;
+    --border: #27272a;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --accent: #f59e0b;
+    --accent-bright: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  a { color: var(--accent-bright); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+  header.site {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(9,9,11,0.85); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  header.site .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 0.9rem; padding-bottom: 0.9rem; }
+  header.site .brand { font-weight: 700; letter-spacing: 0.02em; color: var(--text); text-decoration: none; }
+  header.site .brand span { color: var(--accent); }
+  header.site nav a { color: var(--text-muted); text-decoration: none; margin-left: 1.5rem; font-size: 0.9rem; }
+  header.site nav a:hover { color: var(--text); }
+  .hero { text-align: center; padding: 4.5rem 0 3rem; }
+  .badge {
+    display: inline-block; border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 999px; padding: 0.25rem 0.9rem; font-size: 0.75rem; letter-spacing: 0.08em;
+    text-transform: uppercase; font-family: ui-monospace, monospace; margin-bottom: 1.5rem;
+  }
+  h1.title { font-size: clamp(2.2rem, 6vw, 3.4rem); margin: 0 0 1rem; font-weight: 800; }
+  h1.title span { color: var(--accent); }
+  .tagline { color: var(--text-muted); font-size: 1.15rem; max-width: 640px; margin: 0 auto 2rem; }
+  .cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 0.85rem 1.8rem; border-radius: 0.5rem; font-weight: 600;
+    text-decoration: none; font-size: 0.95rem;
+  }
+  .btn-primary { background: linear-gradient(90deg, #d97706, #fbbf24); color: #1a1200; }
+  .btn-secondary { border: 1px solid var(--border); color: var(--text); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; padding: 2.5rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 2rem 0; }
+  .stat { text-align: center; }
+  .stat .num { font-size: 1.7rem; font-weight: 800; color: var(--accent-bright); font-family: ui-monospace, monospace; }
+  .stat .label { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem; }
+  section { padding: 3rem 0; }
+  h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .section-sub { color: var(--text-muted); margin-bottom: 2rem; max-width: 680px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.4rem; }
+  .card .icon { font-size: 1.5rem; margin-bottom: 0.6rem; }
+  .card h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+  .card p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.compare th, table.compare td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); text-align: left; }
+  table.compare th { color: var(--text-muted); font-weight: 600; }
+  table.compare td.good { color: var(--accent-bright); font-weight: 600; }
+  ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  ol.steps li { counter-increment: step; margin-bottom: 1.2rem; padding-left: 3rem; position: relative; }
+  ol.steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 2rem; height: 2rem; border-radius: 50%; background: var(--surface-raised);
+    border: 1px solid var(--accent); color: var(--accent-bright); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-family: ui-monospace, monospace;
+  }
+  ol.steps code { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 0.4rem; padding: 0.6rem 0.8rem; margin-top: 0.4rem; font-size: 0.85rem; overflow-x: auto; }
+  details.faq { background: var(--surface); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.2rem; margin-bottom: 0.7rem; }
+  details.faq summary { cursor: pointer; font-weight: 600; }
+  details.faq p { color: var(--text-muted); margin: 0.7rem 0 0; font-size: 0.92rem; }
+  footer { border-top: 1px solid var(--border); padding: 2.5rem 0; color: var(--text-muted); font-size: 0.85rem; }
+  footer a { color: var(--text-muted); }
+  footer .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+  footer h4 { color: var(--text); font-size: 0.85rem; margin: 0 0 0.6rem; }
+  footer ul { list-style: none; padding: 0; margin: 0; }
+  footer li { margin-bottom: 0.4rem; }
+  .overflow-x { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#top">B.L.A.S.T.<span> OCR</span></a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/Ibrahim-Salman19/OCR">GitHub</a>
+      <a href="https://ocr-book.streamlit.app/">Live Demo</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap">
+
+  <section class="hero">
+    <span class="badge">● Sovereign Edition</span>
+    <h1 class="title">B.L.A.S.T. <span>OCR</span></h1>
+    <p class="tagline">Batched. Latency-Aware. Streaming. Text-extraction. Self-hosted document OCR built for production throughput, not notebook demos.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://ocr-book.streamlit.app/">Try the Live Demo</a>
+      <a class="btn btn-secondary" href="https://github.com/Ibrahim-Salman19/OCR">View Source on GitHub</a>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><div class="num">7.7x</div><div class="label">Faster than EasyOCR (CPU)</div></div>
+    <div class="stat"><div class="num">0.1916</div><div class="label">CER on 14-page gold corpus</div></div>
+    <div class="stat"><div class="num">0.0002 MB</div><div class="label">Memory growth per page</div></div>
+    <div class="stat"><div class="num">$0</div><div class="label">MIT licensed, self-hosted</div></div>
+  </div>
+
+  <section id="features">
+    <h2>What B.L.A.S.T. does</h2>
+    <p class="section-sub">A self-hosted ONNX document intelligence engine — no cloud API calls, no per-page billing, no data leaving your infrastructure.</p>
+    <div class="grid-4">
+      <div class="card">
+        <div class="icon">⚡</div>
+        <h3>ONNX Multi-Provider Inference</h3>
+        <p>Batched ONNX Runtime execution with CUDA, DirectML, and CPU provider fallback.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔗</div>
+        <h3>Distributed Swarm Queue</h3>
+        <p>Redis-backed priority queue with worker heartbeats, retry backoff, and dead-letter quarantine.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📦</div>
+        <h3>Bounded Memory Streaming</h3>
+        <p>Batch-and-stream page processing keeps memory flat on archives hundreds of pages long.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🛡️</div>
+        <h3>Hardened Security Gateway</h3>
+        <p>Magic-byte validation, path-traversal sandboxing, and hostile-text filtering on every upload.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="compare">
+    <h2>Why not EasyOCR, Tesseract, or AWS Textract?</h2>
+    <p class="section-sub">Full breakdowns with methodology live in <a href="https://github.com/Ibrahim-Salman19/OCR/tree/main/docs/comparisons">docs/comparisons</a>. Summary:</p>
+    <div class="overflow-x">
+    <table class="compare">
+      <thead><tr><th>Engine</th><th>CPU latency (14-page gold corpus)</th><th>License</th><th>Table extraction</th></tr></thead>
+      <tbody>
+        <tr><td>B.L.A.S.T. (RapidOCR/ONNX)</td><td class="good">~15.3s/page</td><td class="good">MIT</td><td class="good">Built-in, TEDS-scored</td></tr>
+        <tr><td>EasyOCR (PyTorch)</td><td>~117.8s/page</td><td>Apache-2.0</td><td>None</td></tr>
+        <tr><td>Tesseract</td><td>Slower, no table recovery</td><td>Apache-2.0</td><td>None</td></tr>
+        <tr><td>AWS Textract</td><td>Cloud API, per-page billing</td><td>Proprietary</td><td>Yes (cloud-only)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section id="how-it-works">
+    <h2>How to process a PDF to Markdown</h2>
+    <p class="section-sub">Three steps from install to output. Full API reference in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/API_REFERENCE.md">docs/API_REFERENCE.md</a>.</p>
+    <ol class="steps">
+      <li>
+        Install B.L.A.S.T. OCR
+        <code>pip install -r requirements.txt</code>
+      </li>
+      <li>
+        Initialize the pipeline
+        <code>OCRPipeline(engine='rapidocr', secure_mode=True)</code>
+      </li>
+      <li>
+        Process a document
+        <code>pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])</code>
+      </li>
+    </ol>
+  </section>
+
+  <section id="faq">
+    <h2>Frequently asked questions</h2>
+    <p class="section-sub">The same 8 questions answered in the project's Schema.org FAQPage markup — kept here as visible text so the structured data reflects real page content.</p>
+
+    <details class="faq">
+      <summary>Why is B.L.A.S.T. OCR faster than EasyOCR?</summary>
+      <p>B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with CUDA → DirectML → CPU fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while reducing mean CER by 18%. See ADR 0005 in the repository for the full methodology and raw results.</p>
+    </details>
+    <details class="faq">
+      <summary>How does B.L.A.S.T. prevent memory leaks on large PDF archives?</summary>
+      <p>B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold.</p>
+    </details>
+    <details class="faq">
+      <summary>How does B.L.A.S.T. extract tables?</summary>
+      <p>B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator for regression testing.</p>
+    </details>
+    <details class="faq">
+      <summary>How do I connect B.L.A.S.T. OCR to Claude Desktop, Cursor, or Antigravity?</summary>
+      <p>B.L.A.S.T. includes a native Model Context Protocol (MCP) server. Run <code>python -m blast_ocr.mcp_server</code> or configure <code>mcp.json</code> to expose blast_ocr_process, blast_ocr_extract_tables, blast_ocr_extract_formulas, and blast_ocr_semantic_chunk tools with zero configuration.</p>
+    </details>
+    <details class="faq">
+      <summary>How does B.L.A.S.T. generate dual-layer sandwich PDFs?</summary>
+      <p>B.L.A.S.T. utilizes PyMuPDF to synthesize dual-layer searchable PDFs where the original scanned image is preserved on the visual layer while an invisible, selectable text layer is placed beneath it with exact word-level coordinate bounding box alignment.</p>
+    </details>
+    <details class="faq">
+      <summary>How does B.L.A.S.T. guarantee zero generative hallucination?</summary>
+      <p>Unlike Vision-Language Models (VLMs) that generate text autoregressively and can hallucinate numbers, dates, and clauses, B.L.A.S.T. uses deterministic neural text detection and CTC character classification combined with morphological layout analysis, guaranteeing 0% generative hallucination in legal and financial documents.</p>
+    </details>
+    <details class="faq">
+      <summary>Does B.L.A.S.T. run 100% offline in air-gapped secure environments?</summary>
+      <p>Yes. B.L.A.S.T. executes completely locally with zero external network calls, zero third-party telemetry, and zero cloud API dependencies. All ONNX weights and dependencies are hosted on-premise, making it fully compliant with HIPAA, GDPR, and air-gapped environments.</p>
+    </details>
+    <details class="faq">
+      <summary>How does B.L.A.S.T. protect confidential data with forensic PII redaction?</summary>
+      <p>When <code>secure_mode=True</code> is enabled, B.L.A.S.T. runs an automated 8-class forensic redaction engine that masks SSNs, credit cards, emails, phone numbers, API keys, JWT tokens, IPv4/IPv6, and IBANs across all generated exports before disk persistence.</p>
+    </details>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR">Source Code</a></li>
+          <li><a href="https://ocr-book.streamlit.app/">Live Demo</a></li>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/pricing.md">Pricing</a></li>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/LICENSE">MIT License</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Documentation</h4>
+        <ul>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/INTRODUCTION.md">Introduction</a></li>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/API_REFERENCE.md">API Reference</a></li>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md">Deployment Guide</a></li>
+          <li><a href="https://github.com/Ibrahim-Salman19/OCR/tree/main/docs/comparisons">Comparisons</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>For AI Agents</h4>
+        <ul>
+          <li><a href="./llms.txt">llms.txt</a></li>
+          <li><a href="./llms-full.txt">llms-full.txt</a></li>
+          <li><a href="./mcp.json">mcp.json (MCP manifest)</a></li>
+          <li><a href="./sitemap.xml">sitemap.xml</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Author</h4>
+        <ul>
+          <li><a href="https://ibrahimsalman.vercel.app">Ibrahim Salman</a></li>
+          <li><a href="https://github.com/Ibrahim-Salman19">GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/ibrahim-salman-dev/">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <p>© 2026 B.L.A.S.T. OCR Project. Distributed under the MIT License.</p>
+  </div>
+</footer>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://ocr-book.streamlit.app/#software",
+      "name": "B.L.A.S.T. OCR Engine",
+      "alternateName": "BLAST OCR",
+      "description": "Self-hosted ONNX OCR and document intelligence engine with bounded-memory streaming, table structure extraction, LaTeX formula recognition, and native AI Agent MCP integration.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Linux, Windows, macOS",
+      "softwareVersion": "3.0.0",
+      "downloadUrl": "https://github.com/Ibrahim-Salman19/OCR",
+      "installUrl": "https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/DEPLOYMENT_GUIDE.md",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@id": "https://ibrahimsalman.vercel.app/#person" },
+      "creator": { "@id": "https://ibrahimsalman.vercel.app/#person" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "ONNX Runtime multi-provider acceleration (CUDA, DirectML, CPU)",
+        "Table structure extraction to Markdown and HTML with built-in TEDS evaluator",
+        "LaTeX Mathematical Formula Recognition (inline and display)",
+        "Bounded streaming memory architecture (0.0002 MB/page growth slope, measured)",
+        "Dual-Layer Selectable Sandwich PDF Generation",
+        "Native Model Context Protocol (MCP) Server for AI Agents",
+        "LangChain and LlamaIndex Document Loaders",
+        "Forensic 8-Class PII Redaction",
+        "Distributed 3-Tier Priority Queue Swarm with Heartbeats and Zombie Reaper"
+      ]
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#sourcecode",
+      "name": "B.L.A.S.T. OCR Source Code",
+      "programmingLanguage": "Python",
+      "runtimePlatform": "Python 3.9, 3.10, 3.11, 3.12, 3.13",
+      "codeRepository": "https://github.com/Ibrahim-Salman19/OCR",
+      "license": "https://opensource.org/licenses/MIT",
+      "author": { "@id": "https://ibrahimsalman.vercel.app/#person" }
+    },
+    {
+      "@type": "TechArticle",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#documentation",
+      "headline": "B.L.A.S.T. OCR Engine: Technical Architecture and Performance Benchmarks",
+      "description": "Complete architectural overview, reproducible benchmark harness, and integration guide for B.L.A.S.T. OCR.",
+      "keywords": "Python OCR, ONNX OCR, Document Intelligence, Table Extraction, PDF to Markdown, Model Context Protocol, LangChain OCR Loader",
+      "inLanguage": "en-US",
+      "author": { "@id": "https://ibrahimsalman.vercel.app/#person" },
+      "publisher": { "@type": "Organization", "name": "B.L.A.S.T. OCR Project", "url": "https://github.com/Ibrahim-Salman19/OCR" }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://ibrahimsalman.vercel.app/#person",
+      "name": "Ibrahim Salman",
+      "alternateName": ["Ibrahim-Salman19", "Ibrahim Salman Dev"],
+      "url": "https://ibrahimsalman.vercel.app",
+      "image": "https://ibrahimsalman.vercel.app/profile.jpg",
+      "jobTitle": "Full-Stack Software Engineer & AI Systems Architect",
+      "email": "mailto:ibrahim.pk848@gmail.com",
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "University of Engineering and Technology, Taxila",
+        "url": "https://uettaxila.edu.pk/",
+        "sameAs": "https://www.wikidata.org/wiki/Q10854449"
+      },
+      "knowsAbout": [
+        "Optical Character Recognition (OCR)",
+        "Retrieval-Augmented Generation (RAG)",
+        "Document Intelligence",
+        "Computer Vision",
+        "ONNX Runtime Multi-Provider Acceleration",
+        "Distributed Task Queues & Swarms",
+        "Python",
+        "TypeScript"
+      ],
+      "sameAs": [
+        "https://github.com/Ibrahim-Salman19",
+        "https://www.linkedin.com/in/ibrahim-salman-dev/",
+        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8",
+        "https://x.com/ibrahim_salman19"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://ocr-book.streamlit.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why is B.L.A.S.T. OCR faster than EasyOCR?",
+          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with CUDA -> DirectML -> CPU fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while reducing mean CER by 18%. See ADR 0005 in the repository for the full methodology and raw results." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
+          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. extract tables?",
+          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (TableExtractor) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator for regression testing." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I connect B.L.A.S.T. OCR to Claude Desktop, Cursor, or Antigravity?",
+          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T. includes a native Model Context Protocol (MCP) server. Run 'python -m blast_ocr.mcp_server' or configure mcp.json to expose blast_ocr_process, blast_ocr_extract_tables, blast_ocr_extract_formulas, and blast_ocr_semantic_chunk tools with zero configuration." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. generate dual-layer sandwich PDFs?",
+          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T. utilizes PyMuPDF to synthesize dual-layer searchable PDFs where the original scanned image is preserved on the visual layer while an invisible, selectable text layer is placed beneath it with exact word-level coordinate bounding box alignment." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. guarantee zero generative hallucination?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Unlike Vision-Language Models (VLMs) that generate text autoregressively and can hallucinate numbers, dates, and clauses, B.L.A.S.T. uses deterministic neural text detection and CTC character classification combined with morphological layout analysis, guaranteeing 0% generative hallucination in legal and financial documents." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does B.L.A.S.T. run 100% offline in air-gapped secure environments?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. B.L.A.S.T. executes completely locally with zero external network calls, zero third-party telemetry, and zero cloud API dependencies. All ONNX weights and dependencies are hosted on-premise, making it fully compliant with HIPAA, GDPR, and air-gapped environments." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does B.L.A.S.T. protect confidential data with forensic PII redaction?",
+          "acceptedAnswer": { "@type": "Answer", "text": "When secure_mode=True is enabled, B.L.A.S.T. runs an automated 8-class forensic redaction engine that masks SSNs, credit cards, emails, phone numbers, API keys, JWT tokens, IPv4/IPv6, and IBANs across all generated exports before disk persistence." }
+        }
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "@id": "https://ocr-book.streamlit.app/#howto",
+      "name": "How to Process Multi-Page PDFs to Markdown with B.L.A.S.T. OCR",
+      "description": "Step-by-step guide to installing and processing PDF documents to Markdown with high accuracy.",
+      "step": [
+        { "@type": "HowToStep", "name": "Install B.L.A.S.T. OCR", "text": "Install core dependencies using pip install -r requirements.txt" },
+        { "@type": "HowToStep", "name": "Initialize Pipeline", "text": "Instantiate OCRPipeline(engine='rapidocr', secure_mode=True)" },
+        { "@type": "HowToStep", "name": "Execute Document Processing", "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])" }
+      ]
+    },
+    {
+      "@type": "Dataset",
+      "@id": "https://github.com/Ibrahim-Salman19/OCR#benchmark-dataset",
+      "name": "B.L.A.S.T. OCR Gold Standard Evaluation Corpus",
+      "description": "14-page multi-layout evaluation corpus with ground truth text, table geometries, reading order permutations, and character error rate (CER) baselines.",
+      "license": "https://opensource.org/licenses/MIT",
+      "measurementTechnique": "Character Error Rate (CER), Word Error Rate (WER), Kendall's Tau Reading Order, Tree-Edit-Distance (TEDS)"
+    }
+  ]
+}
+</script>
+
+</body>
+</html>

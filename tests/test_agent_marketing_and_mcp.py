@@ -245,6 +245,49 @@ def test_streamlit_ui_seo_tags():
     assert 'rel="describedby"' in ui_text
 
 
+def test_github_pages_landing_page():
+    index_path = ROOT_DIR / "index.html"
+    assert index_path.exists()
+    html_text = index_path.read_text(encoding="utf-8")
+
+    assert "<title>B.L.A.S.T. OCR Engine" in html_text
+    assert 'name="description" content="' in html_text
+    assert 'rel="canonical" href="https://ibrahim-salman19.github.io/OCR/"' in html_text
+    assert 'property="og:image" content="https://raw.githubusercontent.com' in html_text
+
+    ld_start = html_text.find('<script type="application/ld+json">')
+    ld_start = html_text.find("\n", ld_start) + 1
+    ld_end = html_text.find("</script>", ld_start)
+    data = json.loads(html_text[ld_start:ld_end].strip())
+    assert data["@context"] == "https://schema.org"
+    types = [item["@type"] for item in data["@graph"]]
+    for expected in (
+        "SoftwareApplication",
+        "SoftwareSourceCode",
+        "TechArticle",
+        "Person",
+        "FAQPage",
+        "HowTo",
+        "Dataset",
+    ):
+        assert expected in types, f"missing {expected} entity"
+
+    software_entry = next(item for item in data["@graph"] if item["@type"] == "SoftwareApplication")
+    assert "aggregateRating" not in software_entry
+
+    faq_entry = next(item for item in data["@graph"] if item["@type"] == "FAQPage")
+    assert len(faq_entry["mainEntity"]) == 8
+    # Every FAQ question's visible text must also appear as real page copy --
+    # structured data must reflect visible content, not just hidden markup.
+    for question in faq_entry["mainEntity"]:
+        assert question["name"] in html_text, f"FAQ question not visible on page: {question['name']}"
+
+    # .nojekyll disables GitHub Pages' default Jekyll processing, which would
+    # otherwise try (and mostly fail without a theme) to render every .md file
+    # in this repo -- including hundreds of unrelated marketing/docs files.
+    assert (ROOT_DIR / ".nojekyll").exists()
+
+
 def test_marketing_skills_registry():
     skills_lock = ROOT_DIR / "skills-lock.json"
     assert skills_lock.exists()

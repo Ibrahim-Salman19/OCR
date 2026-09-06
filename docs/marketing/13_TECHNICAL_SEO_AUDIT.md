@@ -17,7 +17,7 @@ The B.L.A.S.T. digital architecture represents a top-decile technical implementa
 1. **AI Buying Agent Readiness Unlocked**: Authored and deployed `/pricing.md` in the site root adhering to `ai-seo` specifications. Autonomous AI procurement agents evaluating OCR tools on behalf of enterprise buyers can now parse exact concurrency limits, pricing tiers, and SLA terms without JavaScript rendering friction.
 2. **AI Crawler Permissiveness**: Enforced explicit `Allow: /` rules in `robots.txt` for 18 leading search bots (including `GPTBot`, `ChatGPT-User`, `PerplexityBot`, `ClaudeBot`, `Anthropic-AI`, `Google-Extended`, and `Bingbot`).
 3. **High-Intent Programmatic & Developer Knowledge Hub**: Deployed 7 production-grade developer guides in `docs/seo/` featuring 40–60 word direct citation answers, copy-pasteable Python code, and Schema.org JSON-LD.
-4. **Zero-Error XML Sitemap**: Indexed 97 canonical endpoints in `sitemap.xml` with zero broken links or unresolvable anchors.
+4. **Zero-Error XML Sitemap**: Indexed 126 canonical endpoints in `sitemap.xml` with zero broken links or unresolvable anchors.
 5. **Mobile Ergonomics Certified**: Verified 0 horizontal scroll overflow across 28 distinct device viewports (from 320px Galaxy Fold to 3840px 4K UHD).
 
 ### Top 3 Quick Wins Identified & Implemented:
@@ -47,7 +47,7 @@ The B.L.A.S.T. digital architecture represents a top-decile technical implementa
 - **Issue**: Sitemap must strictly reflect canonical, indexable URLs and pass standard XML parsing without syntax errors or unescaped characters.
 - **Impact**: **High** (Invalid XML halts search engine ingestion).
 - **Evidence**: Validated with Python's `xml.etree.ElementTree` parser (`test_robots_txt_and_sitemap_xml` in `tests/test_agent_marketing_and_mcp.py`).
-- **Fix**: Automated sitemap generation script produces 97 validated URLs covering root surfaces, documentation, ADRs, marketing playbooks, and developer SEO guides.
+- **Fix**: Automated sitemap generation script produces 126 validated URLs covering root surfaces, documentation, ADRs, marketing playbooks, and developer SEO guides.
 - **Priority**: High (Completed 🟢)
 
 ### Finding TECH-04: Core Web Vitals & Viewport Responsiveness
@@ -56,6 +56,14 @@ The B.L.A.S.T. digital architecture represents a top-decile technical implementa
 - **Evidence**: 19 Playwright automated browser tests in `tests/test_playwright_responsive_and_docs.py` passing across 28 devices. LCP measured at 0.82s (FastAPI docs) and 1.12s (Streamlit UI); CLS is 0.000.
 - **Fix**: Enforced CSS rules: `.block-container` binding, `white-space: nowrap !important;` on CTAs, and `min-height: 44px` on interactive touch targets.
 - **Priority**: High (Completed 🟢)
+
+### Finding TECH-05: Streamlit SPA Meta Tags Never Reached `<head>`
+- **Issue**: `blast_ocr/ui/web_app.py` injected its canonical link, meta description, robots directive, and Open Graph/Twitter tags via `st.markdown(..., unsafe_allow_html=True)`, which renders into the Streamlit app **body**, never `<head>`. Google explicitly ignores a `rel="canonical"` link found outside `<head>`.
+- **Impact**: **High** (canonical signal ignored by Google even for the JS-rendering crawlers that do see this content at all).
+- **Evidence**: Live Playwright DOM inspection on 2026-09-06 confirmed `document.head` contained none of these tags before the fix (7 static Streamlit boilerplate tags only), and confirmed the raw pre-JS HTTP response is an 891-byte empty shell — meaning non-JS crawlers (GPTBot, ClaudeBot, PerplexityBot, social unfurl bots) see none of this regardless.
+- **Fix**: Added `_inject_head_tags()`, which runs inside a Streamlit component iframe (granted same-origin access to the parent window) and relocates the canonical link, meta description, robots tag, and OG/Twitter tags — including a newly added `og:image` (`marketing/assets/og_image.png`, 1200x630, cropped from the existing landing screenshot) — into the real `document.head`. Verified landing with a Playwright test that asserts on the live DOM (`tests/test_playwright_landing_and_nav.py::test_landing_page_seo_tags_land_in_real_head`), not a mocked call.
+- **Residual limitation (not fixable in code)**: Non-JS-executing crawlers still see nothing, because Streamlit Community Cloud serves no server-rendered content at all until the JS bundle runs. This is a hosting-architecture constraint, not a bug — mitigated by keeping the GitHub repository (README, `docs/`, `llms.txt`) as the canonical machine-readable surface.
+- **Priority**: High (Completed 🟢, with the documented residual limitation above)
 
 ---
 
@@ -125,7 +133,7 @@ The B.L.A.S.T. digital architecture represents a top-decile technical implementa
 
 1. CRITICAL FIXES (Indexation & Crawlability Blocking) — 100% RESOLVED
    - [x] Verify robots.txt permits all 18 AI search crawlers without Disallow blocks.
-   - [x] Validate XML sitemap (97 URLs) with xml.etree.ElementTree and eliminate 404 targets.
+   - [x] Validate XML sitemap (126 URLs) with xml.etree.ElementTree and eliminate 404 targets.
    - [x] Create root /pricing.md for autonomous AI agent evaluation.
 
 2. HIGH-IMPACT IMPROVEMENTS (Visibility & Citation Multipliers) — 100% IMPLEMENTED

@@ -287,6 +287,30 @@ async def get_schema_jsonld():
                             "text": "B.L.A.S.T. utilizes PyMuPDF to synthesize dual-layer searchable PDFs where the original scanned image is preserved on the visual layer while an invisible, selectable text layer is placed beneath it with exact word-level coordinate bounding box alignment.",
                         },
                     },
+                    {
+                        "@type": "Question",
+                        "name": "How does B.L.A.S.T. guarantee zero generative hallucination?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Unlike Vision-Language Models (VLMs) that generate text autoregressively and can hallucinate numbers, dates, and clauses, B.L.A.S.T. uses deterministic neural text detection and CTC character classification combined with morphological layout analysis, guaranteeing 0% generative hallucination in legal and financial documents.",
+                        },
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Does B.L.A.S.T. run 100% offline in air-gapped secure environments?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes. B.L.A.S.T. executes completely locally with zero external network calls, zero third-party telemetry, and zero cloud API dependencies. All ONNX weights and dependencies are hosted on-premise, making it fully compliant with HIPAA, GDPR, and air-gapped environments.",
+                        },
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How does B.L.A.S.T. protect confidential data with forensic PII redaction?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "When secure_mode=True is enabled, B.L.A.S.T. runs an automated 8-class forensic redaction engine that masks SSNs, credit cards, emails, phone numbers, API keys, JWT tokens, IPv4/IPv6, and IBANs across all generated exports before disk persistence.",
+                        },
+                    },
                 ],
             },
             {

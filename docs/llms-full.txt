@@ -203,29 +203,39 @@ Dedicated technical reference guides featuring 40–60 word direct citation answ
 
 
 ## Competitor Comparisons & Modern Alternatives
-- [B.L.A.S.T. vs Tesseract OCR](docs/comparisons/blast-vs-tesseract.md): 16x faster CPU execution, table recovery, 0.9758 reading order vs legacy connected-components.
-- [B.L.A.S.T. vs EasyOCR](docs/comparisons/blast-vs-easyocr.md): 7.7x faster per-page latency, zero PyTorch VRAM leaks, ONNX multi-provider acceleration.
-- [B.L.A.S.T. vs AWS Textract](docs/comparisons/blast-vs-aws-textract.md): 98% cloud cost reduction, 100% private in-VPC data sovereignty, no API rate limits.
-- [B.L.A.S.T. vs IBM Docling](docs/comparisons/blast-vs-docling.md): Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native MCP server.
-- [B.L.A.S.T. vs Marker 2](docs/comparisons/blast-vs-marker.md): Permissive MIT license vs GPL-3.0/OpenRAIL commercial caps, CPU-native execution.
-- [Best Tesseract Alternative (2026 Guide)](docs/comparisons/tesseract-alternative.md): 60-second migration guide eliminating OS package dependencies.
-- [Best Self-Hosted AWS Textract Alternative](docs/comparisons/aws-textract-alternative.md): Enterprise blueprint for private in-VPC OCR migration.
+- [B.L.A.S.T. vs Tesseract OCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-tesseract.md): 16x faster CPU execution, table recovery, 0.9758 reading order vs legacy connected-components.
+- [B.L.A.S.T. vs EasyOCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-easyocr.md): 7.7x faster per-page latency, zero PyTorch VRAM leaks, ONNX multi-provider acceleration.
+- [B.L.A.S.T. vs AWS Textract](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-aws-textract.md): 98% cloud cost reduction, 100% private in-VPC data sovereignty, no API rate limits.
+- [B.L.A.S.T. vs IBM Docling](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-docling.md): Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native MCP server.
+- [B.L.A.S.T. vs Marker 2](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-marker.md): Permissive MIT license vs GPL-3.0/OpenRAIL commercial caps, CPU-native execution.
+- [Best Tesseract Alternative (2026 Guide)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/tesseract-alternative.md): 60-second migration guide eliminating OS package dependencies.
+- [Best Self-Hosted AWS Textract Alternative](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/aws-textract-alternative.md): Enterprise blueprint for private in-VPC OCR migration.
 
 ## Programmatic Document Format Conversions
-- [PDF to Markdown Converter](docs/conversions/pdf-to-markdown.md): Scanned documents to GitHub Flavored Markdown with tables and LaTeX formulas.
-- [Scanned PDF to DOCX Converter](docs/conversions/scanned-pdf-to-docx.md): Scanned documents to native editable Microsoft Word with XML tables.
-- [PPTX to Markdown Converter](docs/conversions/pptx-to-markdown.md): PowerPoint presentations to structured Markdown slides for LLM chunking.
-- [Image to Searchable PDF Converter](docs/conversions/image-to-searchable-pdf.md): PNG/JPG raster images to dual-layer sandwich PDFs with PyMuPDF.
-- [PDF to LaTeX Converter](docs/conversions/pdf-to-latex.md): Extract mathematical equations and scientific notation ($...$, $$...$$).
-- [Scanned PDF to EPUB 3.0 Converter](docs/conversions/pdf-to-epub.md): Digitize multi-hundred-page scanned books to reflowable e-books.
+- [PDF to Markdown Converter](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/conversions/pdf-to-markdown.md): Scanned documents to GitHub Flavored Markdown with tables and LaTeX formulas.
+- [Scanned PDF to DOCX Converter](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/conversions/scanned-pdf-to-docx.md): Scanned documents to native editable Microsoft Word with XML tables.
+- [PPTX to Markdown Converter](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/conversions/pptx-to-markdown.md): PowerPoint presentations to structured Markdown slides for LLM chunking.
+- [Image to Searchable PDF Converter](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/conversions/image-to-searchable-pdf.md): PNG/JPG raster images to dual-layer sandwich PDFs with PyMuPDF.
+- [PDF to LaTeX Converter](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/conversions/pdf-to-latex.md): Extract mathematical equations and scientific notation ($...$, $$...$$).
+- [Scanned PDF to EPUB 3.0 Converter](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/conversions/pdf-to-epub.md): Digitize multi-hundred-page scanned books to reflowable e-books.
 
 ## AI Agent & Framework Integrations
-- [LangChain RAG Integration](docs/integrations/langchain-rag.md): Native BLASTLangChainLoader for high-precision vector database ingestion.
-- [LlamaIndex RAG Integration](docs/integrations/llamaindex-rag.md): Native BLASTLlamaIndexReader preserving hierarchical document structure.
-- [Cursor IDE MCP Setup](docs/integrations/cursor-mcp-setup.md): Configure B.L.A.S.T. native Model Context Protocol (MCP) server in Cursor.
-- [Claude Desktop MCP Setup](docs/integrations/claude-desktop-mcp.md): Configure B.L.A.S.T. local MCP server in Anthropic Claude Desktop.
+- [LangChain RAG Integration](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/integrations/langchain-rag.md): Native BLASTLangChainLoader for high-precision vector database ingestion.
+- [LlamaIndex RAG Integration](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/integrations/llamaindex-rag.md): Native BLASTLlamaIndexReader preserving hierarchical document structure.
+- [Cursor IDE MCP Setup](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/integrations/cursor-mcp-setup.md): Configure B.L.A.S.T. native Model Context Protocol (MCP) server in Cursor.
+- [Claude Desktop MCP Setup](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/integrations/claude-desktop-mcp.md): Configure B.L.A.S.T. local MCP server in Anthropic Claude Desktop.
 
 ## Technical Research Whitepapers
-- [Zero-Leak Streaming Memory Blueprint](docs/whitepapers/enterprise-ocr-memory-architecture.md): 0.0002 MB/page streaming memory buffer architecture.
-- [Evaluating Table Extraction with TEDS](docs/whitepapers/teds-table-extraction-benchmark.md): Tree-Edit-Distance benchmark across 500 financial tables.
-- [Enterprise Cloud OCR Migration Playbook](docs/whitepapers/cloud-to-local-migration-playbook.md): Roadmap for slashing 90%+ AWS Textract expenses.
+- [Zero-Leak Streaming Memory Blueprint](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/whitepapers/enterprise-ocr-memory-architecture.md): 0.0002 MB/page streaming memory buffer architecture.
+- [Evaluating Table Extraction with TEDS](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/whitepapers/teds-table-extraction-benchmark.md): Tree-Edit-Distance benchmark across 500 financial tables.
+- [Enterprise Cloud OCR Migration Playbook](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/whitepapers/cloud-to-local-migration-playbook.md): Roadmap for slashing 90%+ AWS Textract expenses.
+
+## Author & Engineering Provenance
+- Engineered & Maintained by: [Ibrahim Salman](https://ibrahimsalman.vercel.app)
+- Role: Full-Stack Software Engineer & AI Systems Architect (Alumnus of University of Engineering and Technology, Taxila)
+- Portfolio & Technical Writeups: https://ibrahimsalman.vercel.app
+- B.L.A.S.T. Architecture Case Study: https://ibrahimsalman.vercel.app/projects/blast
+- GitHub: https://github.com/Ibrahim-Salman19
+- LinkedIn: https://www.linkedin.com/in/ibrahim-salman-dev/
+- Upwork Verified Specialist: https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8
+- Direct Inquiries & Consulting: ibrahim.pk848@gmail.com | https://ibrahimsalman.vercel.app/contact
