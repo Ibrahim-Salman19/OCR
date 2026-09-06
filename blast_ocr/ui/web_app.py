@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import html
 import inspect
+import io
 import json
 import logging
 import math
@@ -786,8 +787,6 @@ def _make_download_reader(path: str) -> Any:
 
 def _build_zip_bytes(output_files: Sequence[tuple[str, str]]) -> io.BytesIO:
     """Build a collision-safe bundle and return as BytesIO for Streamlit download_button."""
-    import io
-
     buffer = io.BytesIO()
     used_names: set[str] = set()
     with zipfile.ZipFile(buffer, "w", allowZip64=True) as archive:

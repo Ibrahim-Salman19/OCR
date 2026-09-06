@@ -100,7 +100,7 @@ All empirical benchmark numbers are verified against [`docs/BENCHMARKS_2026.md`]
 |    at 2 to 3 pages/second on CPU. B.L.A.S.T. delivers 29.1 pages/second on CPU.   |
 | 2. Production Readiness: Neither includes a distributed queue, worker heartbeat  |
 |    registry, zombie reaper failover, or sliding-window memory streaming.          |
-|    B.L.A.S.T. is certified across 737 tests and ready for mission-critical scale."|
+|    B.L.A.S.T. is verified across 914 tests (912 passed, 2 skipped, 0 failed) and ready for mission-critical scale."|
 +-----------------------------------------------------------------------------------+
 | LANDMINE QUESTIONS TO PLANT WITH PROSPECT:                                        |
 | - "Can your deployment infrastructure afford dedicated high-end GPUs for every    |

@@ -16,7 +16,7 @@ $$\text{Value} = \frac{\text{Dream Outcome} \times \text{Perceived Likelihood of
 ```
                       (1) Dream Outcome: 29.1 Pages/Sec Offline OCR Pipeline
                                      ×
-                      (2) Likelihood: 100% Deterministic, 737 Certified Tests
+                      (2) Likelihood: 100% Deterministic, 914 Tests (912 Passed, 2 Skipped, 0 Failed)
 Value Score = -------------------------------------------------------------------------
                       (3) Time Delay: 45 Seconds to First OCR Output (CLI / UI)
                                      ×
@@ -25,7 +25,7 @@ Value Score = ------------------------------------------------------------------
 
 ### Deconstructed Drivers:
 1. **Dream Outcome (Maximize)**: Complete document parsing sovereignty. High-throughput (29.1 pages/sec), multi-format extraction (tables, formulas, layouts) directly on commodity CPU or GPU without sending data to third-party cloud APIs.
-2. **Perceived Likelihood of Achievement (Maximize)**: Backed by 737 automated test suites, 24/24 stress chaos recovery scenarios, $0.0002\text{ MB/page}$ zero-leak slope verification, and reproducible gold-standard benchmarks (`docs/BENCHMARKS_2026.md`).
+2. **Perceived Likelihood of Achievement (Maximize)**: Backed by 914 automated tests (912 passed, 2 skipped, 0 failed), $0.0002\text{ MB/page}$ zero-leak slope verification, and reproducible gold-standard benchmarks (`docs/BENCHMARKS_2026.md`).
 3. **Time Delay (Minimize to Zero)**: Single `pip install blast-ocr` command. Pre-packaged ONNX runtime sessions eliminate CUDA version mismatches. Instant local execution in $\le 45$ seconds.
 4. **Effort & Sacrifice (Minimize to Zero)**: No complex Kubernetes clusters required for small jobs; auto-scaling Redis swarm supervisor included for enterprise scale. Zero cloud vendor API keys, zero egress costs, zero privacy review friction.
 
@@ -132,4 +132,4 @@ graph TD
 > With B.L.A.S.T. Enterprise, you deploy an air-gapped swarm across 2 commodity GPU/CPU nodes for $1,499/mo flat. You save $162,000 annually, slash processing latency by 75%, and guarantee zero data leaves your perimeter. That is an immediate 10x ROI in month one."*
 
 ### Handling the "We Can Build It with Tesseract" Objection:
-> *"You certainly can! But building dynamic batching, aspect-ratio bucketing, memory leak recycling, zombie failover queues, and layout geometry extraction in Tesseract takes an engineering team approximately 6 to 9 months of full-time R&D. At $150k engineer salaries, that's a $100,000 internal development build cost. B.L.A.S.T. is certified across 737 tests and production-ready in 45 seconds today."*
+> *"You certainly can! But building dynamic batching, aspect-ratio bucketing, memory leak recycling, zombie failover queues, and layout geometry extraction in Tesseract takes an engineering team approximately 6 to 9 months of full-time R&D. At $150k engineer salaries, that's a $100,000 internal development build cost. B.L.A.S.T. is verified across 914 tests (912 passed, 2 skipped, 0 failed) and production-ready in 45 seconds today."*

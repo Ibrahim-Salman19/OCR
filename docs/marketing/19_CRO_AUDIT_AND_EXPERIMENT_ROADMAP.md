@@ -19,7 +19,7 @@ Where:
 - **$v$ (Clarity of Value Proposition - Weight 3)**: 29.1 pages/second on CPU + 0.0002 MB/page memory slope.
 - **$i$ (Incentive - Weight 2)**: Free Apache 2.0 open-source core, instant local execution.
 - **$f$ (Friction - Weight 2)**: Reduced to a single `pip install blast-ocr` command.
-- **$a$ (Anxiety - Weight 2)**: Neutralized by 737 passing tests and air-gapped zero-egress privacy.
+- **$a$ (Anxiety - Weight 2)**: Neutralized by 912/914 passing tests (2 skipped, 0 failed) and air-gapped zero-egress privacy.
 
 ---
 
@@ -30,7 +30,7 @@ Where:
 | **CRO-01** | GitHub Hero | Add 1-line copy-paste quickstart code block directly above the fold. | 9 | 9 | 10 | **9.3** |
 | **CRO-02** | Streamlit UI | Replace empty upload dropzone with a 1-click "Load Demo Financial Report" button. | 9 | 9 | 9 | **9.0** |
 | **CRO-03** | Documentation | Add 40–60 word direct citation answer blocks under all H2 headings. | 8 | 9 | 9 | **8.7** |
-| **CRO-04** | GitHub Badges | Add automated test pass badge: `737/737 Tests Passing (100%)`. | 8 | 9 | 9 | **8.7** |
+| **CRO-04** | GitHub Badges | Add automated test pass badge: `912/914 Tests Passing (2 skipped)`. | 8 | 9 | 9 | **8.7** |
 | **CRO-05** | Pricing Page | Introduce interactive Cloud Bill Savings Calculator widget. | 8 | 8 | 8 | **8.0** |
 | **CRO-06** | Streamlit UI | Auto-switch active tab to "Layout Inspector" upon pipeline completion. | 8 | 8 | 8 | **8.0** |
 | **CRO-07** | Error States | Replace cryptic stack traces with actionable 3-step remediation cards. | 7 | 8 | 9 | **8.0** |
@@ -63,7 +63,7 @@ Where:
 
 ```
 Sprint 1 (Days 1-15): Launch CRO-01 (Above-the-fold Quickstart) and CRO-02 (1-Click UI Demo).
-Sprint 2 (Days 16-30): Implement CRO-04 (737 Tests Passing Badge) and CRO-07 (Friendly Error Cards).
+Sprint 2 (Days 16-30): Implement CRO-04 (Tests Passing Badge) and CRO-07 (Friendly Error Cards).
 Sprint 3 (Days 31-45): Deploy CRO-03 (Direct Citation Answer Blocks across all docs).
 Sprint 4 (Days 46-60): Launch CRO-05 (Interactive Cloud OCR Cost Calculator).
 Sprint 5 (Days 61-75): Roll out CRO-06 (Auto-tab switching in layout inspector).

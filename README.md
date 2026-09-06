@@ -4,8 +4,8 @@
 > The ultra-high-throughput, memory-bounded OCR and document intelligence engine for PDFs, PowerPoints (PPTX), and scanned images.
 
 [![Status](https://img.shields.io/badge/Status-Active--Development-brightgreen.svg)](https://github.com/Ibrahim-Salman19/OCR)
-[![Tests](https://img.shields.io/badge/Tests-737%2F737%20Passing%20(2%20skipped)-brightgreen.svg)](https://github.com/Ibrahim-Salman19/OCR/actions)
-[![Playwright](https://img.shields.io/badge/Playwright-71%2F71%20Passing-brightgreen.svg)](tests/test_playwright_ocr_execution.py)
+[![CI](https://github.com/Ibrahim-Salman19/OCR/actions/workflows/ci.yml/badge.svg)](https://github.com/Ibrahim-Salman19/OCR/actions/workflows/ci.yml)
+[![Playwright](https://img.shields.io/badge/Playwright-70%2F70%20Passing-brightgreen.svg)](tests/test_playwright_ocr_execution.py)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Ruff%20100%25%20Clean-brightgreen.svg)](pyproject.toml)
 [![Security](https://img.shields.io/badge/Security-0%20Vulnerabilities-brightgreen.svg)](docs/SECURITY_HARDENING.md)
 [![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
@@ -215,7 +215,7 @@ When `secure_mode=True` is enabled, B.L.A.S.T. runs an automated 8-class forensi
 
 ## 🧪 Rigorous Testing & Quality Gates
 
-B.L.A.S.T. has **737 certified automated tests** covering the OCR pipeline, security boundary, queue/storage backends, browser UI, and export formats — the full suite passes with **100% green status (735 passed, 2 skipped, 0 failed)**:
+B.L.A.S.T. has **914 automated tests** covering the OCR pipeline, security boundary, queue/storage backends, browser UI, and export formats — the full suite passes with **100% green status (912 passed, 2 skipped, 0 failed)**, verified 2026-09-06 by actually executing every test rather than trusting a stale badge (CI had silently stopped running tests entirely for over a week before that; see `docs/marketing/13_TECHNICAL_SEO_AUDIT.md`, Finding TECH-06):
 
 ```bash
 # Run full test suite with coverage
@@ -227,9 +227,9 @@ The test harness guarantees:
 - ✅ Thread-safe cross-job OCR engine isolation.
 - ✅ Bounded sliding-window memory during 1,000+ page runs (0.0002 MB/page slope).
 - ✅ Exact dual-layer PDF bounding box alignment.
-- ✅ 71/71 Playwright browser end-to-end tests passing without flakiness.
-- ✅ 100% clean Ruff linting across all 187 repository files.
-- ✅ 0 Bandit security issues and verified zero-leak gate certification.
+- ✅ 70/70 Playwright browser end-to-end tests passing without flakiness.
+- ✅ 100% clean Ruff linting across all 245 git-tracked repository files (scoped to `E722`/`F401`/`F811`/`F841`; see `pyproject.toml`).
+- ✅ 0 Bandit security issues (a real HIGH-severity CI failure here from 2026-09-01 to 2026-09-06 was fixed with a justified `# nosec`, not just re-labeled) and verified zero-leak gate certification.
 
 ---
 

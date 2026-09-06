@@ -147,7 +147,7 @@ print(f"Loaded {len(docs)} hierarchy-aware chunks with KaTeX math!")
 [TEXT OVERLAY]: "29 Pages/Sec ⚡ • 0% Memory Leaks 🔒 • Free & Open Source"
 
 [0:22 - 0:30] | THE CALL TO ACTION
-[VISUAL]: B.L.A.S.T. logo pulses with electric blue neon. GitHub repository page shows 737 passing tests badge.
+[VISUAL]: B.L.A.S.T. logo pulses with electric blue neon. GitHub repository page shows 912/914 passing tests badge.
 [VERBAL]: "100% free and MIT licensed. Link in bio to star the repo and try the live demo!"
 [TEXT OVERLAY]: "Link in Bio • pip install blast-ocr 🚀"
 ```

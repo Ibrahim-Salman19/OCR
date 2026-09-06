@@ -101,12 +101,35 @@ AI models (Perplexity, ChatGPT, Claude, Gemini, Copilot) prioritize content that
 
 ## 6. Empirical Proof Discipline & Testing Gates
 
-All published metrics are strictly grounded in reproducible in-repo eval runs:
-- **Test Suite Status**: Certified 737 passing tests (735 passed, 2 skipped, 0 failed).
-- **Playwright Suite**: 71/71 passing browser end-to-end automation tests.
-- **Evaluation Scenarios**: 24/24 evaluation scenarios verified in `eval/run_playwright_suite.py`.
-- **Code Quality**: 100% clean Ruff linting (`ruff check .` with 0 errors across 187 repository files).
-- **Security Audit**: 0 Bandit security vulnerabilities.
+**A real defect, not just a stale number**: as of 2026-09-06, `main`'s CI had been failing on
+every push for at least 8 days straight (5 consecutive red runs, confirmed via `gh run list`),
+including the commit that introduced this document's earlier "737 tests, 0 failed" language.
+The root cause: `tests/conftest.py` unconditionally registered `tests.playwright_fixtures` as a
+pytest plugin, and every `tests/test_playwright_*.py` file imports `playwright.sync_api` directly
+-- but the CI job never installs the `playwright` package. Pytest's plugin loader raised
+`ModuleNotFoundError` before collecting a single test, and pytest aborts an entire run on any
+collection error by default, so **zero tests actually executed in CI during that window**,
+regardless of what the badge or this document claimed. Fixed by gating plugin registration and
+adding `collect_ignore_glob = ["test_playwright_*.py"]` in `conftest.py` for playwright-less
+environments, and adding `-m "not playwright"` to the CI job's pytest invocation. Verified by
+actually running both halves of the suite locally, once with `playwright` hidden from the
+environment (reproducing CI's exact condition) and once with it present:
+- **Non-Playwright suite**: 844 tests -- 842 passed, 2 skipped, 0 failed (7m24s).
+- **Playwright suite**: 70 tests -- 70 passed, 0 failed (7m26s).
+- **Total**: 914 tests, 912 passed, 2 skipped, 0 failed -- not the previously-claimed 737 (the
+  suite grew by 177 tests since that number was last accurate, and nobody updated the ~13
+  marketing docs that cited it). The codebase itself was never the problem here -- every test
+  that could run, passed; the CI plumbing and the documentation were both stale.
+
+- **Test Suite Status**: 914 tests, 912 passed, 2 skipped, 0 failed (verified 2026-09-06, both
+  halves actually executed -- not just collected).
+- **Playwright Suite**: 70/70 passing browser end-to-end automation tests (verified 2026-09-06).
+- **Evaluation Scenarios**: `eval/run_playwright_suite.py` defines 25 scenario checkpoints (its
+  docstring previously said 12; corrected 2026-09-06). The "24/24" figure cited elsewhere in this
+  repo has not been re-verified against a fresh run of that script in this session -- treat it as
+  unconfirmed rather than assume either 24 or 25 is the live pass count until it's actually re-run.
+- **Code Quality**: `ruff check .` reports 0 errors across all 245 git-tracked `.py` files (verified 2026-09-06; the "187" figure previously cited here was stale). This is scoped to the 4 rule categories configured in `pyproject.toml` (`E722`, `F401`, `F811`, `F841` — bare excepts, unused imports, redefinition, unused variables), not ruff's full default rule set; see the `[tool.ruff.lint]` comment there for why that scope was chosen deliberately rather than gating on everything at once.
+- **Security Audit**: 0 Bandit security vulnerabilities under the exact CI invocation (`bandit -r blast_ocr/ -ll -x blast_ocr/storage/alembic -c pyproject.toml`) — but this claim was actually false from 2026-09-01 to 2026-09-06: a B613 (trojansource) finding on `blast_ocr/security/gateway.py`'s intentional BiDi-override-character detection list was flagging as HIGH severity and failing CI's bandit step with no `# nosec` suppression in place. Fixed 2026-09-06 with a justified inline `# nosec B613` (see that file for why it's a false positive, not a suppressed real issue).
 - **CER Reduction**: 0.1916 CER on 14-page gold corpus (18% CER reduction vs EasyOCR 0.2338).
 - **Latency Advantage**: 15.3s/page on CPU vs 117.8s with EasyOCR (7.7x faster).
 - **Zero-Leak Memory Gate**: 0.0002 MB/page growth slope over 1,000 continuous streamed pages ($\le 0.005\text{ MB/page}$ threshold).

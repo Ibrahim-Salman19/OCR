@@ -3,8 +3,10 @@
 eval.run_playwright_suite
 
 Comprehensive Playwright Evaluation and Automated Browser Testing Harness for B.L.A.S.T. OCR.
-Executes 12 end-to-end browser scenarios, captures high-resolution screenshots, verifies
-DOM states and download artifacts, and generates eval/results/playwright_scorecard.json.
+Executes 25 end-to-end browser scenarios (25 record_scenario() call sites in run_full_suite,
+verified 2026-09-06 -- this docstring previously said 12, stale), captures high-resolution
+screenshots, verifies DOM states and download artifacts, and generates
+eval/results/playwright_scorecard.json.
 """
 
 from __future__ import annotations

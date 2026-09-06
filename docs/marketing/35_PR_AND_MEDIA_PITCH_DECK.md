@@ -19,7 +19,7 @@
 
 Designed specifically to address the dual crises of ballooning cloud OCR API bills and unstable open-source OCR scripts, B.L.A.S.T. delivers a verified 29.1 pages/second throughput on standard commodity CPU cores—more than 16 times faster than legacy Tesseract implementations. Crucially, its sliding-window bounded streaming architecture enforces a verified memory growth slope of just 0.0002 MB/page over 10,000 continuous pages, permanently resolving the out-of-memory container crashes that plague high-volume document ingestion.
 
-"Enterprises and AI builders are spending millions of dollars shipping private contracts, medical histories, and tax records to cloud APIs simply because existing open-source OCR tools are slow and crash constantly," said the lead maintainer of B.L.A.S.T. "B.L.A.S.T. restores complete document processing sovereignty. It runs 100% air-gapped, extracts structured markdown tables and mathematical formulas, and is certified production-ready across 737 automated test suites."
+"Enterprises and AI builders are spending millions of dollars shipping private contracts, medical histories, and tax records to cloud APIs simply because existing open-source OCR tools are slow and crash constantly," said the lead maintainer of B.L.A.S.T. "B.L.A.S.T. restores complete document processing sovereignty. It runs 100% air-gapped, extracts structured markdown tables and mathematical formulas, and is verified production-ready across 914 automated tests (912 passed, 2 skipped, 0 failed)."
 
 **Key Technical Capabilities**:
 - **Vectorized SIMD Pre-Processing**: Dynamic aspect-ratio tensor bucketing minimizes padding waste during ONNX runtime batching.
@@ -45,7 +45,7 @@ Rather than forcing users to upload massive, noisy PDFs to cloud LLMs at signifi
 
 ### Press Release 3: Enterprise Certification & Zero-Leak Warranty
 **FOR IMMEDIATE RELEASE**  
-**B.L.A.S.T. Achieves 737 Certified Tests and Zero-Leak Production Certification for Air-Gapped Workloads**
+**B.L.A.S.T. Achieves 912/914 Verified Tests and Zero-Leak Production Certification for Air-Gapped Workloads**
 
 *Complete architectural audit confirms zero memory leaks across 10,000-page batch runs, automated zombie reaper failover, and hostile file defense.*
 
@@ -65,7 +65,7 @@ Rather than forcing users to upload massive, noisy PDFs to cloud LLMs at signifi
   > 
   > Today, an open-source team launched B.L.A.S.T. (Batch Layout-Aware Structural Text), achieving 29.1 pages/second on standard CPU hardware via SIMD preprocessing and dynamic tensor bucketing—with a verified 0.0002 MB/page zero-leak memory slope that eliminates container OOM crashes.
   > 
-  > The repo is 100% open-source (Apache 2.0) with 737 passing tests and a reproducible benchmark suite.
+  > The repo is 100% open-source (MIT) with 912/914 passing tests (2 skipped, 0 failed) and a reproducible benchmark suite.
   > 
   > Would you be interested in speaking with the systems engineers about how local SIMD vectorization is challenging cloud AI pricing models?
   > 

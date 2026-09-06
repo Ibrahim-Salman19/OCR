@@ -48,9 +48,9 @@
   > *"For financial institutions, healthcare networks, and defense contractors, data sovereignty is non-negotiable. B.L.A.S.T. requires zero external network connections. We enforce strict input sanitation—magic-byte headers, strict allowlist filesystem sandboxing, and 100MB decompression bomb limits."*
 
 ### Slide 7: Production Certification & Stress Verification
-- **Visual**: Live test dashboard snapshot: 737/737 Tests Passing (100%), 24/24 Chaos Scenarios Cleared, 71/71 Playwright End-to-End Tests.
+- **Visual**: Live test dashboard snapshot: 912/914 Tests Passing (2 skipped), 70/70 Playwright End-to-End Tests.
 - **Presenter Script**:
-  > *"B.L.A.S.T. is certified production-ready. We run 737 automated regression tests, continuous memory leak slope verification, and chaos fault-injection tests where worker processes are killed mid-batch to verify our Redis zombie reaper fails over seamlessly."*
+  > *"B.L.A.S.T. is certified production-ready. We run 914 automated regression tests, continuous memory leak slope verification, and chaos fault-injection tests where worker processes are killed mid-batch to verify our Redis zombie reaper fails over seamlessly."*
 
 ### Slide 8: Deployment Models: From CLI to Kubernetes Swarm
 - **Visual**: Three deployment diagrams:

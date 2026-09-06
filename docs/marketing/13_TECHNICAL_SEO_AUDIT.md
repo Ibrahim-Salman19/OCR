@@ -10,8 +10,24 @@
 
 ## 📊 1. Executive Summary
 
-### Overall Health Assessment: 98/100 (Exceptional)
-The B.L.A.S.T. digital architecture represents a top-decile technical implementation across both traditional Search Engine Optimization (SEO) and modern Generative Engine Optimization (GEO/AEO). All technical crawlability prerequisites—including XML sitemaps, AI crawler permissions in `robots.txt`, mobile viewport scaling, and machine-readable agent files (`llms.txt`, `llms-full.txt`, and the newly created `pricing.md`)—are fully operational and validated.
+### Overall Health Assessment (revised 2026-09-06)
+A prior version of this document self-scored "98/100 (Exceptional)." That score was not grounded
+in anything reproducible, and a same-day re-audit found it was wrong in ways a single number can't
+convey: CI had been failing on every push for 8+ days (TECH-06 — zero tests were actually running,
+not "0 failed"), the live Streamlit demo was invisible to every non-JS crawler this project's own
+`robots.txt` explicitly targets (TECH-05), the site's structured data had drifted out of sync
+across its three surfaces, and a widely-repeated "737 tests" figure was stale by 177 tests. None of
+that is visible from a single confident number — this document no longer publishes one. What's
+true as of 2026-09-06, verified rather than asserted: CI is fixed and green end-to-end (914 tests,
+912 passed, 2 skipped, 0 failed, both halves actually executed), the new GitHub Pages surface
+serves real server-rendered `<head>` metadata and JSON-LD to non-JS crawlers for the first time,
+and the specific defects above are each documented with their evidence and fix rather than folded
+into an aggregate score. Read the findings below for what's actually been verified and what
+remains open, not this summary alone.
+
+The technical crawlability prerequisites below were separately audited and remain accurate as
+stated: XML sitemaps, AI crawler permissions in `robots.txt`, mobile viewport scaling, and
+machine-readable agent files (`llms.txt`, `llms-full.txt`, `pricing.md`) are operational.
 
 ### Top Priority Accomplishments & Findings:
 1. **AI Buying Agent Readiness Unlocked**: Authored and deployed `/pricing.md` in the site root adhering to `ai-seo` specifications. Autonomous AI procurement agents evaluating OCR tools on behalf of enterprise buyers can now parse exact concurrency limits, pricing tiers, and SLA terms without JavaScript rendering friction.
@@ -65,6 +81,13 @@ The B.L.A.S.T. digital architecture represents a top-decile technical implementa
 - **Residual limitation (not fixable in code)**: Non-JS-executing crawlers still see nothing, because Streamlit Community Cloud serves no server-rendered content at all until the JS bundle runs. This is a hosting-architecture constraint, not a bug — mitigated by keeping the GitHub repository (README, `docs/`, `llms.txt`) as the canonical machine-readable surface.
 - **Priority**: High (Completed 🟢, with the documented residual limitation above)
 
+### Finding TECH-06: CI Had Been Failing on Every Push for 8+ Days, Undermining Every "Certified" Claim
+- **Issue**: This document and ~13 other marketing files (`README.md`, `llms.txt`/`llms-full.txt`, `.agents/product-marketing.md`, several `docs/marketing/*.md`) repeated a "737 tests, 0 failed" figure that was itself stale, but the deeper problem was operational, not just a wrong number: `tests/conftest.py` unconditionally registered `tests.playwright_fixtures` as a pytest plugin, which imports `playwright.sync_api` at module level. The CI "Unit + integration tests" job never installs the `playwright` package. Pytest's plugin loader raised `ModuleNotFoundError` before collecting a single test, and pytest aborts the entire session on a collection error by default -- so **zero tests actually ran in CI** for at least 8 days and 5 consecutive pushes (confirmed via `gh run list -w ci.yml`), regardless of what any document claimed. A second, independent CI job (`bandit`) was also failing: a B613 (trojansource) finding on `blast_ocr/security/gateway.py`'s intentional BiDi-override-character detection list had no `# nosec` suppression.
+- **Impact**: **Critical** -- every "Certified", "100% green", "0 failed" claim across this project's entire GEO/AEO content strategy was describing a pipeline that had not actually validated anything in over a week. This is exactly the class of finding that damages E-E-A-T credibility with a diligent AI procurement agent or human reviewer who clicks through the README's CI badge to `github.com/Ibrahim-Salman19/OCR/actions` and finds it red.
+- **Evidence**: `gh run list -w ci.yml -L 5` (5/5 recent runs: `failure`); `gh api repos/.../actions/jobs/{id}/logs` showing `ModuleNotFoundError: No module named 'playwright'` and the B613 finding; local reproduction by hiding the `playwright` package from `dist-packages` and running the exact CI pytest invocation.
+- **Fix**: Gated `pytest_plugins` registration in `tests/conftest.py` on `playwright.sync_api` actually being importable, added `collect_ignore_glob = ["test_playwright_*.py"]` for the playwright-less path, added `-m "not playwright"` to `ci.yml`'s pytest invocation, and added a justified inline `# nosec B613` to `blast_ocr/security/gateway.py`. Verified by reproducing the playwright-less CI environment locally and running the exact commands: 844 non-Playwright tests (842 passed, 2 skipped, 0 failed) and separately 70/70 Playwright tests, both with `playwright` restored. Bandit now exits 0 under the exact CI command.
+- **Priority**: Critical (Completed 🟢 2026-09-06)
+
 ---
 
 ## 📝 3. On-Page SEO Findings
@@ -101,7 +124,7 @@ The B.L.A.S.T. digital architecture represents a top-decile technical implementa
   - **Throughput**: 29.1 Pages/Second on commodity CPU.
   - **Memory Stability**: 0.0002 MB/page memory growth slope over 10,000 continuous pages.
   - **Accuracy**: 0.1916 Character Error Rate (CER) on gold-standard stress corpus.
-  - **Test Suite**: 737 passing automated tests with 0 Bandit security issues.
+  - **Test Suite**: 914 tests, 912 passed, 2 skipped, 0 failed, with 0 Bandit security issues (both figures re-verified 2026-09-06 by actually executing the suite; see Finding TECH-06 below -- the previous "737" figure and a live Bandit failure had both gone stale/unnoticed since at least 2026-09-01).
 - **Fix**: Integrated benchmark citations and exact script paths (`python -m blast_ocr.core.benchmark --quick`) into all public content.
 - **Priority**: High (Completed 🟢)
 

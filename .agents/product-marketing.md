@@ -112,23 +112,28 @@
 - 7.7x faster per-page CPU latency (117.8s → 15.3s).
 - 0.9758 Kendall's Tau reading order.
 - 0.0002 MB/page memory growth slope over 1,000-page continuous streaming stress test (zero-leak gate passed).
-- 737/737 passing unit/integration tests with 0 failures and 100% clean Ruff linting.
-- 71/71 Playwright browser end-to-end tests passing.
+- 914 tests: 912 passed, 2 skipped, 0 failed, with 100% clean Ruff linting (verified 2026-09-06 by actual execution, after fixing an 8-day CI outage -- see docs/GEO_AND_SEO_OPTIMIZATION.md).
+- 70/70 Playwright browser end-to-end tests passing.
 **Customers:**
 - Enterprise data engineering pipelines, sovereign offline document intelligence, RAG vector indexing systems.
-**Testimonials:**
-> "B.L.A.S.T. is the only open-source OCR engine we've tested that can churn through 1,000+ page archives without leaking a single megabyte of RAM or dropping tables." — Data Platform Lead
+**Testimonials:** None yet. This project has no verified customer or user testimonials as of
+2026-09-06 -- it is pre-launch open-source software with no evidence of enterprise adoption. A
+line here previously read like a real attributed quote ("— Data Platform Lead") with no name,
+company, or source; that was never a real testimonial and has been removed rather than left to be
+copied into public-facing copy as if it were one. If an illustrative target-persona quote is
+useful for messaging testing, label it explicitly as hypothetical (e.g. "Illustrative target quote
+(not a real customer)") rather than formatting it identically to a genuine testimonial.
 **Value themes:**
 | Theme | Proof |
 |---|---|
 | Deterministic Memory Stability | 1,000-page stress test leak slope 0.0002 MB/page (`eval/results/stress_report.json`), zero open file descriptor leaks. |
 | High Throughput & Low Latency | 15.3s/page on CPU with RapidOCR ONNX vs 117.8s with EasyOCR; multi-provider ONNX fallback (`CUDA` → `DirectML` → `CPU`). |
-| Production Hardening | 737 tests passing, automated zombie reaper & DLQ retry supervisor, 8-class PII redaction, 71/71 Playwright tests. |
+| Production Hardening | 914 tests (912 passed, 2 skipped, 0 failed), automated zombie reaper & DLQ retry supervisor, 8-class PII redaction, 70/70 Playwright tests. |
 
 ## Goals
 **Business goal:** Establish B.L.A.S.T. OCR as the gold-standard, self-hosted document intelligence engine for Agentic RAG and enterprise document workflows.
 **Conversion action:** GitHub star/fork, `pip install blast-ocr`, integrate via MCP or Python SDK, deploy Docker swarm.
-**Current metrics:** 737 tests passed, 24/24 evaluation scenarios verified, 0.1916 CER on gold standard corpus.
+**Current metrics:** 912/914 tests passed (2 skipped, 0 failed), 0.1916 CER on gold standard corpus.
 
 ## Creator & Engineering Authority
 **Author & Lead Architect:** [Ibrahim Salman](https://ibrahimsalman.vercel.app)  

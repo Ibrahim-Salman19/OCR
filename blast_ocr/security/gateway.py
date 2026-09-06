@@ -51,8 +51,15 @@ MAGIC_BYTES = {
 # Unicode BiDi override/embedding control characters (Trojan Source, CVE-2021-42574
 # class attacks): these can reorder how text visually renders without changing its
 # logical byte order, hiding malicious content from a human reviewer.
+# bandit's B613 (trojansource) plugin flags any source file containing these
+# characters, on the reasonable assumption they're hidden there to fool a
+# reviewer. Here they're the opposite: a literal, commented, single-line
+# detection list -- the thing `_scan_text_sample` below uses to *reject*
+# uploads containing them. Suppressing is correct; hiding the characters
+# (e.g. via \uXXXX escapes) would just move the false positive to whichever
+# call site re-derives the same set.
 BIDI_OVERRIDE_CHARS = frozenset(
-    "‪‫‬‭‮⁦⁧⁨⁩"
+    "‪‫‬‭‮⁦⁧⁨⁩"  # nosec B613
 )
 
 # PDF readers (per ISO 32000) tolerate the "%PDF-" marker anywhere within the

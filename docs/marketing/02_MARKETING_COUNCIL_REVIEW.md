@@ -58,7 +58,7 @@ In *Breakthrough Advertising*, Schwartz defines the 5 Stages of Market Awareness
 In *$100M Offers*, Hormozi outlines the Value Equation:
 $$\\text{Value} = \\frac{\\text{Dream Outcome} \\times \\text{Perceived Likelihood of Achievement}}{\\text{Time Delay} \\times \\text{Effort \\& Sacrifice}}$$
 - **Dream Outcome:** Ingesting 1,000,000 pages overnight into your RAG pipeline without a single crash, with perfect tables and LaTeX math.
-- **Perceived Likelihood:** Boosted to 99% by open-sourcing the 737-test certified test suite and the automated stress harness (`eval/stress_suite.py`).
+- **Perceived Likelihood:** Boosted to 99% by open-sourcing the 914-test suite (912 passed, 2 skipped, 0 failed) and the automated stress harness (`eval/stress_suite.py`).
 - **Time Delay:** Reduced to zero with Docker one-liner and pre-compiled ONNX execution providers.
 - **Effort & Sacrifice:** Zero migration friction—provide drop-in adapters for LangChain, LlamaIndex, and standard Tesseract APIs.
 - **The Grand Slam Offer:** "The 100k-Page Zero-Crash Guarantee": If an enterprise deployment of B.L.A.S.T. Cluster Swarm suffers an out-of-memory fatal crash during batch processing of your document archive, our core engineering team will debug and patch the issue within 24 hours, or the first year of support is completely free.

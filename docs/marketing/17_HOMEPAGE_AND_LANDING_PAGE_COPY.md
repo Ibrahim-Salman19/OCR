@@ -7,7 +7,7 @@ This document provides complete, production-ready conversion copy for the primar
 ## 1. Hero Section (Above the Fold)
 
 ### Eyebrow Badge
-`🟢 CERTIFIED PRODUCTION-READY: 737/737 TESTS PASSED • 0.0002 MB/PAGE LEAK SLOPE`
+`🟢 PRODUCTION-READY: 912/914 TESTS PASSED (2 SKIPPED) • 0.0002 MB/PAGE LEAK SLOPE`
 
 ### Main Headline
 # The Deterministic, Air-Gapped OCR Engine That Never Leaks Memory.

@@ -101,4 +101,30 @@ def auto_patch_redis(request, mock_redis):
             yield mock_redis
 
 
-pytest_plugins = ["tests.playwright_fixtures"]
+# tests/playwright_fixtures.py, and every tests/test_playwright_*.py module,
+# import `playwright.sync_api` directly at module level. The CI "Unit +
+# integration tests" job installs only requirements*.txt (no playwright
+# package, no browser binaries). Two failure modes stack here:
+#   1. Registering the plugin unconditionally made pytest's plugin loader
+#      raise ImportError before collecting a single test -- failing the
+#      whole job regardless of what any individual test would have done.
+#   2. Even with (1) fixed, `-m "not playwright"` in ci.yml only deselects
+#      tests *after* they're collected -- pytest still imports every
+#      test_playwright_*.py file to find that marker, so all 17 of those
+#      files raised their own ImportError, and pytest aborts the entire
+#      run on any collection error unless told not to.
+# Solving both by detecting playwright's absence once and (a) skipping the
+# plugin registration and (b) telling pytest to never even try importing
+# those files, rather than importing-then-discarding them.
+try:
+    import playwright.sync_api  # noqa: F401
+
+    _PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    _PLAYWRIGHT_AVAILABLE = False
+
+if _PLAYWRIGHT_AVAILABLE:
+    pytest_plugins = ["tests.playwright_fixtures"]
+else:
+    pytest_plugins = []
+    collect_ignore_glob = ["test_playwright_*.py"]

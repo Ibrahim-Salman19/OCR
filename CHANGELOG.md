@@ -2,6 +2,69 @@
 
 All notable changes to the B.L.A.S.T. OCR Engine will be documented in this file.
 
+## [Unreleased] - 2026-09-06
+
+### Fixed (Critical -- CI was not actually running tests)
+- **Critical**: `tests/conftest.py` unconditionally registered `tests.playwright_fixtures` as a
+  pytest plugin, which imports `playwright.sync_api` at module level; the CI "Unit + integration
+  tests" job never installs the `playwright` package. Pytest's plugin loader raised
+  `ModuleNotFoundError` before collecting a single test, and pytest aborts an entire session on a
+  collection error by default -- **zero tests actually ran in CI for at least 8 days and 5
+  consecutive pushes** (confirmed via `gh run list -w ci.yml`), regardless of what the README
+  badge or any marketing doc claimed. Fixed by gating plugin registration on `playwright` actually
+  being importable and adding `collect_ignore_glob = ["test_playwright_*.py"]` for that
+  environment, plus `-m "not playwright"` in `ci.yml`. Verified by reproducing CI's exact
+  playwright-less condition locally: 844 non-Playwright tests (842 passed, 2 skipped, 0 failed)
+  and, separately, 70/70 Playwright tests with the package restored.
+- Fixed a second, independently-failing CI job: bandit's B613 (trojansource) check flagged
+  `blast_ocr/security/gateway.py`'s intentional Unicode BiDi-override-character detection list as
+  a HIGH-severity finding, with no `# nosec` suppression in place. Added a justified inline
+  `# nosec B613` -- the characters are a literal detection list a security module uses to *reject*
+  hostile uploads, not obfuscated content hiding from review.
+- Streamlit UI (`blast_ocr/ui/web_app.py`): canonical link, meta description, robots directive,
+  and OG/Twitter tags were rendered into the app body via `st.markdown(...,
+  unsafe_allow_html=True)`, never `<head>` -- Google explicitly ignores a canonical tag found
+  outside `<head>`, and the raw pre-JS HTTP response (891 bytes) was invisible to every non-JS
+  crawler regardless. Added `_inject_head_tags()` to relocate these into the real
+  `document.head` via a Streamlit component iframe; added the previously-missing `og:image`.
+  Non-JS crawlers (GPTBot, ClaudeBot, PerplexityBot) still can't read the Streamlit surface --
+  that's a Streamlit Community Cloud hosting constraint, not fixable from application code --
+  mitigated by a new static GitHub Pages surface (see Added, below).
+- `blast_ocr/ui/web_app.py`: `_build_zip_bytes`'s return type annotation referenced `io.BytesIO`
+  with `io` only imported inside the function body -- harmless at runtime (`from __future__ import
+  annotations` defers evaluation) but a real mypy finding. Moved `import io` to module scope.
+- Schema.org JSON-LD had drifted out of sync across its three surfaces: the Streamlit UI graph was
+  missing the `Dataset` entity and 3 of 8 `FAQPage` questions that README.md's graph had. All three
+  surfaces (plus the new GitHub Pages page) now carry identical entities.
+- `llms.txt`/`llms-full.txt` (root and `docs/` copies) had ~20 relative markdown links each,
+  inconsistent with the absolute-URL convention used everywhere else in the same files; normalized
+  to absolute GitHub URLs. The `docs/` copies were also missing the author E-E-A-T section present
+  in the root copies; synced.
+
+### Added
+- `index.html` + `.nojekyll`: a static GitHub Pages site (`https://ibrahim-salman19.github.io/OCR/`)
+  with real server-rendered `<head>` metadata and JSON-LD, readable by non-JS crawlers -- verified
+  live in production with a plain `curl` (no JS execution) after enabling Pages via the GitHub API.
+  Serving from the repo root also makes `robots.txt`, `sitemap.xml`, `llms.txt`, `llms-full.txt`,
+  `pricing.md`, and `mcp.json` reachable at a real URL for the first time.
+- `marketing/assets/og_image.png`: a 1200x630 Open Graph image cropped from the existing landing
+  screenshot (there was no `og:image` at all before).
+
+### Corrected (stale claims across marketing docs)
+- A "737 tests" figure was repeated across ~19 files (`README.md`, `llms.txt`/`llms-full.txt`,
+  `.agents/product-marketing.md`, `gemini.md`, and 12 `docs/marketing/*.md` files); the suite had
+  grown to 914 tests since that number was last accurate. Corrected everywhere to the verified
+  current figure: 914 tests, 912 passed, 2 skipped, 0 failed.
+- `README.md` and `docs/GEO_AND_SEO_OPTIMIZATION.md` claimed "187 repository files" for the Ruff
+  clean-lint figure; the real git-tracked count is 245. Also added the caveat that the configured
+  ruff scope is 4 rule categories (`E722`/`F401`/`F811`/`F841`), not the full default rule set.
+  `docs/marketing/13_TECHNICAL_SEO_AUDIT.md`'s self-assigned "98/100 (Exceptional)" score was
+  removed in favor of naming what was actually verified and what remains open.
+  `docs/marketing/16_SCHEMA_MARKUP_VALIDATION.md` corrected two rich-result eligibility claims:
+  Google restricted FAQ rich results to gov/health sites and discontinued HowTo rich results
+  entirely in August 2023 -- the schema is still valid for GEO/AI-answer extraction, just not for
+  a Google SERP rich card.
+
 ## [Unreleased] - 2026-08-13
 
 ### Fixed (Correctness -- ADR 0009)

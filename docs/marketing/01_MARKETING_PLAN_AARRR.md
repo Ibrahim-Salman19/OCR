@@ -27,7 +27,7 @@ Tesseract and EasyOCR fail completely on bidirectional, cursive, overlapping Nas
 - **Open-Source Mindshare:** 10,000+ GitHub stars, 150,000+ monthly PyPI downloads, top-3 ranked MCP document server on Smithery.ai and mcp.so.
 - **Organic Inbound Engine:** 45,000+ monthly organic visits across Google, Bing, and AI search engines (Perplexity, ChatGPT, Claude) driven by 400+ programmatic SEO pages and validated Schema.org microdata.
 - **Enterprise Pipeline:** 40+ qualified enterprise inbound inquiries per quarter, $450,000 ARR in self-hosted air-gapped commercial licenses and high-throughput cluster support contracts.
-- **Technical Moat:** Zero regressions on the 737-test certified CI harness, sub-50ms p95 page processing latency, and turn-key Kubernetes priority queue swarm orchestration.
+- **Technical Moat:** Zero regressions on the 914-test CI harness (912 passed, 2 skipped, 0 failed), sub-50ms p95 page processing latency, and turn-key Kubernetes priority queue swarm orchestration.
 
 ### 4. 90-Day Priorities (Immediate Execution Horizon)
 1. **Developer Mindshare Launch:** Execute coordinated Day-0 launch across Product Hunt, Hacker News Show HN, Reddit (`r/LocalLLaMA`, `r/MachineLearning`, `r/Python`), and Twitter/X technical threads.

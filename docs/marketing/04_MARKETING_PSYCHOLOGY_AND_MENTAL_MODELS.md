@@ -63,7 +63,7 @@ This guide applies behavioral economics, cognitive biases, and strategic mental 
 ### 4. Social Proof & Technical Authority (Robert Cialdini)
 - **The Bias:** In uncertain technical environments, engineers look for consensus signals and verifiable credentials before trusting a new low-level library.
 - **Authoritative Proof Assets:**
-  1. *The 737-Test Suite Badge:* "737/737 Passing Tests, 100% Clean Linting, 0 Bandit Security Vulnerabilities."
+  1. *The Test Suite Badge:* "912/914 Passing Tests (2 skipped), 100% Clean Linting, 0 Bandit Security Vulnerabilities."
   2. *Auditable Benchmark Result:* `docs/BENCHMARKS_2026.md` providing reproducible CLI commands to verify throughput and accuracy independently.
   3. *The 1,000-Page Continuous Stress Scorecard:* `eval/results/extreme_stress_scorecard.json` documenting verified memory slope plateaus.
 

@@ -1,7 +1,7 @@
 # B.L.A.S.T. OCR Engine: Complete Technical Specification & LLM Reference (llms-full.txt)
 
 > **Version**: 3.0.0-ENTERPRISE
-> **Status**: Certified Production-Grade & Ship-Ready (737 tests passing, 100% clean Ruff linting, 0 Bandit security vulnerabilities, 71 Playwright tests, 24/24 evaluation scenarios)
+> **Status**: Production-Grade & Ship-Ready (914 tests, 912 passed, 2 skipped, 0 failed -- verified 2026-09-06 by actual execution, not a stale badge; CI had silently stopped running any tests for 8+ days before that fix. 100% clean Ruff linting scoped to 4 rule categories, 0 Bandit security vulnerabilities, 70/70 Playwright tests. See docs/GEO_AND_SEO_OPTIMIZATION.md for the full verification trail.)
 > **Repository**: `https://github.com/Ibrahim-Salman19/OCR` -- B.L.A.S.T. (Blueprint. Link. Architect. Stylize. Trigger.)
 > **License**: MIT (100% Permissive Open-Source)
 > **Primary Interfaces**: Python SDK, Model Context Protocol (MCP), FastAPI REST API, CLI, Streamlit Sovereign Web App, LangChain Loader, LlamaIndex Reader

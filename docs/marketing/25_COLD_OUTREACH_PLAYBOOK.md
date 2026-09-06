@@ -165,7 +165,7 @@ Target operates under strict HIPAA, SOC2, or financial compliance and cannot all
   > Following up with our security architecture summary:
   > - All temporary processing buffers are held in encrypted RAM or ephemeral directories (`.tmp/`) wiped immediately upon job completion.
   > - Zero root container execution.
-  > - 100% reproducible test suite with 737 automated regression checks and 0 known security vulnerabilities (Bandit/Ruff certified).
+  > - 100% reproducible test suite with 914 automated regression checks (912 passed, 2 skipped, 0 failed) and 0 known security vulnerabilities (Bandit/Ruff certified).
   > 
   > If your InfoSec team requires a pre-filled SOC2 / HIPAA compliance questionnaire, I can provide our standard enterprise security package right away.
   > 
