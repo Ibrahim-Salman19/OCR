@@ -65,6 +65,23 @@ All notable changes to the B.L.A.S.T. OCR Engine will be documented in this file
   entirely in August 2023 -- the schema is still valid for GEO/AI-answer extraction, just not for
   a Google SERP rich card.
 
+### Fixed (found only once CI could actually run)
+- `blast_ocr/core/engines/tesseract_engine.py`: `process_page()` did `from pytesseract import
+  Output` as a fresh top-level import, bypassing the already-resolved `self._pytesseract`
+  reference entirely -- the method required the real `pytesseract` package even when a caller had
+  supplied a working mock/reference. Broke in CI (which doesn't install `pytesseract`; it's not a
+  project dependency -- RapidOCR is the default, Tesseract an optional fallback); masked locally
+  because `pytesseract` happened to already be installed there. Fixed to read `Output.DICT` off
+  `self._pytesseract`.
+- `tests/test_ui_deep_coverage.py::test_resource_snapshot` unpacked `_resource_snapshot()`'s
+  return value as `cpu, mem = ...`, but the function returns `(memory_mb, cpu_percent)` in that
+  order -- the swapped names inverted the assertions (it was really checking `cpu_percent > 0.0`,
+  not a safe invariant, while never checking that RSS is positive). Only failed in CI when a quiet
+  moment made `cpu_percent` read exactly `0.0`.
+- Confirmed via `gh run watch` on two live GitHub Actions runs (not just local reproduction): the
+  first surfaced the two bugs above; the second, after fixing them, was fully green -- all 6 CI
+  jobs passing, 840 passed / 3 skipped / 0 failed.
+
 ## [Unreleased] - 2026-08-13
 
 ### Fixed (Correctness -- ADR 0009)
