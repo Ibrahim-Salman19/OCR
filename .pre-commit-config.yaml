@@ -1,0 +1,38 @@
+# Optional local pre-commit hooks. Not required -- CI is the enforcement
+# point -- but they turn a 12-minute red pipeline into a 3-second local
+# message for the two checks that catch the most churn.
+#
+#     pip install pre-commit && pre-commit install
+#
+# Every hook is `repo: local` and shells out to the same tool CI runs, rather
+# than pulling a mirrored copy at an independently-pinned version. That is
+# deliberate: a mirror pinned to a different ruff release than
+# requirements-dev.txt produces the "passes locally, fails in CI" split that
+# makes people stop trusting their hooks.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (same rules as CI's lint job)
+        entry: ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: actionlint
+        name: actionlint (workflow syntax + expression checking)
+        # Skipped automatically when actionlint isn't installed, so this file
+        # stays usable without a Go toolchain. Install it with:
+        #   go install github.com/rhysd/actionlint/cmd/actionlint@latest
+        entry: bash -c 'command -v actionlint >/dev/null && actionlint || echo "actionlint not installed; skipping"'
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+        pass_filenames: false
+
+      - id: no-ci-escape-hatches
+        name: reject '|| true' gates in CI workflows
+        # Same script CI's lint job runs, so this cannot drift from it.
+        entry: python scripts/ci_no_escape_hatches.py
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+        pass_filenames: false

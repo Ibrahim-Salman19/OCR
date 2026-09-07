@@ -1,0 +1,84 @@
+# Dependabot configuration.
+#
+# The github-actions ecosystem is the important one here: ci.yml and
+# release.yml pin every third-party action to a full commit SHA for
+# supply-chain reasons, and a SHA pin goes stale in a way a tag pin does not.
+# Dependabot updates the SHA *and* the trailing `# vX.Y.Z` comment, which
+# turns "pinned" from a maintenance burden into a reviewable weekly PR.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for all action bumps rather than eight. Actions are low-risk to
+      # review together and every one of them is gated by the full CI run.
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(ci)"
+
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # The "CRITICAL STABILITY CORE" pins in requirements.txt are deliberate and
+    # load-bearing, not neglect: streamlit==1.32.0 is what Streamlit Community
+    # Cloud runs, and it transitively requires protobuf<5, which is why
+    # opentelemetry-exporter-otlp is excluded from the production extras. A
+    # real `docker build` was what surfaced that conflict -- see docs/adr/0013.
+    # Letting Dependabot open a "bump streamlit to 1.6x" PR every week against
+    # that would train everyone to close its PRs unread, which is exactly how a
+    # genuinely important security bump gets missed. So the core is ignored
+    # here and its CVE exposure is tracked deliberately instead, in
+    # .github/baselines/pip-audit.json.
+    ignore:
+      - dependency-name: streamlit
+      - dependency-name: pandas
+      - dependency-name: pydantic
+      - dependency-name: numpy
+      - dependency-name: pillow
+      - dependency-name: protobuf
+    groups:
+      dev-dependencies:
+        patterns:
+          - pytest*
+          - hypothesis
+          - ruff
+          - mypy
+          - bandit
+          - pip-audit
+          - moto
+          - fakeredis
+          - jiwer
+          - httpx
+      runtime-dependencies:
+        patterns: ["*"]
+        exclude-patterns:
+          - pytest*
+          - hypothesis
+          - ruff
+          - mypy
+          - bandit
+          - pip-audit
+          - moto
+          - fakeredis
+          - jiwer
+          - httpx
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(docker)"

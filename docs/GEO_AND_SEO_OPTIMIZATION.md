@@ -52,7 +52,7 @@ weight and it's worth being precise about which:
 
 ### Implemented Schema Entities:
 - `SoftwareApplication`: Defines name, alternateName, description, operatingSystem, applicationCategory, downloadUrl, installUrl, license, free price offer ($0 USD), and complete 9-point feature list.
-- `SoftwareSourceCode`: Declares Python 3.9–3.13 runtime platform, code repository, and MIT license.
+- `SoftwareSourceCode`: Declares Python 3.10–3.12 runtime platform, code repository, and MIT license.
 - `TechArticle`: Documents architectural overview, reproducible benchmarks, and integration guides with targeted technical keywords.
 - `FAQPage`: Q&A targeting the top 8 high-volume user and AI assistant queries (speed, memory leaks, table extraction, MCP setup, sandwich PDFs, anti-hallucination, air-gapped security, PII redaction). As of 2026-09-06 all three surfaces (README.md, Streamlit UI, FastAPI `/v1/schema.json`) carry the same 8 questions — previously the README had 8 while the two live/API surfaces only had 5, a real drift now closed. Note: Google restricted FAQ *rich results* to well-known government/health sites in August 2023, so this project won't get the SERP accordion — the value here is GEO/AI-answer-engine extraction (Perplexity, Bing Copilot, ChatGPT Search), not a Google rich snippet. See `docs/marketing/16_SCHEMA_MARKUP_VALIDATION.md` §3.
 - `HowTo`: Structured 3-step guide for PDF-to-Markdown document processing. Note: Google discontinued HowTo rich results entirely in August 2023; same GEO-only caveat as `FAQPage`.
@@ -116,15 +116,26 @@ environments, and adding `-m "not playwright"` to the CI job's pytest invocation
 actually running both halves of the suite locally, once with `playwright` hidden from the
 environment (reproducing CI's exact condition) and once with it present:
 - **Non-Playwright suite**: 844 tests -- 842 passed, 2 skipped, 0 failed (7m24s).
-- **Playwright suite**: 70 tests -- 70 passed, 0 failed (7m26s).
-- **Total**: 914 tests, 912 passed, 2 skipped, 0 failed -- not the previously-claimed 737 (the
-  suite grew by 177 tests since that number was last accurate, and nobody updated the ~13
-  marketing docs that cited it). The codebase itself was never the problem here -- every test
-  that could run, passed; the CI plumbing and the documentation were both stale.
+- **Playwright suite**: 70 tests -- 70 passed, 0 failed (7m26s), each of the 17 test files run
+  in isolation.
+- **Total**: 914 tests, 912 passed, 2 skipped, 0 failed when measured that way -- not the
+  previously-claimed 737 (the suite grew by 177 tests since that number was last accurate, and
+  nobody updated the ~13 marketing docs that cited it). The codebase itself was never the
+  problem here -- every test that could run, passed; the CI plumbing and the documentation were
+  both stale.
+- **Correction (2026-09-07, `docs/adr/0014`)**: running the Playwright suite as CI's `e2e` job
+  actually runs it -- one `pytest -m playwright` invocation across all 17 files, not each file
+  isolated -- gives 68 passed / 2 failed, not 70/70. Both failures are order-dependent
+  (`test_landing_page_aria_landmarks` passes alone and fails only in the full run; a CDN-timing
+  wait on `.swagger-ui` fails a different FastAPI `/docs` test each time), not broken assertions,
+  which is why `e2e` runs and reports on every push but is deliberately excluded from CI's
+  required check until the suite proves stable. The honest group-run total is **910 passed, 2
+  skipped, 2 failed** of 914.
 
-- **Test Suite Status**: 914 tests, 912 passed, 2 skipped, 0 failed (verified 2026-09-06, both
-  halves actually executed -- not just collected).
-- **Playwright Suite**: 70/70 passing browser end-to-end automation tests (verified 2026-09-06).
+- **Test Suite Status**: 914 tests -- 844 non-Playwright pass cleanly (842 passed, 2 skipped);
+  the 70 Playwright tests give 910/2/2 as a group (see the correction above), not 912/2/0.
+- **Playwright Suite**: 68/70 passing as a group (verified 2026-09-07); both failures are
+  order-dependent, not broken assertions -- see `docs/adr/0014`.
 - **Evaluation Scenarios**: `eval/run_playwright_suite.py` defines 25 scenario checkpoints (its
   docstring previously said 12; corrected 2026-09-06). The "24/24" figure cited elsewhere in this
   repo has not been re-verified against a fresh run of that script in this session -- treat it as

@@ -7,8 +7,8 @@
 [![CI](https://github.com/Ibrahim-Salman19/OCR/actions/workflows/ci.yml/badge.svg)](https://github.com/Ibrahim-Salman19/OCR/actions/workflows/ci.yml)
 [![Playwright](https://img.shields.io/badge/Playwright-70%2F70%20Passing-brightgreen.svg)](tests/test_playwright_ocr_execution.py)
 [![Code Style](https://img.shields.io/badge/Code%20Style-Ruff%20100%25%20Clean-brightgreen.svg)](pyproject.toml)
-[![Security](https://img.shields.io/badge/Security-0%20Vulnerabilities-brightgreen.svg)](docs/SECURITY_HARDENING.md)
-[![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![Security](https://img.shields.io/badge/Bandit-0%20High%2FMedium-brightgreen.svg)](docs/SECURITY_HARDENING.md)
+[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![CER Reduction](https://img.shields.io/badge/CER%20vs%20EasyOCR-%E2%88%9218%25-orange.svg)](docs/BENCHMARKS_2026.md)
 [![Latency vs EasyOCR](https://img.shields.io/badge/Latency%20vs%20EasyOCR-7.7x%20faster-orange.svg)](docs/adr/0005-phase3-engine-bakeoff.md)
 [![Memory Leak](https://img.shields.io/badge/1k--page%20leak%20slope-0.0002%20MB%2Fpage-success.svg)](eval/results/stress_report.json)
@@ -215,7 +215,7 @@ When `secure_mode=True` is enabled, B.L.A.S.T. runs an automated 8-class forensi
 
 ## 🧪 Rigorous Testing & Quality Gates
 
-B.L.A.S.T. has **914 automated tests** covering the OCR pipeline, security boundary, queue/storage backends, browser UI, and export formats — the full suite passes with **100% green status (912 passed, 2 skipped, 0 failed)**, verified 2026-09-06 by actually executing every test rather than trusting a stale badge (CI had silently stopped running tests entirely for over a week before that; see `docs/marketing/13_TECHNICAL_SEO_AUDIT.md`, Finding TECH-06):
+B.L.A.S.T. has **914 automated tests** covering the OCR pipeline, security boundary, queue/storage backends, browser UI, and export formats. The 844 non-browser tests pass cleanly (842 passed, 2 skipped) and gate every push at 80%+ coverage. The 70 Playwright browser tests also run in CI now, in their own job: **910 passed, 2 skipped, 2 failed** as a group. Both failures are order-dependent rather than broken assertions (see `docs/adr/0014-ci-cd-gates-that-can-actually-fail.md`), which is exactly why that job reports on every run but doesn't yet block merges. These numbers are re-verified as of 2026-09-07 by actually executing every test, not carried forward from an older run (CI had previously gone a full week without running any tests at all; see `docs/marketing/13_TECHNICAL_SEO_AUDIT.md`, Finding TECH-06):
 
 ```bash
 # Run full test suite with coverage
@@ -227,7 +227,7 @@ The test harness guarantees:
 - ✅ Thread-safe cross-job OCR engine isolation.
 - ✅ Bounded sliding-window memory during 1,000+ page runs (0.0002 MB/page slope).
 - ✅ Exact dual-layer PDF bounding box alignment.
-- ✅ 70/70 Playwright browser end-to-end tests passing without flakiness.
+- ✅ 68/70 Playwright browser end-to-end tests passing as a group, the other 2 order-dependent (not broken assertions -- see `docs/adr/0014`).
 - ✅ 100% clean Ruff linting across all 245 git-tracked repository files (scoped to `E722`/`F401`/`F811`/`F841`; see `pyproject.toml`).
 - ✅ 0 Bandit security issues (a real HIGH-severity CI failure here from 2026-09-01 to 2026-09-06 was fixed with a justified `# nosec`, not just re-labeled) and verified zero-leak gate certification.
 
@@ -299,7 +299,7 @@ Distributed under the **MIT License**. Free for commercial and private use.
       "@id": "https://github.com/Ibrahim-Salman19/OCR#sourcecode",
       "name": "B.L.A.S.T. OCR Source Code",
       "programmingLanguage": "Python",
-      "runtimePlatform": "Python 3.9, 3.10, 3.11, 3.12, 3.13",
+      "runtimePlatform": "Python 3.10, 3.11, 3.12",
       "codeRepository": "https://github.com/Ibrahim-Salman19/OCR",
       "license": "https://opensource.org/licenses/MIT",
       "author": {"@id": "https://ibrahimsalman.vercel.app/#person"}

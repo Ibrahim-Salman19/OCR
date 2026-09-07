@@ -20,8 +20,9 @@ the harness yet.
 """
 
 import json
+import os
 from pathlib import Path
-from typing import Optional
+from typing import NoReturn, Optional
 
 import pytest
 
@@ -40,7 +41,49 @@ WER_TOLERANCE = 0.01
 pytestmark = pytest.mark.eval_regression
 
 
+def _missing_scorecard(reason: str) -> NoReturn:
+    """Skip locally, but fail hard in CI.
+
+    Skipping when no fresh scorecard exists is right on a developer machine
+    that has never run the harness. In CI it is exactly backwards: the job runs
+    `python eval/run.py` immediately beforehand, so "no fresh scorecard" can
+    only mean that step produced nothing -- and skipping there turned this into
+    a gate that was structurally incapable of failing. Combined with the
+    `|| true` that used to follow the harness invocation in ci.yml, a crashed
+    eval run and flawless OCR quality were the same green checkmark.
+
+    ci.yml sets BLAST_OCR_EVAL_REQUIRE_SCORECARD=1 for exactly this reason.
+    """
+    if os.environ.get("BLAST_OCR_EVAL_REQUIRE_SCORECARD") == "1":
+        pytest.fail(
+            f"{reason}\n\n"
+            "BLAST_OCR_EVAL_REQUIRE_SCORECARD=1 is set, so a missing or "
+            "partial scorecard is a failure rather than a skip: the eval "
+            "harness was supposed to have produced one just before this ran."
+        )
+    pytest.skip(reason)
+
+
 def _latest_scorecard() -> Optional[Path]:
+    # An explicitly-named scorecard always wins, and is what CI uses.
+    #
+    # The mtime heuristic below is fine on a developer machine, where
+    # eval/results/ accumulates over days, but it is unsound immediately after
+    # a `git checkout`: every file in the tree gets roughly the same mtime, so
+    # "newer than baseline.json" becomes a sub-second coin flip. Since
+    # eval/results/99b9f142f158-dirty.json is itself committed and does carry
+    # an "aggregate" key, a CI run whose eval harness produced nothing could
+    # pick up that stale committed scorecard, compare it against the baseline,
+    # and report the OCR quality gate as green. ci.yml therefore runs the
+    # harness with an explicit --out and points this variable at that exact
+    # file, so the comparison never depends on filesystem timestamps.
+    explicit = os.environ.get("BLAST_OCR_EVAL_SCORECARD")
+    if explicit:
+        path = Path(explicit)
+        if not path.is_absolute():
+            path = REPO_ROOT / path
+        return path if path.exists() else None
+
     if not BASELINE_PATH.exists():
         return None
     base_mtime = BASELINE_PATH.stat().st_mtime
@@ -66,7 +109,7 @@ def _latest_scorecard() -> Optional[Path]:
 
 def test_no_quality_regression_vs_baseline():
     if not BASELINE_PATH.exists():
-        pytest.skip(
+        _missing_scorecard(
             f"No baseline scorecard at {BASELINE_PATH} yet -- nothing to "
             f"compare against. Run `python eval/run.py`, review the "
             f"result, then commit it as eval/results/baseline.json."
@@ -74,7 +117,7 @@ def test_no_quality_regression_vs_baseline():
 
     latest_path = _latest_scorecard()
     if latest_path is None:
-        pytest.skip(
+        _missing_scorecard(
             "No scorecard found in eval/results/. Run `python eval/run.py` "
             "first, then re-run this test."
         )
@@ -86,7 +129,7 @@ def test_no_quality_regression_vs_baseline():
     new_agg = latest["aggregate"]
 
     if new_agg["page_count"] != base_agg["page_count"]:
-        pytest.skip(
+        _missing_scorecard(
             f"Latest scorecard ({latest_path.name}) covers "
             f"{new_agg['page_count']} pages but the baseline covers "
             f"{base_agg['page_count']} -- looks like a partial `--pages` "

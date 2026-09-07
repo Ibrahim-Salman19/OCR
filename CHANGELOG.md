@@ -2,6 +2,62 @@
 
 All notable changes to the B.L.A.S.T. OCR Engine will be documented in this file.
 
+## [Unreleased] - 2026-09-07
+
+### Changed (CI/CD -- every gate can now actually fail; see docs/adr/0014)
+- **Removed all five `|| true` escape hatches from `.github/workflows/ci.yml`.** `ruff check .`,
+  `mypy`, `pip-audit` and the "OCR quality regression gate" were all green regardless of what
+  they found. Re-measured each one: `ruff check .` is clean repo-wide, so it is now hard-gated;
+  `mypy` (130 errors) and `pip-audit` (28 CVEs) are ratcheted against committed baselines in
+  `.github/baselines/`, failing only on findings that are *not* already recorded there.
+- **`scripts/ci_no_escape_hatches.py`** runs in CI and fails the build if any workflow
+  re-introduces `|| true`, `|| :`, or `continue-on-error: true`.
+
+### Fixed (a gate that was structurally incapable of failing)
+- **The "OCR quality regression gate" could not fail, for two independent reasons.** The harness
+  ran under `|| true`, and `tests/test_eval_regression.py` *skips* when no fresh scorecard
+  exists -- so a crashed eval run and perfect OCR quality produced the same green check. Beyond
+  that, the test selected its scorecard by mtime, which is meaningless right after a checkout
+  where every file shares a checkout-time timestamp and the committed
+  `eval/results/99b9f142f158-dirty.json` is itself a valid-looking scorecard. CI now names the
+  scorecard explicitly via `eval/run.py --out` + `BLAST_OCR_EVAL_SCORECARD`, and
+  `BLAST_OCR_EVAL_REQUIRE_SCORECARD=1` turns the skip-when-missing branch into a failure.
+- **The declared Python support window was wrong at both ends**, and a single-version CI job
+  could never have caught it. `blast_ocr/ui/web_app.py` uses `@dataclass(slots=True)` (3.10+),
+  so the package cannot import on 3.9; and `requirements.txt`'s `pandas==2.2.1` publishes no
+  cp313 wheel, so the pins cannot resolve on 3.13. `requires-python` is now `>=3.10`, the 3.9
+  and 3.13 classifiers are removed, and CI runs a 3.10/3.11/3.12 matrix.
+
+### Added (CI)
+- **The 17 `tests/test_playwright_*.py` files now run in CI**, in a dedicated `e2e` job -- 70
+  tests that previously vanished from every run without so much as a skip message, because the
+  test job never installed `playwright`. Running them as a group immediately surfaced two
+  order-dependent failures (`test_landing_page_aria_landmarks` passes 4/4 when its file runs
+  alone; the FastAPI `/docs` tests time out on the CDN-loaded `.swagger-ui` selector, a
+  different one each run). Both predate this change, so `e2e` runs and reports on every push
+  but is deliberately excluded from the `ci-passed` required check until it is stable.
+- **Coverage is now gated** at `--cov-fail-under=80`, against a measured 81.1% (7357/9069
+  lines) for the suite this job actually runs.
+- **The container image is now started, not just built**: the `docker` job polls the same
+  `/_stcore/health` endpoint the Dockerfile's `HEALTHCHECK` uses, dumps `docker logs` on
+  failure, and asserts the image does not run as root.
+- CPU-only torch is installed first in every Python job (the fix the `Dockerfile` already had),
+  so CI stops pulling multiple GB of CUDA wheels onto GPU-less runners.
+- `ci-passed` aggregate job as a single required status check for branch protection.
+- CodeQL analysis, bandit SARIF upload to the Security tab, per-job `timeout-minutes`,
+  least-privilege `permissions`, and pip caching.
+
+### Added (CD -- previously nonexistent)
+- **`.github/workflows/release.yml`**: tag-triggered PyPI publish via Trusted Publishing (OIDC,
+  no stored API token), GHCR image push with SBOM and signed build provenance, and a GitHub
+  Release carrying that version's CHANGELOG section. Guards the release on tag/version
+  agreement and on the changelog section existing. **Requires a one-time Trusted Publishing
+  registration on pypi.org by the project owner** -- see the workflow header.
+- `.github/dependabot.yml` (github-actions, pip, docker), with the ADR-0013 stability-core pins
+  excluded so its PRs stay signal.
+- Third-party actions pinned to full commit SHAs rather than mutable tags.
+- Optional `.pre-commit-config.yaml` reusing the exact tools CI runs.
+
 ## [Unreleased] - 2026-09-06
 
 ### Fixed (Critical -- CI was not actually running tests)

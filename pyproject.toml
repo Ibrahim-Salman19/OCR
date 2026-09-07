@@ -3,7 +3,11 @@ name = "blast-ocr"
 version = "3.0.0"
 description = "Self-hosted OCR/document-intelligence pipeline (PDF/PPTX/image -> Markdown/DOCX/EPUB) with a native MCP server and LangChain/LlamaIndex loaders"
 readme = "README.md"
-requires-python = ">=3.9"
+# 3.10 is the measured floor, not an aspiration: blast_ocr/ui/web_app.py uses
+# @dataclass(frozen=True, slots=True) in three places, and the `slots`
+# parameter is 3.10+. On 3.9 the package fails at import, so the previous
+# ">=3.9" would have let pip install a build that could never run.
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Ibrahim Salman", email = "hafiz.muhammad.ibrahim.salman@gmail.com" }]
 keywords = [
@@ -25,11 +29,17 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
+    # Exactly the versions CI proves on every push (ci.yml's test matrix).
+    # 3.9 was removed because the package cannot import there (see
+    # requires-python above). 3.13 was removed because requirements.txt's
+    # pandas==2.2.1 -- part of the ADR-0013 stability core -- publishes no
+    # cp313 wheel, so `pip install -r requirements.txt` cannot resolve on
+    # 3.13 at all. Both were verified rather than assumed: `uv pip compile
+    # --python-version 3.13 --only-binary :all:` fails on pandas, and vermin
+    # reports blast_ocr/'s minimum as 3.10.
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: Linguistic",
     "Topic :: Scientific/Engineering :: Image Recognition",
     "Topic :: Software Development :: Libraries :: Python Modules",

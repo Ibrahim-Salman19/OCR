@@ -1,0 +1,307 @@
+# B.L.A.S.T. OCR -- continuous delivery.
+#
+# This repository previously had no CD at all: a publish-ready pyproject.toml
+# (blast-ocr 3.0.0), a working Dockerfile, and no automation that shipped
+# either. Cutting a release meant remembering a sequence of local commands,
+# which is how version numbers and published artifacts drift apart.
+#
+# Trigger: push a tag, e.g.
+#     git tag -a v3.0.1 -m "..." && git push origin v3.0.1
+#
+# ONE-TIME MANUAL SETUP IS REQUIRED BEFORE THE PYPI JOB CAN WORK.
+# PyPI Trusted Publishing (OIDC) is used deliberately -- it means no API token
+# is stored in this repository at all, so there is no long-lived credential to
+# leak. It does, however, require the project owner to register this workflow
+# once at https://pypi.org/manage/account/publishing/ with:
+#     PyPI project name : blast-ocr
+#     Owner             : Ibrahim-Salman19
+#     Repository name   : OCR
+#     Workflow name     : release.yml
+#     Environment name  : pypi
+# Until that is done the pypi job will fail with an OIDC error. The GHCR and
+# GitHub Release jobs need no setup -- they use the built-in GITHUB_TOKEN.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and verify everything, but publish nothing."
+        type: boolean
+        default: true
+
+# Deliberately NOT cancel-in-progress, and a different group from ci.yml.
+# Cancelling a release halfway through leaves a published PyPI file with no
+# matching container image and no GitHub Release -- a state that cannot be
+# fixed by re-running, because PyPI filenames cannot be reused.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/blast-ocr
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  # --------------------------------------------------------------- verify ----
+  verify:
+    name: Pre-release verification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # A deliberately cheap Python for the two fail-fast checks below, so a
+      # mismatched tag is caught in ~20 seconds rather than after the full
+      # dependency install. Also makes the tomllib dependency explicit instead
+      # of relying on whatever python3 the runner image happens to ship.
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Tag and package version must agree
+        id: version
+        # The single most common release bug: tagging v3.0.1 while
+        # pyproject.toml still says 3.0.0, so PyPI receives a file named
+        # blast_ocr-3.0.0 that can never be replaced. Fail here, before
+        # anything is published, rather than discovering it afterwards.
+        run: |
+          set -euo pipefail
+          pkg_version=$(python -c "
+          import tomllib, pathlib
+          print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
+          ")
+          echo "pyproject.toml version: $pkg_version"
+          echo "version=$pkg_version" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag_version="${GITHUB_REF_NAME#v}"
+            echo "git tag version:        $tag_version"
+            if [ "$tag_version" != "$pkg_version" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${pkg_version}."
+              exit 1
+            fi
+          fi
+
+      - name: CHANGELOG must document this version
+        # A release with no changelog entry is a release nobody can evaluate.
+        # Checked here, in the fail-fast job, with the same script that later
+        # produces the release body -- so "the check passed" and "the body is
+        # non-empty" cannot come apart.
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python scripts/ci_changelog_section.py "$VERSION" --check-only
+
+      - uses: ./.github/actions/python-env
+        with:
+          python-version: "3.11"
+          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
+
+      # A tag can point at any commit, including one CI never ran on (or one
+      # whose CI run has since been deleted). Re-running the suite here means
+      # "published" always implies "tested at that exact tree".
+      - name: Test suite
+        run: python -m pytest tests/ -q
+
+  # ---------------------------------------------------------------- build ----
+  build-dist:
+    name: Build sdist + wheel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: verify
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - run: pip install build twine
+      - run: python -m build
+
+      - name: Validate distribution metadata
+        # twine check catches the README/long_description rendering failures
+        # that PyPI rejects *after* upload, which with a burned version number
+        # is an unrecoverable mistake.
+        run: twine check --strict dist/*
+
+      - name: Verify the wheel imports on a clean interpreter
+        # `python -m build` succeeding only proves the wheel was assembled.
+        # This proves the package it produced is actually importable -- e.g.
+        # that [tool.setuptools] packages didn't omit a subpackage.
+        run: |
+          python -m venv /tmp/wheelcheck
+          /tmp/wheelcheck/bin/pip install --quiet dist/*.whl
+          /tmp/wheelcheck/bin/python -c "import blast_ocr; print('blast_ocr', blast_ocr.__file__)"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-dist
+          path: dist/
+          retention-days: 30
+
+  # ----------------------------------------------------------------- pypi ----
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: build-dist
+    if: github.event_name == 'push' || !inputs.dry_run
+    # The environment gives the project owner a place to require a manual
+    # approval before anything reaches PyPI, and is part of the Trusted
+    # Publishing identity registered on pypi.org (see the header).
+    environment:
+      name: pypi
+      url: https://pypi.org/p/blast-ocr
+    permissions:
+      contents: read
+      id-token: write # OIDC token for Trusted Publishing -- no API token stored
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          attestations: true
+
+  # ----------------------------------------------------------------- ghcr ----
+  publish-image:
+    name: Publish container image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    needs: verify
+    permissions:
+      contents: read
+      packages: write # push to GHCR
+      id-token: write # provenance attestation
+      attestations: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive tags and labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=B.L.A.S.T. OCR
+            org.opencontainers.image.description=Self-hosted OCR/document-intelligence pipeline
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' || !inputs.dry_run }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # linux/amd64 only, deliberately. arm64 would have to be emulated
+          # through QEMU, and this image builds torch, opencv and onnxruntime
+          # from a full dependency tree -- measured in hours under emulation,
+          # not minutes, which turns every release into a timeout risk. Add
+          # `linux/arm64` here only alongside a native arm64 runner.
+          platforms: linux/amd64
+          sbom: true
+          provenance: mode=max
+
+      - name: Attest build provenance
+        # Signed, verifiable provenance for the pushed image:
+        #     gh attestation verify oci://ghcr.io/<owner>/blast-ocr:<tag> \
+        #       --owner <owner>
+        if: github.event_name == 'push' || !inputs.dry_run
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Smoke test the published image
+        # Same reasoning as ci.yml's docker job: a pushed image that does not
+        # start is worse than no image, because consumers will pull it.
+        if: github.event_name == 'push' || !inputs.dry_run
+        run: |
+          set -euo pipefail
+          ref="${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
+          docker run -d --name blast-release-smoke -p 8501:8501 "$ref"
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:8501/_stcore/health >/dev/null 2>&1; then
+              echo "Published image healthy after ${i}s"
+              docker rm -f blast-release-smoke >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Published image never became healthy"
+          docker logs blast-release-smoke
+          exit 1
+
+  # -------------------------------------------------------- github release ----
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: [verify, build-dist, publish-pypi, publish-image]
+    if: github.event_name == 'push'
+    permissions:
+      contents: write # create the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-dist
+          path: dist/
+
+      - name: Extract this version's CHANGELOG section
+        id: notes
+        # Ships the hand-written changelog entry as the release body rather
+        # than an auto-generated commit list, which for this repository would
+        # be far less informative than what CHANGELOG.md already says.
+        run: |
+          python scripts/ci_changelog_section.py "$VERSION" > release-notes.md
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Container image:** \`${IMAGE_NAME}:${VERSION}\`"
+            echo ""
+            echo "\`\`\`"
+            echo "docker pull ${IMAGE_NAME}:${VERSION}"
+            echo "pip install blast-ocr==${VERSION}"
+            echo "\`\`\`"
+          } >> release-notes.md
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          body_path: release-notes.md
+          files: dist/*
+          fail_on_unmatched_files: true

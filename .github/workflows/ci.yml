@@ -1,3 +1,26 @@
+# B.L.A.S.T. OCR -- continuous integration.
+#
+# Design notes (the "why", so the next person doesn't undo it):
+#
+#  * Every gate here can actually fail. This pipeline previously carried five
+#    `|| true` escape hatches, which meant `ruff check .`, `mypy`, `pip-audit`
+#    and the "OCR quality regression gate" were decorations: green whatever
+#    they found. Where a check was already clean it is now hard-gated; where it
+#    was not, it is ratcheted against a committed baseline (see
+#    .github/baselines/ and scripts/ci_*_gate.py) so existing debt is parked
+#    but new debt cannot land. Reverting any of these to `|| true` re-creates
+#    the exact failure mode of commit 1b8ea8f, where CI was silently failing on
+#    every push for eight days.
+#
+#  * Third-party actions are pinned to full commit SHAs, not tags. A tag is a
+#    mutable pointer; a compromised upstream can repoint v4 at anything, and
+#    this workflow has access to the repo and (in release.yml) to publishing
+#    credentials. Dependabot (.github/dependabot.yml) proposes SHA bumps as
+#    reviewable PRs so pinning does not mean going stale.
+#
+#  * Runner images are pinned to ubuntu-24.04 rather than ubuntu-latest for
+#    the same reproducibility reason -- `latest` silently migrates.
+
 name: CI
 
 on:
@@ -5,50 +28,85 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
+# One CI run per ref. A newer push to a PR supersedes the older run (nothing is
+# lost -- the newer commit is a superset), but pushes to main are never
+# cancelled: every commit that lands on main gets its own recorded verdict, so
+# a red main can't be masked by a later green run cancelling it.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Least privilege at the top; the two jobs that need more escalate locally.
+permissions:
+  contents: read
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: "true"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
 
 jobs:
+  # ---------------------------------------------------------------- lint ----
   lint:
     name: Lint (ruff)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
       - run: pip install ruff
-      # Hard-gated on blast_ocr/ (the shipped package, verified clean -- see
-      # docs/adr/0013). Root-level dev/debug scripts and tests/ still have
-      # pre-existing lint debt (unused imports etc.); advisory there until
-      # that's triaged separately, rather than blocking every PR on unrelated
-      # pre-existing findings on day one.
-      - run: ruff check blast_ocr/
-      - run: ruff check . || true
+      # Previously `ruff check blast_ocr/` was gated and `ruff check .` was
+      # advisory (`|| true`) on the assumption that root-level scripts and
+      # tests/ still carried lint debt. Re-measured: the whole repo is clean
+      # under the configured rule set, so the advisory form was protecting
+      # nothing and hiding any future regression outside blast_ocr/. Gated.
+      - name: ruff check (whole repository)
+        run: ruff check --output-format=github .
 
+      # Guards the property that makes every other gate in this file mean
+      # something. Without it, the cheapest way to make a red build green is to
+      # append `|| true`, which is exactly how CI came to be silently failing
+      # on every push for eight days (commit 1b8ea8f).
+      - name: No CI escape hatches
+        run: python scripts/ci_no_escape_hatches.py
+
+  # ----------------------------------------------------------- typecheck ----
   typecheck:
-    name: Type check (mypy)
-    runs-on: ubuntu-latest
+    name: Type check (mypy ratchet)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/python-env
         with:
           python-version: "3.11"
-      - run: pip install mypy
-      - run: pip install -r requirements.txt
-      # mypy against a large pre-existing codebase starts non-blocking
-      # (report findings, don't fail the build) until the baseline is clean --
-      # see pyproject.toml's [tool.mypy] comment on incremental adoption.
-      - run: mypy blast_ocr/ || true
+          requirements: "requirements.txt requirements-dev.txt"
+      # `mypy blast_ocr/ || true` reported 130 pre-existing errors and passed
+      # regardless, so a genuinely new type error was indistinguishable from
+      # the existing debt. The ratchet fails only on findings absent from
+      # .github/baselines/mypy.json -- keyed on (file, error-code) so it also
+      # catches "fixed one, introduced another elsewhere".
+      - name: mypy ratchet
+        run: python scripts/ci_mypy_gate.py blast_ocr/
 
+  # ---------------------------------------------------------------- test ----
   test:
-    name: Unit + integration tests
-    runs-on: ubuntu-latest
+    name: Tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 is the real floor: blast_ocr/ui/web_app.py uses
+        # @dataclass(slots=True), which is 3.10+. 3.13 is excluded because
+        # requirements.txt's pandas==2.2.1 (part of the ADR-0013 stability
+        # core) publishes no cp313 wheel, so the pins cannot install there at
+        # all. pyproject.toml's requires-python and classifiers were corrected
+        # to match this measured window rather than the aspirational 3.9-3.13.
+        python-version: ["3.10", "3.11", "3.12"]
     services:
       redis:
         image: redis:7
@@ -61,63 +119,361 @@ jobs:
     env:
       BLAST_OCR_REDIS_URL: redis://localhost:6379/0
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
+
+      - name: pytest
+        # --cov-fail-under turns the coverage report from a number nobody reads
+        # into a gate.
+        #
+        # 80 is set just under the measured baseline. The number that matters
+        # is the one this job will actually see, which is NOT the 81% a local
+        # `pytest tests/` reports: that run includes the Playwright suite,
+        # which this job excludes (no playwright package -> conftest.py's
+        # collect_ignore_glob). Measured the matching way -- `pytest tests/
+        # --ignore-glob='tests/test_playwright_*.py' --cov=blast_ocr` -- gives
+        # 7357/9069 lines = 81.1%. Raise this as coverage improves; it exists
+        # to catch a real drop, not to be decorative.
+        env:
+          COVERAGE_FLOOR: "80"
+        run: |
+          python -m pytest tests/ \
+            --cov=blast_ocr \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under="$COVERAGE_FLOOR" \
+            --junitxml="junit-${{ matrix.python-version }}.xml" \
+            -q
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo "### Coverage (py${{ matrix.python-version }})"
+            echo ""
+            python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          p = Path("coverage.xml")
+          if p.exists():
+              root = ET.parse(p).getroot()
+              rate = float(root.get("line-rate", 0)) * 100
+              print(f"Line coverage: **{rate:.2f}%**")
+          else:
+              print("_No coverage.xml produced._")
+          PY
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage + test report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          # upload-artifact v4+ rejects duplicate names, so matrix legs must
+          # not all upload "coverage-report".
+          name: test-reports-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            junit-${{ matrix.python-version }}.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ----------------------------------------------------------------- e2e ----
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/python-env
         with:
           python-version: "3.11"
-      - name: System dependencies (poppler for pdf2image)
-        run: sudo apt-get update && sudo apt-get install -y poppler-utils libgl1 libglib2.0-0
-      - run: pip install -r requirements.txt -r requirements-production.txt -r requirements-dev.txt
-      - run: python -m pytest tests/ --cov=blast_ocr --cov-report=term-missing --cov-report=xml -q
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage.xml
+          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
 
-  security-scan:
-    name: Dependency + static security scan
-    runs-on: ubuntu-latest
+      # The 17 tests/test_playwright_*.py files have never run in CI. Not by a
+      # deliberate exclusion -- the "Unit + integration tests" job simply never
+      # installed playwright, so tests/conftest.py's ImportError fallback set
+      # collect_ignore_glob and pytest skipped the whole surface silently. They
+      # need no external service: tests/playwright_fixtures.py starts its own
+      # Streamlit and FastAPI subprocesses and polls their health endpoints.
+      - name: Install Playwright + Chromium
+        # `playwright` only -- deliberately NOT pytest-playwright. This suite
+        # brings its own fixtures in tests/playwright_fixtures.py, and
+        # pytest-playwright would inject its own `page`/`context`/`browser`
+        # fixtures over the top of them. The local run these tests were
+        # verified against had exactly this package set (pytest plugins:
+        # anyio, hypothesis, cov), so this installs what was actually tested.
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Run browser end-to-end suite
+        run: python -m pytest tests/ -m playwright -q --junitxml=junit-e2e.xml
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-artifacts
+          path: |
+            junit-e2e.xml
+            test-results/
+            tests/temp_out/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ------------------------------------------------------------ security ----
+  security:
+    name: Security (bandit + dependency ratchet)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write # upload-sarif
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
       - run: pip install pip-audit bandit
-      - name: pip-audit (known CVEs in dependencies)
-        run: |
-          pip-audit -r requirements.txt || true # advisory until the dependency baseline is triaged
-          pip-audit -r requirements-production.txt || true
-      - name: bandit (SAST for common Python security anti-patterns)
-        run: bandit -r blast_ocr/ -ll -x blast_ocr/storage/alembic -c pyproject.toml
 
+      # bandit was already a real gate and blast_ocr/ is clean at -ll
+      # (0 High, 0 Medium; the 30 Low findings are below the threshold).
+      # Left hard-gated, with SARIF so findings land in the Security tab
+      # instead of only in the log.
+      - name: bandit (SAST)
+        run: |
+          bandit -r blast_ocr/ -x blast_ocr/storage/alembic -c pyproject.toml \
+            -f sarif -o bandit.sarif --exit-zero
+          bandit -r blast_ocr/ -ll -x blast_ocr/storage/alembic -c pyproject.toml
+
+      - name: Upload bandit SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+        with:
+          sarif_file: bandit.sarif
+          category: bandit
+        continue-on-error: true
+
+      # `pip-audit || true` hid 28 real CVEs (streamlit 1.32.0, pillow 10.4.0,
+      # protobuf 4.25.9, starlette 0.38.6) -- all downstream of the deliberate
+      # ADR-0013 stability pins, so they cannot simply be upgraded away. The
+      # ratchet accepts exactly those 28 (recorded in
+      # .github/baselines/pip-audit.json, where
+      # each is a reviewed risk acceptance) and fails on anything new. So a CVE
+      # disclosed tomorrow in a dependency we *could* bump now breaks the build
+      # instead of scrolling past.
+      - name: Dependency vulnerability ratchet
+        run: |
+          python scripts/ci_pip_audit_gate.py \
+            -r requirements.txt \
+            -r requirements-production.txt
+
+  # -------------------------------------------------------------- codeql ----
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+        with:
+          languages: python
+          # security-and-quality adds maintainability queries on top of the
+          # default security set; this repo already runs bandit for the shallow
+          # patterns, so the value here is CodeQL's cross-function taint
+          # tracking (e.g. request data reaching a file path or a subprocess).
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+        with:
+          category: "/language:python"
+
+  # ------------------------------------------------------ eval regression ----
   eval-regression:
     name: OCR quality regression gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     needs: test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/python-env
         with:
           python-version: "3.11"
-      - run: sudo apt-get update && sudo apt-get install -y poppler-utils libgl1 libglib2.0-0
-      - run: pip install -r requirements.txt -r requirements-production.txt -r requirements-dev.txt
-      # Regression-gated against the committed eval/results/baseline.json
-      # scorecard; skipped (not failed) if eval/run.py hasn't produced a
-      # fresh scorecard for this run, per pytest.ini's eval_regression marker.
-      - run: python eval/run.py --engine rapidocr || true
-      - run: python -m pytest tests/test_eval_regression.py -v
+          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
 
-  docker-build:
-    name: Build container image
-    runs-on: ubuntu-latest
+      # This gate was structurally incapable of failing. `python eval/run.py
+      # || true` meant a crashed harness produced no fresh scorecard, and
+      # tests/test_eval_regression.py *skips* (by design) when no fresh
+      # scorecard exists -- so the harness crashing and the OCR quality being
+      # perfect were the same green result. Both halves are fixed: the harness
+      # run is no longer swallowed, and BLAST_OCR_EVAL_REQUIRE_SCORECARD makes
+      # the skip-when-missing branch a failure in CI, where a missing scorecard
+      # can only mean the step above silently did nothing.
+      #
+      # The corpus (14 pages + gold transcriptions) is committed under eval/,
+      # and rapidocr_onnxruntime bundles its ONNX models in the wheel, so this
+      # needs no network access and no model download.
+      #
+      # --out names the scorecard explicitly instead of letting the test pick
+      # "the newest file in eval/results/". That heuristic is unsound on a
+      # fresh checkout, where every file shares a checkout-time mtime and the
+      # already-committed eval/results/99b9f142f158-dirty.json is itself a
+      # valid-looking scorecard -- so a run that produced nothing could still
+      # find something to compare and pass. See the comment on
+      # _latest_scorecard() in tests/test_eval_regression.py.
+      - name: Run eval harness
+        run: |
+          python eval/run.py \
+            --engine rapidocr \
+            --out "eval/results/ci-${GITHUB_SHA}.json"
+
+      - name: Compare against committed baseline
+        env:
+          BLAST_OCR_EVAL_REQUIRE_SCORECARD: "1"
+          BLAST_OCR_EVAL_SCORECARD: eval/results/ci-${{ github.sha }}.json
+        run: python -m pytest tests/test_eval_regression.py -v
+
+      - name: Upload scorecard
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: eval-scorecard
+          path: eval/results/*.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  # -------------------------------------------------------------- docker ----
+  docker:
+    name: Container build + smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Build image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           push: false
+          # load: true puts the image in the local daemon so the smoke test
+          # below can actually run it. Without this the job proved only that
+          # the Dockerfile parses and its layers build -- never that the
+          # resulting image starts.
+          load: true
           tags: blast-ocr:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke test the built image
+        # The build succeeding says nothing about whether the entrypoint works:
+        # a missing runtime apt package, a bad ENV path, or a permissions
+        # mistake under the non-root `blast` user all build fine and fail on
+        # first start. Poll the same health endpoint the Dockerfile's
+        # HEALTHCHECK uses, then fail loudly with the container logs attached.
+        run: |
+          set -euo pipefail
+          docker run -d --name blast-smoke -p 8501:8501 blast-ocr:ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8501/_stcore/health >/dev/null 2>&1; then
+              echo "Container healthy after ${i}s"
+              docker rm -f blast-smoke >/dev/null
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' blast-smoke)" != "true" ]; then
+              echo "::error::Container exited before becoming healthy"
+              docker logs blast-smoke
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::Container never became healthy within 60s"
+          docker logs blast-smoke
+          exit 1
+
+      - name: Verify the image runs as a non-root user
+        # docs/SECURITY_HARDENING.md and the Dockerfile both promise a non-root
+        # runtime. Asserting it here keeps that from silently regressing on a
+        # future Dockerfile edit.
+        run: |
+          uid=$(docker run --rm --entrypoint id blast-ocr:ci -u)
+          echo "Container UID: $uid"
+          if [ "$uid" = "0" ]; then
+            echo "::error::Image runs as root; the Dockerfile's USER directive regressed"
+            exit 1
+          fi
+
+  # ----------------------------------------------------------- aggregate ----
+  # Single required status check for branch protection. Without this, adding a
+  # job to this file means remembering to also add it to the protected-branch
+  # settings; with it, "CI passed" is one check that can never silently omit a
+  # job.
+  #
+  # `if: always()` is what makes this job run at all when something upstream
+  # failed -- but on its own it inverts the problem, because a job that runs
+  # unconditionally and has no failing step of its own reports success. Hence
+  # the explicit per-job result check in the step below, which is the part
+  # that actually enforces anything.
+  ci-passed:
+    name: CI passed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: always()
+    # `e2e` is deliberately NOT in this list yet. It runs, and its result is
+    # visible on every run, but it does not block merges until the suite is
+    # shown to be stable in CI.
+    #
+    # Why: these 70 tests have never executed in CI, so their behaviour as a
+    # *group* has never been observed anywhere but developer machines. Running
+    # them locally exactly as this job does (`pytest tests/ -m playwright`)
+    # gives 68 passed / 2 failed, and both failures are order-dependent rather
+    # than genuine breakage:
+    #   * test_playwright_accessibility.py passes 4/4 when run as a file, and
+    #     test_landing_page_aria_landmarks fails only inside the larger run --
+    #     cross-test interference, not a broken assertion.
+    #   * the FastAPI /docs tests time out waiting for `.swagger-ui`, which
+    #     FastAPI loads from cdn.jsdelivr.net; a different one fails each run,
+    #     which is the signature of a network-timing flake, not a bug.
+    # Both predate this pipeline and neither is a regression it introduced.
+    #
+    # Gating on a suite with known order-dependent flakes would just recreate
+    # the pressure that produced the `|| true` habit in the first place. Add
+    # `e2e` here once it has run green for a stretch of pushes -- that is a
+    # one-word change, and scripts/ci_no_escape_hatches.py makes sure nobody
+    # takes the other route.
+    needs: [lint, typecheck, test, security, codeql, eval-regression, docker]
+    steps:
+      - name: Check upstream job results
+        env:
+          # Passed as data, not interpolated into the script body -- same
+          # reason as everywhere else in this pipeline.
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json, os, sys
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          width = max(len(name) for name in needs)
+          bad = []
+          for name, data in sorted(needs.items()):
+              result = data.get("result", "unknown")
+              print(f"{name:<{width}}  {result}")
+              # Anything that is not an outright success blocks. "skipped" is
+              # included on purpose: a job skipped because one of *its*
+              # dependencies failed still means this commit was not fully
+              # verified, and treating that as success is precisely how an
+              # aggregate check quietly stops aggregating.
+              if result != "success":
+                  bad.append(f"{name} ({result})")
+
+          if bad:
+              print(f"::error::CI did not fully pass: {', '.join(bad)}")
+              sys.exit(1)
+          print("\nAll CI jobs succeeded.")
+          PY

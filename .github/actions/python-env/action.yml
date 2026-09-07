@@ -1,0 +1,98 @@
+# Shared environment setup for every Python job in ci.yml.
+#
+# GitHub Actions has no YAML anchors, so without this the same ~20-line install
+# block gets copy-pasted into five jobs and drifts. In particular the CPU-only
+# torch step below is easy to omit in a new job and costs ~4 minutes and several
+# GB of runner disk when it is.
+name: "Python environment"
+description: "System packages, cached Python, CPU-only torch, and the requested requirement sets."
+
+inputs:
+  python-version:
+    description: "Python version to install."
+    required: false
+    default: "3.11"
+  requirements:
+    description: >-
+      Space-separated requirements files to install, in order. Defaults to the
+      runtime core only.
+    required: false
+    default: "requirements.txt"
+  system-deps:
+    description: >-
+      Install the apt packages the runtime needs: poppler-utils (pdf2image),
+      libgl1/libglib2.0-0 (OpenCV needs libGL even in headless builds).
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        # Keying the pip cache on all three requirement files means a change to
+        # any of them invalidates it -- a cache keyed on only requirements.txt
+        # would serve a stale wheel set after a dev-dependency bump.
+        cache: pip
+        cache-dependency-path: |
+          requirements.txt
+          requirements-production.txt
+          requirements-dev.txt
+
+    - name: System dependencies
+      if: inputs.system-deps == 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          poppler-utils libgl1 libglib2.0-0
+
+    - name: Install CPU-only torch first
+      shell: bash
+      # easyocr depends on torch without pinning a CPU/GPU variant, so a plain
+      # `pip install -r requirements.txt` on Linux resolves the default
+      # CUDA-enabled build: multiple GB of nvidia_* wheels (nvidia_cublas alone
+      # is 423MB) downloaded onto a runner that has no GPU and never will.
+      # Installing the CPU wheel from PyTorch's own index first satisfies
+      # easyocr's dependency so pip never resolves the CUDA variant. This is
+      # the same trick the Dockerfile uses, and for the same reason -- see the
+      # comment above the builder stage's pip install.
+      run: |
+        python -m pip install --upgrade pip
+        pip install --index-url https://download.pytorch.org/whl/cpu torch
+
+    - name: Install requirements
+      shell: bash
+      # The input is passed through `env:` rather than interpolated into the
+      # script body. `${{ }}` expands before bash ever sees the line, so an
+      # interpolated value is executed as source code, not read as data --
+      # harmless for a literal like this one, but it is the pattern that turns
+      # into a command-injection bug the moment someone wires an input to
+      # anything attacker-influenced. Keeping the safe form here means the
+      # unsafe form never gets copied out of this file.
+      env:
+        REQUIREMENTS: ${{ inputs.requirements }}
+      run: |
+        args=()
+        for f in $REQUIREMENTS; do
+          args+=(-r "$f")
+        done
+        pip install "${args[@]}"
+
+    - name: Record the resolved environment
+      shell: bash
+      # A frozen dependency list attached to every run turns "it worked
+      # yesterday" into an answerable question. Cheap, and the only record of
+      # what floating pins (>=) actually resolved to on the day.
+      run: |
+        echo "### Resolved environment (Python ${{ inputs.python-version }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo '<details><summary>pip freeze</summary>' >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+        pip freeze >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo '</details>' >> "$GITHUB_STEP_SUMMARY"

@@ -64,6 +64,13 @@ clean_*.txt
 !llms*.txt
 !robots.txt
 
+# Test/coverage reports. CI's test job produces all three (ci.yml uploads them
+# as build artifacts instead), and a developer running the same pytest command
+# locally would otherwise get them as untracked noise.
+.coverage
+coverage.xml
+junit-*.xml
+
 # Audit and eval artifacts
 .agents/auditor_*
 .agents/orchestrator_*
