@@ -87,6 +87,16 @@ EXPOSE 8501 9464
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
-ENTRYPOINT ["streamlit", "run", "blast_ocr/ui/web_app.py", \
+# streamlit_app.py, NOT blast_ocr/ui/web_app.py: Streamlit's own bootstrap
+# (_fix_sys_path in streamlit/web/bootstrap.py) only adds the *entrypoint
+# script's own directory* to sys.path, not the repo root. Pointing the
+# entrypoint at blast_ocr/ui/web_app.py directly means `from blast_ocr...`
+# in that file can never resolve -- confirmed with a real `streamlit run
+# blast_ocr/ui/web_app.py`, which throws ModuleNotFoundError: No module
+# named 'blast_ocr' and renders Streamlit's generic crash page. streamlit_
+# app.py lives at the repo root (so its own directory already contains the
+# blast_ocr package) and additionally inserts the repo root into sys.path
+# itself before importing blast_ocr.ui.web_app.
+ENTRYPOINT ["streamlit", "run", "streamlit_app.py", \
             "--server.address=0.0.0.0", "--server.port=8501", \
             "--server.headless=true"]

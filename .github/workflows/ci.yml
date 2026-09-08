@@ -401,6 +401,20 @@ jobs:
         # mistake under the non-root `blast` user all build fine and fail on
         # first start. Poll the same health endpoint the Dockerfile's
         # HEALTHCHECK uses, then fail loudly with the container logs attached.
+        #
+        # KNOWN GAP: /_stcore/health only proves the Streamlit server process
+        # is up -- it says nothing about whether the app's own script ran
+        # without raising. A wrong entrypoint path (blast_ocr/ui/web_app.py
+        # instead of streamlit_app.py, whose repo-root sys.path fixup it
+        # needs) returned a healthy /_stcore/health for weeks while every
+        # real visitor got Streamlit's generic "Oh no. Error running app."
+        # crash page, and this smoke test never caught it. A real fix needs a
+        # headless browser: Streamlit's landing markup is rendered client-side
+        # over a WebSocket, so plain `curl http://localhost:8501/` only ever
+        # returns the static SPA shell (`<div id="root">`) whether the app is
+        # healthy or crashed -- confirmed by testing it directly, so don't
+        # "fix" this with a curl/grep check, it can't distinguish the two
+        # states. Left as a follow-up rather than bolted on here.
         run: |
           set -euo pipefail
           docker run -d --name blast-smoke -p 8501:8501 blast-ocr:ci

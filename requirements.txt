@@ -12,14 +12,14 @@ numpy>=2.3.0,<3; python_version >= "3.14"
 # --- OCR ENGINE ---
 # easyocr (PyTorch-based) is deliberately NOT installed here. It pulls in
 # torch, which is ~750MB even in its CPU-only build, pushing this file's
-# installed footprint to ~1.9GB. Streamlit Community Cloud's free tier caps
-# apps at 1GB, and a cold boot / wake-from-hibernation has to reinstall this
-# file from scratch before the platform's health check gives up -- a
-# multi-minute install of that size routinely loses that race, which is what
-# was producing "Oh no. Error running app." on every visit, not just under
-# load. rapidocr_onnxruntime (ONNX Runtime, no torch) is already this
-# project's default and marketed engine (see the in-app FAQ: it replaced
-# EasyOCR as the baseline after a bake-off showing a 7.7x latency
+# installed footprint to ~1.9GB against Streamlit Community Cloud's 1GB
+# free-tier cap. (Note: this split was NOT the fix for the "Oh no. Error
+# running app." crash seen on ocr-book.streamlit.app -- that was a separate,
+# unrelated bug, a wrong entrypoint file causing ModuleNotFoundError; see the
+# Dockerfile's ENTRYPOINT comment. This split is worth keeping on its own
+# merits regardless.) rapidocr_onnxruntime (ONNX Runtime, no torch) is
+# already this project's default and marketed engine (see the in-app FAQ: it
+# replaced EasyOCR as the baseline after a bake-off showing a 7.7x latency
 # improvement and 18% lower CER), so the cloud deployment loses nothing by
 # not carrying the heavier legacy backend. Local dev, the Docker image, and
 # CI still get easyocr via `-r requirements.txt -r requirements-easyocr.txt`
