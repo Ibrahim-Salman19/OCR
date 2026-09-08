@@ -1,0 +1,86 @@
+# B.L.A.S.T. OCR -- container image rollback.
+#
+# release.yml only ever moves forward: publish a new version, move `:latest`
+# to point at it. Nothing in this repository could undo that before this
+# workflow existed -- the CD half had a publish path but no way back.
+#
+# This re-points `:latest` at an already-published, already-attested image by
+# digest, using `docker buildx imagetools create`. It pulls zero image
+# bytes and rebuilds nothing: it only asks GHCR to make an existing manifest
+# answer to the `latest` tag too, which is what "roll back a container
+# deployment" actually means for an image nobody has forked into a orchestrator
+# with its own release object. Anyone re-pulling `:latest` after this run gets
+# the older, known-good image.
+#
+# This intentionally does NOT touch PyPI. PyPI has no equivalent safe
+# operation: a published sdist/wheel file name can never be reused (see
+# release.yml's tag/version check), and deleting a release is exactly the
+# kind of irreversible action this pipeline elsewhere refuses to automate.
+# The correct manual action for a bad PyPI release is "yank" it --
+# https://pypi.org/manage/project/blast-ocr/releases/ -- which marks the
+# version undesirable without deleting it or breaking anyone already pinned
+# to it. Only the project owner can do that, the same as the two other
+# manual, owner-only steps documented in release.yml's header and
+# docs/adr/0014.
+
+name: Rollback container image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: >-
+          Previously published version to restore as `latest`, e.g. "3.0.0".
+          Must already exist as a tag on ghcr.io/<owner>/blast-ocr.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/blast-ocr
+
+jobs:
+  rollback:
+    name: Re-point :latest at a previous version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      packages: write # re-tag on GHCR
+    steps:
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify the target version was actually published
+        # imagetools create against a tag that does not exist would otherwise
+        # fail with a registry error that does not say which input was wrong.
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "${IMAGE_NAME}:${{ inputs.version }}" \
+            || { echo "::error::${IMAGE_NAME}:${{ inputs.version }} does not exist on GHCR -- nothing to roll back to."; exit 1; }
+
+      - name: Re-point :latest at the requested version
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create \
+            --tag "${IMAGE_NAME}:latest" \
+            "${IMAGE_NAME}:${{ inputs.version }}"
+
+      - name: Confirm the new :latest resolves to the requested digest
+        run: |
+          set -euo pipefail
+          old_digest=$(docker buildx imagetools inspect "${IMAGE_NAME}:${{ inputs.version }}" --format '{{json .Manifest.Digest}}')
+          new_digest=$(docker buildx imagetools inspect "${IMAGE_NAME}:latest" --format '{{json .Manifest.Digest}}')
+          echo "requested version digest: ${old_digest}"
+          echo "latest now resolves to:   ${new_digest}"
+          if [ "$old_digest" != "$new_digest" ]; then
+            echo "::error:::latest does not match the requested version after retagging."
+            exit 1
+          fi
+          echo "::notice::${IMAGE_NAME}:latest now points at version ${{ inputs.version }} (${new_digest})."

@@ -140,3 +140,18 @@ Consequences:
   under Settings -> Branches on GitHub.com, which -- like the PyPI Trusted Publishing
   registration above -- only the repository owner can do. Until that setting is made, a red
   `ci-passed` does not block a merge.
+
+Addendum (2026-09-08): a rollback path for the container image.
+- The original version of this ADR shipped a CD pipeline that could only move forward: publish
+  a new version, move `:latest` to point at it. There was no way back, which is exactly the gap
+  a standard CI/CD checklist calls out under "every deployment should be reversible."
+- `.github/workflows/rollback.yml` closes it for the GHCR image: a `workflow_dispatch` job that
+  re-points `:latest` at an already-published version via `docker buildx imagetools create`,
+  pulling no image bytes and rebuilding nothing. It verifies the target version exists before
+  retagging and verifies the resulting digest matches after.
+- PyPI is deliberately not covered. A published sdist/wheel filename can never be reused (the
+  reason `release.yml`'s tag/version check exists at all), and there is no equivalent safe,
+  automatable operation the way retagging is for a container. The correct action for a bad PyPI
+  release is to yank it from https://pypi.org/manage/project/blast-ocr/releases/, which marks a
+  version undesirable without deleting it or breaking anyone already pinned to it -- a manual,
+  owner-only step, the same category as the two already listed above in Consequences.

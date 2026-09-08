@@ -57,6 +57,10 @@ All notable changes to the B.L.A.S.T. OCR Engine will be documented in this file
   excluded so its PRs stay signal.
 - Third-party actions pinned to full commit SHAs rather than mutable tags.
 - Optional `.pre-commit-config.yaml` reusing the exact tools CI runs.
+- **`.github/workflows/rollback.yml`**: a `workflow_dispatch` job that re-points the GHCR
+  `:latest` tag at a previously published version via `docker buildx imagetools create` (no
+  rebuild, no pulled bytes). PyPI is deliberately not covered -- a bad release there is undone
+  by yanking it manually on pypi.org, not by automation; see docs/adr/0014's addendum.
 
 ## [Unreleased] - 2026-09-06
 
