@@ -185,6 +185,24 @@ jobs:
     name: End-to-end (Playwright)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    # Without this, is_queue_available() correctly reports the queue as
+    # unreachable, the swarm monitor panel (and its "RUN ZOMBIE REAPER SCAN"
+    # button) never renders, and the two e2e tests asserting on it fail --
+    # caught by a real CI run, not local testing: whoever authored this job
+    # apparently had a local Redis running on 6379, which made the same
+    # assertions pass locally with no service block. Mirrors the `test`
+    # job's Redis service below.
+    services:
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      BLAST_OCR_REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/python-env
@@ -237,7 +255,13 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-      - run: pip install pip-audit bandit
+      # bandit-sarif-formatter registers the `sarif` output format bandit
+      # itself doesn't ship -- without it, the `-f sarif` step below fails
+      # immediately with "invalid choice: 'sarif'" before the actual -ll
+      # gate ever runs (caught by a real CI run, not local testing: local
+      # bandit runs here never passed -f sarif, so the missing plugin never
+      # surfaced until this step actually executed on GitHub Actions).
+      - run: pip install pip-audit bandit bandit-sarif-formatter
 
       # bandit was already a real gate and blast_ocr/ is clean at -ll
       # (0 High, 0 Medium; the 30 Low findings are below the threshold).
