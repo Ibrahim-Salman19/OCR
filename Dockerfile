@@ -9,7 +9,7 @@
 # ("Hostile document security boundary" -> sandboxed OCR workers: non-root
 # process, minimal writable surface).
 
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
@@ -46,7 +46,7 @@ RUN pip install --no-cache-dir --prefix=/install \
         -r requirements-easyocr.txt
 
 
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Runtime-only system dependencies: poppler-utils (pdf2image), libgl1 (opencv
 # needs libGL even in "headless" builds for some codec paths), fonts for
