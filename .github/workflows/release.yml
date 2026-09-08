@@ -103,7 +103,7 @@ jobs:
       - uses: ./.github/actions/python-env
         with:
           python-version: "3.11"
-          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
+          requirements: "requirements.txt requirements-production.txt requirements-easyocr.txt requirements-dev.txt"
 
       # A tag can point at any commit, including one CI never ran on (or one
       # whose CI run has since been deleted). Re-running the suite here means

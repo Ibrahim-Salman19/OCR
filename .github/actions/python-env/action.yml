@@ -39,6 +39,7 @@ runs:
         cache-dependency-path: |
           requirements.txt
           requirements-production.txt
+          requirements-easyocr.txt
           requirements-dev.txt
 
     - name: System dependencies

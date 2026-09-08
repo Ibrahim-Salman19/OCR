@@ -123,7 +123,7 @@ jobs:
       - uses: ./.github/actions/python-env
         with:
           python-version: ${{ matrix.python-version }}
-          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
+          requirements: "requirements.txt requirements-production.txt requirements-easyocr.txt requirements-dev.txt"
 
       - name: pytest
         # --cov-fail-under turns the coverage report from a number nobody reads
@@ -190,7 +190,7 @@ jobs:
       - uses: ./.github/actions/python-env
         with:
           python-version: "3.11"
-          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
+          requirements: "requirements.txt requirements-production.txt requirements-easyocr.txt requirements-dev.txt"
 
       # The 17 tests/test_playwright_*.py files have never run in CI. Not by a
       # deliberate exclusion -- the "Unit + integration tests" job simply never
@@ -305,7 +305,7 @@ jobs:
       - uses: ./.github/actions/python-env
         with:
           python-version: "3.11"
-          requirements: "requirements.txt requirements-production.txt requirements-dev.txt"
+          requirements: "requirements.txt requirements-production.txt requirements-easyocr.txt requirements-dev.txt"
 
       # This gate was structurally incapable of failing. `python eval/run.py
       # || true` meant a crashed harness produced no fresh scorecard, and

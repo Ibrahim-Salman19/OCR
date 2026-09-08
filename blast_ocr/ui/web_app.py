@@ -21,6 +21,7 @@ falls back cleanly instead of taking down the UI.
 from __future__ import annotations
 
 import html
+import importlib.util
 import inspect
 import io
 import json
@@ -408,6 +409,14 @@ try:
     from streamlit.runtime.scriptrunner import get_script_run_ctx
 except Exception:  # pragma: no cover - compatibility fallback
     get_script_run_ctx = None
+
+# easyocr (PyTorch) is an optional backend -- not installed on Streamlit
+# Community Cloud, where its ~750MB torch dependency would blow the free
+# tier's resource limits (see requirements.txt). A cheap spec lookup avoids
+# actually importing torch/easyocr just to know whether the engine is
+# available. The "ensemble" engine also needs easyocr as its cross-check
+# secondary, so it rides on the same flag.
+_EASYOCR_AVAILABLE = importlib.util.find_spec("easyocr") is not None
 
 logger = logging.getLogger(__name__)
 
@@ -1290,16 +1299,23 @@ def render_engine_configuration(settings: Any) -> EngineOptions:
     preset_denoise, preset_contrast, preset_deskew, preset_dewarp = _preset_defaults(preset)
 
     with st.expander("ADVANCED ENGINE PROTOCOLS", expanded=False):
+        engine_options = [
+            "batched_rapidocr (SIMD Batched ONNX - Maximum Throughput)",
+            "rapidocr (ONNX Runtime - Fast Standard)",
+            "tesseract (Pytesseract - Baseline)",
+        ]
+        if _EASYOCR_AVAILABLE:
+            engine_options.insert(2, "easyocr (PyTorch - Multilingual Global)")
+            engine_options.append("ensemble (Consensus Voting - High Accuracy)")
+        else:
+            st.caption(
+                "easyocr and ensemble are unavailable on this deployment "
+                "(optional PyTorch backend not installed)."
+            )
         engine_choice = st.selectbox(
             "OCR ENGINE ADAPTER",
-            [
-                "batched_rapidocr (SIMD Batched ONNX - Maximum Throughput)",
-                "rapidocr (ONNX Runtime - Fast Standard)",
-                "easyocr (PyTorch - Multilingual Global)",
-                "tesseract (Pytesseract - Baseline)",
-                "ensemble (Consensus Voting - High Accuracy)",
-            ],
-            index=1,
+            engine_options,
+            index=min(1, len(engine_options) - 1),
             key="engine_choice",
         )
         selected_engine = str(engine_choice).split(" ", 1)[0].strip()

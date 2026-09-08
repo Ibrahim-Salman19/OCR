@@ -1,0 +1,25 @@
+# Optional PyTorch-based OCR backend (the "easyocr" engine choice in the UI).
+# Deliberately excluded from requirements.txt: easyocr depends on torch, and
+# even torch's CPU-only build is ~750MB, which is why this project's default
+# engine is the ONNX-based rapidocr_onnxruntime instead (see requirements.txt
+# for the full story on Streamlit Community Cloud's resource limits).
+#
+# Install with: pip install -r requirements.txt -r requirements-easyocr.txt
+#
+# This file pins CPU-only torch itself rather than relying on the Dockerfile's
+# and CI's separate "install CPU-only torch first" step to have already
+# satisfied it. That assumption doesn't hold: the Dockerfile installs that
+# first step with `pip install --prefix=/install ...`, and a later, separate
+# `pip install --prefix=/install -r requirements-easyocr.txt` invocation does
+# NOT see the first step's install as already satisfying easyocr's unpinned
+# `torch` dependency (--prefix isolates the install target but pip's
+# already-satisfied check only looks at the running interpreter's normal
+# site-packages) -- reproduced with a real `docker build`, which pulled
+# torch-2.14.0 plus the entire CUDA toolkit (cuda-toolkit, nvidia-cublas,
+# nvidia-cudnn-cu13, and a dozen more nvidia-* packages) despite that earlier
+# step. Pinning the exact same CPU wheel here, the way requirements.txt used
+# to before torch moved out of it, makes this file self-contained and correct
+# regardless of what any consumer did before processing it.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0+cpu
+easyocr>=1.7.0

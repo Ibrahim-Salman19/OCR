@@ -18,15 +18,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-COPY requirements.txt requirements-production.txt pyproject.toml ./
+COPY requirements.txt requirements-production.txt requirements-easyocr.txt pyproject.toml ./
 # requirements.txt first (the CRITICAL STABILITY CORE pins, including the
 # streamlit==1.32.0 protobuf<5 constraint), then requirements-production.txt
-# (queue/storage/observability) -- deliberately excludes
-# opentelemetry-exporter-otlp to avoid the protobuf conflict documented in
-# both files and docs/adr/0013. The container image runs the full
-# docker-compose profile (Redis queue, MinIO storage, Prometheus metrics), so
-# it needs the production extras installed, unlike the minimal
-# `pip install -r requirements.txt` path Streamlit Community Cloud uses.
+# (queue/storage/observability) and requirements-easyocr.txt (the optional
+# PyTorch/EasyOCR backend, excluded from requirements.txt itself so the
+# minimal `pip install -r requirements.txt` path Streamlit Community Cloud
+# uses stays under its resource limits -- see the comment in requirements.txt
+# for the full story). The container image runs the full docker-compose
+# profile (Redis queue, MinIO storage, Prometheus metrics) and isn't resource
+# constrained the way SCC is, so it installs every optional extra.
 # CPU-only torch FIRST, via PyTorch's own CPU wheel index: easyocr depends on
 # torch without pinning a CPU/GPU variant, so a plain `pip install` on Linux
 # resolves the default CUDA-enabled build -- multiple gigabytes of nvidia_*
@@ -41,7 +42,8 @@ RUN pip install --no-cache-dir --prefix=/install \
         torch \
     && pip install --no-cache-dir --prefix=/install \
         -r requirements.txt \
-        -r requirements-production.txt
+        -r requirements-production.txt \
+        -r requirements-easyocr.txt
 
 
 FROM python:3.11-slim AS runtime
