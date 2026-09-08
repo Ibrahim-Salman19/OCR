@@ -1,0 +1,24 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Carousel" },
+    { "id": "page-2", "name": "Single image + copy" }
+  ],
+  "artboards": [
+    { "file": "Slide1Cover.dc.html",     "page": "page-1", "x": 0,    "y": 0,    "w": 1200, "h": 1200, "title": "1. Cover", "print": "fixed" },
+    { "file": "Slide2Problem.dc.html",   "page": "page-1", "x": 1320, "y": 0,    "w": 1200, "h": 1200, "title": "2. The real problem", "print": "fixed" },
+    { "file": "Slide3Mechanism.dc.html", "page": "page-1", "x": 2640, "y": 0,    "w": 1200, "h": 1200, "title": "3. What changed", "print": "fixed" },
+    { "file": "Slide4Numbers.dc.html",   "page": "page-1", "x": 3960, "y": 0,    "w": 1200, "h": 1200, "title": "4. The numbers", "print": "fixed" },
+    { "file": "Slide5Memory.dc.html",    "page": "page-1", "x": 0,    "y": 1320, "w": 1200, "h": 1200, "title": "5. The memory test", "print": "fixed" },
+    { "file": "Slide6Gaps.dc.html",      "page": "page-1", "x": 1320, "y": 1320, "w": 1200, "h": 1200, "title": "6. The gaps", "print": "fixed" },
+    { "file": "Slide7Close.dc.html",     "page": "page-1", "x": 2640, "y": 1320, "w": 1200, "h": 1200, "title": "7. Close", "print": "fixed" },
+
+    { "file": "Main.dc.html",        "page": "page-2", "x": 0,    "y": 0, "w": 1200, "h": 1200, "title": "Share graphic - stat-led", "print": "fixed" },
+    { "file": "Receipts.dc.html",    "page": "page-2", "x": 1320, "y": 0, "w": 1200, "h": 1200, "title": "Share graphic - proof-led", "print": "fixed" },
+    { "file": "PostPreview.dc.html", "page": "page-2", "x": 2640, "y": 0, "w": 420,  "h": 1220, "title": "Post copy - fold check", "print": "flow" }
+  ],
+  "annotations": [
+    { "id": "carousel-note", "page": "page-1", "x": 0, "y": -270, "w": 760, "text": "Seven slides for a LinkedIn document post. Export PDF from the toolbar while this page is open and you get all seven in order, one page each, ready to upload.\n\nSlide 1 is the feed thumbnail and competes on its own. Slide 6 is the one people screenshot." },
+    { "id": "share-note", "page": "page-2", "x": 0, "y": -270, "w": 760, "text": "Use these instead if you post a single image rather than the carousel. Both are 1200x1200.\n\nThe third artboard is the post copy at phone width, with the mobile fold marked." }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}
