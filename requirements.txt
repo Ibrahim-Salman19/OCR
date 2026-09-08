@@ -1,3 +1,23 @@
+# CPU-only torch. easyocr (below) depends on torch without pinning a
+# CPU/GPU variant, so a plain `pip install -r requirements.txt` on Linux
+# resolves torch's default build, which bundles the full CUDA/cuDNN runtime
+# (cuda-toolkit, nvidia-cublas, nvidia-cudnn-cu13, triton, and a dozen more
+# nvidia-* packages -- multiple GB). Streamlit Community Cloud installs this
+# exact file with no other build step (see the note at the bottom of this
+# file), so that isn't just wasteful there, it exceeds SCC's resource limits
+# and crashes the app on boot -- reproduced with
+# `pip install --dry-run -r requirements.txt`, which pulled torch-2.14.0
+# plus the entire CUDA toolkit before this pin was added.
+# The Dockerfile and CI's python-env action solve this by installing torch
+# from PyTorch's CPU wheel index in its own `pip install` step before this
+# file is processed. A single requirements.txt can't do a separate install
+# step, so it needs the extra index plus an explicit `+cpu`-suffixed pin
+# instead -- an unpinned `torch` line here would still risk resolving the
+# default (non-`+cpu`) build from PyPI depending on which index has the
+# newer release.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0+cpu
+
 # --- CRITICAL STABILITY CORE ---
 streamlit==1.32.0; python_version < "3.14"
 streamlit>=1.56.0,<2; python_version >= "3.14"
