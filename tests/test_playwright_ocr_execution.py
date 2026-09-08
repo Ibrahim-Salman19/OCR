@@ -77,3 +77,15 @@ def test_single_document_ocr_pipeline(page: Page, streamlit_app_url: str) -> Non
     ]
     for p_tab in preview_tabs:
         expect(page.locator(f'[role="tab"]:has-text("{p_tab}")')).to_be_visible()
+
+    # 8. Verify progress bar text is fully visible and unclipped (not squeezed into 10px)
+    progress_el = page.locator('[data-testid="stProgress"]')
+    if progress_el.count() > 0:
+        box = progress_el.first.bounding_box()
+        assert box is not None and box["height"] >= 25, f"Progress container height {box} is clipped!"
+        text_el = progress_el.locator("p").first
+        if text_el.count() > 0:
+            expect(text_el).to_be_visible()
+            t_box = text_el.bounding_box()
+            assert t_box is not None and t_box["height"] >= 14, f"Progress text height {t_box} is clipped!"
+

@@ -30,6 +30,23 @@ def test_load_css_not_exists():
             mock_err.assert_called_once_with("Styles file not found!")
 
 
+def test_styles_css_progress_bar_not_clipped():
+    """Verify styles.css does not clip [data-testid="stProgress"] to 10px or overflow:hidden."""
+    from pathlib import Path
+    css_path = Path(web_app.__file__).resolve().parent / "styles.css"
+    assert css_path.exists(), "styles.css must exist"
+    content = css_path.read_text(encoding="utf-8")
+    
+    # [data-testid="stProgress"] must not have height: 10px or overflow: hidden
+    import re
+    st_progress_match = re.search(r'\[data-testid=["\']stProgress["\']\]\s*\{([^}]+)\}', content)
+    assert st_progress_match is not None, "Missing [data-testid='stProgress'] block in styles.css"
+    block = st_progress_match.group(1)
+    assert "overflow: hidden" not in block, "[data-testid='stProgress'] must not have overflow: hidden"
+    assert "height: 10px" not in block, "[data-testid='stProgress'] must not have height: 10px"
+    assert "overflow: visible" in block, "[data-testid='stProgress'] must have overflow: visible"
+
+
 def test_inject_seo_metadata():
     """Covers SEO injection logic (line 41-48)."""
     with patch("streamlit.markdown") as mock_md:

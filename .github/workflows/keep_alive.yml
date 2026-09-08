@@ -16,10 +16,10 @@ name: Keep Streamlit App Awake
 
 "on":
   schedule:
-    # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
-    # Streamlit hibernates after ~12 hours of inactivity, so 6-hour pings
-    # ensure the timer never resets long enough to trigger hibernation.
-    - cron: '0 */6 * * *'
+    # Every 2 hours: 00:00, 02:00, 04:00, 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00 UTC
+    # Streamlit Cloud free-tier hibernates inactive containers after 2-4 hours.
+    # A 2-hour ping with active session interaction guarantees the timer never expires.
+    - cron: '0 */2 * * *'
 
   # Allows manual trigger from the GitHub Actions "Run workflow" button
   workflow_dispatch:

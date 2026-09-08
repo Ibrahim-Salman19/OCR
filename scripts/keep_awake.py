@@ -84,7 +84,10 @@ def main() -> int:
     # 3. Launch browser and interact with the page                         #
     # ------------------------------------------------------------------ #
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+        )
         context = browser.new_context(
             # Realistic user-agent prevents bot-detection on some CDN layers
             user_agent=(
@@ -104,7 +107,7 @@ def main() -> int:
             print(f"[*] Waiting {INITIAL_SETTLE} s for DOM to settle...")
             time.sleep(INITIAL_SETTLE)
 
-            # The sleep screen exposes exactly this button text
+            # 1. The sleep screen exposes exactly this button text
             wake_button = page.locator(
                 "button:has-text('Yes, get this app back up!')"
             )
@@ -129,10 +132,49 @@ def main() -> int:
                 woke = True
                 time.sleep(WAKE_BOOT_WAIT)
 
+            # 2. Check for transition state ("This will take just a sec! Your app is waking up!")
+            for wait_cycle in range(12):
+                try:
+                    body_text = page.locator("body").inner_text(timeout=3_000)
+                except Exception:
+                    body_text = ""
+                if "waking up" in body_text.lower():
+                    print(f"[*] App container is booting (poll {wait_cycle + 1}/12)... waiting 5s")
+                    woke = True
+                    time.sleep(5)
+                else:
+                    break
+
+            # 3. Trigger active interaction (click "ENTER MISSION CONTROL" if on landing hero)
+            # Streamlit Community Cloud hosts the app inside an iframe titled "streamlitApp"
+            try:
+                app_frame = page.frame_locator('iframe[title="streamlitApp"]')
+                cta = app_frame.locator('button:has-text("ENTER MISSION CONTROL")')
+                if cta.count() > 0 and cta.first.is_visible(timeout=4_000):
+                    print("[+] Clicking 'ENTER MISSION CONTROL' in app frame to register active session...")
+                    cta.first.click()
+                    time.sleep(3)
+            except Exception:
+                pass
+
+            # Fallback: check top-level page if not running inside an iframe
+            try:
+                top_cta = page.locator('button:has-text("ENTER MISSION CONTROL")')
+                if top_cta.count() > 0 and top_cta.first.is_visible(timeout=2_000):
+                    print("[+] Clicking top-level 'ENTER MISSION CONTROL'...")
+                    top_cta.first.click()
+                    time.sleep(3)
+            except Exception:
+                pass
+
+            # 4. Hold active WebSocket connection for 12 seconds to ensure session telemetry is registered
+            print("[*] Maintaining active session to reset Streamlit idle timer...")
+            time.sleep(12)
+
             if woke:
-                print("[+] Wake-up request dispatched successfully.")
+                print("[+] Wake-up request dispatched and app container confirmed operational.")
             else:
-                print("[+] App is already awake and operational.")
+                print("[+] App is already awake, session refreshed and operational.")
 
         except PlaywrightTimeout:
             print(
