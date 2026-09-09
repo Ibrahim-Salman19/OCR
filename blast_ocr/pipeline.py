@@ -29,7 +29,52 @@ try:
 except ImportError:
     pdfinfo_from_path = None
 
+try:
+    import pypdfium2 as pdfium
+except ImportError:
+    pdfium = None
+
 logger = logging.getLogger(__name__)
+
+
+def _pdf_page_count(pdf_path: str, poppler_kwargs: Dict) -> Optional[int]:
+    """Page count via pypdfium2 (no system dependencies) first, falling back to
+    poppler's pdfinfo. Streamlit Community Cloud has no poppler binary, so
+    pdfinfo_from_path always fails there -- see requirements.txt."""
+    if pdfium:
+        try:
+            return len(pdfium.PdfDocument(pdf_path))
+        except Exception as pdfium_err:
+            logger.debug(f"pypdfium2 page count failed: {pdfium_err}")
+    if pdfinfo_from_path:
+        try:
+            info = pdfinfo_from_path(pdf_path, **poppler_kwargs)
+            return info.get("Pages")
+        except Exception as info_err:
+            logger.debug(f"pdfinfo_from_path failed: {info_err}")
+    return None
+
+
+def _render_pdf_pages(pdf_path: str, first_page: int, last_page: int, dpi: int):
+    """Render a PDF page range to PIL Images via pypdfium2 (no system
+    dependencies) first, falling back to None so the caller can use
+    pdf2image/poppler instead. Returns None (not an empty list) on failure so
+    the caller can distinguish "use the fallback" from "this page range is
+    genuinely empty"."""
+    if not pdfium:
+        return None
+    try:
+        doc = pdfium.PdfDocument(pdf_path)
+        total = len(doc)
+        scale = dpi / 72.0
+        last = min(last_page, total)
+        return [
+            doc[idx].render(scale=scale).to_pil().convert("RGB")
+            for idx in range(first_page - 1, last)
+        ]
+    except Exception as pdfium_err:
+        logger.debug(f"pypdfium2 render failed, falling back to pdf2image: {pdfium_err}")
+        return None
 
 
 def _is_streamlit_cloud() -> bool:
@@ -130,18 +175,12 @@ class BlastPipeline:
         original_max_workers = self.parallel_processor.max_workers
 
         # 1. Get Page Count
-        total_pages = None
-        if pdfinfo_from_path:
-            try:
-                kwargs = {}
-                if self._config.poppler_path:
-                    kwargs["poppler_path"] = self._config.poppler_path
-                info = pdfinfo_from_path(pdf_path, **kwargs)
-                total_pages = info.get("Pages")
-                if job_id and total_pages:
-                    self.db.update_job_page_count(job_id, total_pages)
-            except Exception as info_err:
-                logger.debug(f"pdfinfo_from_path failed: {info_err}")
+        poppler_kwargs = {}
+        if self._config.poppler_path:
+            poppler_kwargs["poppler_path"] = self._config.poppler_path
+        total_pages = _pdf_page_count(pdf_path, poppler_kwargs)
+        if job_id and total_pages:
+            self.db.update_job_page_count(job_id, total_pages)
 
         # 2. Tier-0 Native Text Router
         if self.job_config.enable_tier0_routing and total_pages:
@@ -204,16 +243,23 @@ class BlastPipeline:
                     logger.info(f"Batch {start_idx}-{end_idx} of {total_pages}")
 
                     try:
-                        # SCALE-HARDENING: Stream directly to disk instead of RAM
-                        pages = convert_from_path(
-                            pdf_path,
-                            first_page=start_idx,
-                            last_page=end_idx,
-                            output_folder=temp_dir,
-                            fmt="png",
-                            paths_only=True,
-                            **render_args,
-                        )
+                        # pypdfium2 first (no system dependencies -- see
+                        # _render_pdf_pages), pdf2image/poppler as fallback.
+                        # SCALE-HARDENING: the poppler path streams pages
+                        # directly to disk instead of RAM; _process_image_batch
+                        # already accepts PIL Images from the pypdfium2 path
+                        # and persists them to temp_dir itself.
+                        pages = _render_pdf_pages(pdf_path, start_idx, end_idx, render_args["dpi"])
+                        if pages is None:
+                            pages = convert_from_path(
+                                pdf_path,
+                                first_page=start_idx,
+                                last_page=end_idx,
+                                output_folder=temp_dir,
+                                fmt="png",
+                                paths_only=True,
+                                **render_args,
+                            )
                     except Exception as e:
                         logger.error(
                             f"Failed to render batch {start_idx}-{end_idx}: {e}"
@@ -246,13 +292,15 @@ class BlastPipeline:
             else:
                 # Fallback: Render all (careful with RAM)
                 logger.warning("Unknown page count, rendering all pages...")
-                pages = convert_from_path(
-                    pdf_path,
-                    output_folder=temp_dir,
-                    fmt="png",
-                    paths_only=True,
-                    **render_args,
-                )
+                pages = _render_pdf_pages(pdf_path, 1, 10**9, render_args["dpi"])
+                if pages is None:
+                    pages = convert_from_path(
+                        pdf_path,
+                        output_folder=temp_dir,
+                        fmt="png",
+                        paths_only=True,
+                        **render_args,
+                    )
                 batch_results = self._process_image_batch(
                     pages,
                     temp_dir,
