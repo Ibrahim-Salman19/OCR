@@ -1,3 +1,19 @@
+# vendor/opencv-python-stub is a local, empty package that declares itself as
+# "opencv-python" version 99.99.99 and depends only on opencv-python-headless.
+# rapidocr_onnxruntime (below) hard-requires plain opencv-python, which needs
+# libGL -- but opencv-python and opencv-python-headless both install to the
+# same cv2/ path, so having both installed means whichever installs last wins
+# on disk, and it is not controllable via requirements.txt ordering (verified
+# empirically: pip installs opencv-python-headless before opencv-python
+# regardless of the two lines' order in this file). Since 99.99.99 outranks
+# any real release, pip satisfies rapidocr's constraint with this stub
+# instead of downloading the real GUI build, so opencv-python-headless ends
+# up as the only actual cv2 implementation ever installed and no libGL
+# system library is required at all. Verified with a real RapidOCR pass and
+# the project's own preprocess_image() (cv2.cvtColor/resize/warpAffine/
+# fastNlMeansDenoising) in a container with zero apt packages installed.
+--find-links vendor/opencv-python-stub
+
 # --- CRITICAL STABILITY CORE ---
 streamlit==1.32.0; python_version < "3.14"
 streamlit>=1.56.0,<2; python_version >= "3.14"
