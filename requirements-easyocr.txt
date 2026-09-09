@@ -22,4 +22,4 @@
 # regardless of what any consumer did before processing it.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.14.0+cpu
-easyocr>=1.7.0
+easyocr>=1.7.2
