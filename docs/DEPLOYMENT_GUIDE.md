@@ -27,13 +27,21 @@ For cloud/linux deployment, use the provided Docker integration (or build your o
 ### 1. The Base Image
 We recommend `python:3.9-slim-bullseye`.
 
-For Streamlit Community Cloud, pin Python with a root-level `runtime.txt`:
+For Streamlit Community Cloud, this repo's root-level `runtime.txt` requests:
 
 ```text
 python-3.11
 ```
 
-This avoids Python 3.14 build-toolchain issues for packages that may not yet publish cp314 wheels in all environments.
+**This is not reliable on its own.** SCC has a currently-open bug where its dashboard's own
+"Python version" setting silently overrides `runtime.txt`
+(https://github.com/streamlit/streamlit/issues/15326) -- widely reported, not specific to this
+app. After deploying (or redeploying), manually check the Python version in the app's Settings
+on share.streamlit.io and correct it to 3.11 if it has drifted. See
+`docs/MAINTENANCE_CHECKLIST.md` for the recurring check, and
+`docs/adr/0015-scc-outage-triple-root-cause-and-maintenance.md` for the incident where a
+silent drift to Python 3.14 took the live app down (nothing on PyPI supports
+`rapidocr_onnxruntime`, this project's default OCR engine, on 3.14 at all).
 
 ### 2. Runtime Dependencies
 ```dockerfile
