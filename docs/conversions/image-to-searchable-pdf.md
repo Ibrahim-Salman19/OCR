@@ -1,6 +1,6 @@
 # Image to Searchable PDF Converter in Python (PNG / JPG to Dual-Layer PDF)
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `image to searchable pdf python`  
 **Secondary Queries**: `png to searchable pdf`, `jpg to dual layer pdf`, `sandwich pdf python ocr`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  
@@ -18,7 +18,7 @@
 
 ```bash
 # Convert scanned receipt or document photo into a searchable PDF
-blast-ocr scan.jpg --formats pdf
+python -m blast_ocr.cli scan.jpg --formats pdf
 ```
 
 ---

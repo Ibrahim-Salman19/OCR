@@ -8,7 +8,7 @@
 
 ## 🏛️ Core Architecture & Engineering Specifications
 - **[Architecture Deep Dive](ARCHITECTURE_DEEP_DIVE.md)**: 3-Layer A.N.T. design pattern, SIMD preprocessing, and tensor decoding.
-- **[Benchmarks 2026](BENCHMARKS_2026.md)**: Reproducible 29.1 pps CPU throughput and 0.0002 MB/page streaming leak measurements.
+- **[Benchmarks 2026](BENCHMARKS_2026.md)**: Reproducible ~15.3s/page CPU latency (7.7x faster than the project's own EasyOCR baseline) and 0.0002 MB/page streaming leak measurements.
 - **[Deployment Guide](DEPLOYMENT_GUIDE.md)**: Production deployment via Docker, Kubernetes, and bare metal.
 - **[Security Hardening](SECURITY_HARDENING.md)**: Sandboxing, path traversal jails, and 8-class PII redaction.
 - **[Performance Tuning](PERFORMANCE_TUNING.md)**: ONNX Runtime thread affinity, aspect ratio bucketing, and SIMD acceleration.
@@ -47,7 +47,7 @@
 ---
 
 ## 🔍 Developer SEO & Knowledge Hub (`docs/seo/`)
-- **[High-Throughput PDF OCR in Python (29.1 pps)](seo/high-throughput-pdf-ocr-python.md)**
+- **[High-Throughput PDF OCR in Python (7.7x Faster)](seo/high-throughput-pdf-ocr-python.md)**
 - **[Extract Tables from Scanned PDF in Python](seo/extract-tables-from-scanned-pdf-python.md)**
 - **[How to Prevent Memory Leaks in Python Batch OCR](seo/pdf-ocr-memory-leak-prevention.md)**
 - **[Setting Up Local MCP Server for Document OCR](seo/mcp-server-ocr-setup-guide.md)**

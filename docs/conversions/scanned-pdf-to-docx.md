@@ -1,6 +1,6 @@
 # Scanned PDF to DOCX Converter in Python (Preserving Layout & Tables)
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `scanned pdf to docx python`  
 **Secondary Queries**: `convert pdf to word python ocr`, `pdf to docx editable`, `python ocr to word`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  
@@ -18,7 +18,7 @@
 
 ```bash
 # Convert scanned PDF to editable Microsoft Word (.docx)
-blast-ocr scanned_contract.pdf --formats docx
+python -m blast_ocr.cli scanned_contract.pdf --formats docx
 ```
 
 ---

@@ -1,6 +1,6 @@
 # PPTX to Markdown Converter in Python (Presentations to LLM Chunks)
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `pptx to markdown python`  
 **Secondary Queries**: `powerpoint to markdown`, `convert pptx to text for rag`, `extract slides to markdown`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  
@@ -18,7 +18,7 @@
 
 ```bash
 # Convert PowerPoint deck to structured Markdown
-blast-ocr presentation.pptx --formats markdown
+python -m blast_ocr.cli presentation.pptx --formats md
 ```
 
 ---

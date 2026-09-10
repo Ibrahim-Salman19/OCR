@@ -13,7 +13,7 @@
 B.L.A.S.T. is an enterprise, self-hosted, deterministic document intelligence and OCR engine designed for high-throughput batch execution and Agentic RAG ingestion. It solves three critical failure modes of conventional document processing pipelines:
 
 1. **Slow CPU Inference Latency**: Solved via ONNX Runtime execution (RapidOCR/PP-OCRv4) with automatic multi-provider fallback (`CUDA` → `DirectML` → `CPU`), cutting CPU per-page latency from ~117.8s to ~15.3s (7.7x faster) and reducing mean CER by 18% versus an EasyOCR/PyTorch baseline on the project's 14-page gold corpus (ADR 0005).
-2. **Memory Accumulation & Unbounded OOM Crashes**: Solved via a bounded sliding-window memory buffer streaming architecture (`StreamingPDFProcessor`); verified across a 1,000-page continuous streaming stress test measuring a linear growth slope of 0.0002 MB/page against a 0.005 MB/page zero-leak threshold (`eval/results/stress_report.json`).
+2. **Memory Accumulation & Unbounded OOM Crashes**: Solved via a bounded sliding-window memory buffer streaming architecture (`PageStreamGenerator`); verified across a 1,000-page continuous streaming stress test measuring a linear growth slope of 0.0002 MB/page against a 0.005 MB/page zero-leak threshold (`eval/results/stress_report.json`).
 3. **Loss of Document Semantics & Generative Hallucination**: Solved via deterministic morphological table grid extraction (scored with a built-in TEDS evaluator), LaTeX math expression detection ($...$, $$...$$), running header/footer suppression, and dual-layer sandwich PDF generation with exact word-level coordinate bounding box alignment. Zero generative hallucination in legal, compliance, and financial records.
 
 ### Architectural Philosophy: The 3-Layer A.N.T. Paradigm
@@ -213,7 +213,7 @@ Dedicated technical reference guides featuring 40–60 word direct citation answ
 - [B.L.A.S.T. vs AWS Textract](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-aws-textract.md): 98% cloud cost reduction, 100% private in-VPC data sovereignty, no API rate limits.
 - [B.L.A.S.T. vs IBM Docling](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-docling.md): Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native MCP server.
 - [B.L.A.S.T. vs Marker 2](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-marker.md): Permissive MIT license vs GPL-3.0/OpenRAIL commercial caps, CPU-native execution.
-- [B.L.A.S.T. vs PyMuPDF4LLM](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-pymupdf4llm.md): OCR-first scanned-document engine vs text-layer-first extractor, plus an honest look at the shared AGPL-licensed PyMuPDF dependency.
+- [B.L.A.S.T. vs PyMuPDF4LLM](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-pymupdf4llm.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/comparisons/blast-vs-pymupdf4llm/)): OCR-first scanned-document engine vs text-layer-first extractor, plus an honest look at the shared AGPL-licensed PyMuPDF dependency.
 - [Best Tesseract Alternative (2026 Guide)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/tesseract-alternative.md): 60-second migration guide eliminating OS package dependencies.
 - [Best Self-Hosted AWS Textract Alternative](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/aws-textract-alternative.md): Enterprise blueprint for private in-VPC OCR migration.
 

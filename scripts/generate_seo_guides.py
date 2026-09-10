@@ -203,11 +203,13 @@ def more_guides(current_slug):
 
 
 def render(slug, title, description, keywords, h1, meta_row_html, jsonld_graph, body_html,
-           status_badge="Code Read Against Source, 2026-09-10"):
-    canonical = f"{BASE_URL}/docs/seo/{slug}/"
+           status_badge="Code Read Against Source, 2026-09-10",
+           base_dir="seo", crumb_label="Guides", crumb_href=None):
+    canonical = f"{BASE_URL}/docs/{base_dir}/{slug}/"
+    crumb_href = crumb_href or f"{BASE_URL}/#guides"
     ld = {"@context": "https://schema.org", "@graph": jsonld_graph}
     ld_json = json.dumps(ld, indent=2)
-    breadcrumb = f'<p class="breadcrumb"><a href="{BASE_URL}/">B.L.A.S.T. OCR</a> / <a href="{BASE_URL}/#guides">Guides</a> / {h1}</p>'
+    breadcrumb = f'<p class="breadcrumb"><a href="{BASE_URL}/">B.L.A.S.T. OCR</a> / <a href="{crumb_href}">{crumb_label}</a> / {h1}</p>'
     html = f"""<!DOCTYPE html>
 <html lang="en-US">
 <head>
@@ -219,7 +221,7 @@ def render(slug, title, description, keywords, h1, meta_row_html, jsonld_graph, 
 <meta name="author" content="Ibrahim Salman">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <link rel="canonical" href="{canonical}">
-<link rel="alternate" type="text/markdown" href="{BASE_URL}/docs/seo/{slug}.md" title="Raw Markdown (LLM/agent-readable)">
+<link rel="alternate" type="text/markdown" href="{BASE_URL}/docs/{base_dir}/{slug}.md" title="Raw Markdown (LLM/agent-readable)">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
 <meta property="og:type" content="article">
@@ -255,7 +257,7 @@ def render(slug, title, description, keywords, h1, meta_row_html, jsonld_graph, 
 </body>
 </html>
 """
-    out_dir = ROOT / "docs" / "seo" / slug
+    out_dir = ROOT / "docs" / base_dir / slug
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "index.html").write_text(html, encoding="utf-8")
     print("wrote", out_dir / "index.html", f"({len(html)} bytes)")
@@ -722,4 +724,67 @@ if __name__ == "__main__":
         """,
     )
 
-    print("all 7 guides done")
+    # ---------------------------------------------------------- Comparison 1 --
+    render(
+        slug="blast-vs-pymupdf4llm",
+        base_dir="comparisons",
+        crumb_label="Comparisons",
+        crumb_href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/index.md",
+        status_badge="Figures Checked Against Source, 2026-09-10",
+        title="B.L.A.S.T. OCR vs PyMuPDF4LLM: OCR vs Text-Layer Extraction",
+        description="PyMuPDF4LLM extracts Markdown from a PDF's existing text layer with OCR as an opt-in fallback. B.L.A.S.T. is OCR-first for scanned/image PDFs. Includes an honest AGPL dependency disclosure.",
+        keywords="blast vs pymupdf4llm, pymupdf4llm alternative, pymupdf4llm ocr, scanned pdf to markdown python",
+        h1="B.L.A.S.T. OCR vs PyMuPDF4LLM: Scanned-PDF OCR vs Text-Layer Extraction",
+        meta_row_html=f'Primary query: <code>blast vs pymupdf4llm</code> &middot; <a href="{BASE_URL}/docs/comparisons/blast-vs-pymupdf4llm.md">raw markdown</a>',
+        jsonld_graph=[
+            PERSON_LD,
+            {
+                "@type": "TechArticle",
+                "headline": "B.L.A.S.T. OCR vs PyMuPDF4LLM — Scanned-PDF OCR vs Text-Layer Extraction",
+                "description": "Architectural comparison between B.L.A.S.T. OCR and PyMuPDF4LLM covering OCR behavior, GPU requirements, table/formula extraction, MCP support, and licensing.",
+                "author": {"@id": AUTHOR_ID},
+                "publisher": {"@type": "Organization", "name": "B.L.A.S.T. Core Engineering", "url": "https://github.com/Ibrahim-Salman19/OCR"},
+                "keywords": "blast vs pymupdf4llm, pymupdf4llm alternative, pymupdf4llm ocr, scanned pdf to markdown python",
+                "datePublished": "2026-09-10",
+                "dateModified": "2026-09-10",
+                "inLanguage": "en",
+                "mainEntityOfPage": f"{BASE_URL}/docs/comparisons/blast-vs-pymupdf4llm/",
+            },
+        ],
+        body_html=f"""
+        <div class="direct-answer">
+          <strong class="tag">Is PyMuPDF4LLM good enough for scanned PDFs, or do I need an OCR engine?</strong>
+          <p>PyMuPDF4LLM and B.L.A.S.T. OCR solve different halves of the same problem. PyMuPDF4LLM extracts Markdown directly from a PDF's existing text layer with no ML models or GPU, and only runs OCR as an opt-in plugin on pages that lack one. B.L.A.S.T. is built OCR-first for scanned and image-only documents, running ONNX inference by default with table structure, formula parsing, and MCP integration.</p>
+        </div>
+
+        <h2>Executive summary</h2>
+        <p>They have not been run head-to-head on the same corpus in this project's eval harness, so no throughput or CER comparison is made here. The table below compares documented architecture and features only.</p>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Dimension</th><th>PyMuPDF4LLM (Artifex)</th><th>B.L.A.S.T. OCR Engine</th></tr></thead>
+          <tbody>
+            <tr><td>Primary design target</td><td>Born-digital PDFs with an existing text layer</td><td class="good">Scanned/image PDFs with no text layer</td></tr>
+            <tr><td>OCR behavior</td><td>Opt-in plugin, skipped by default when text exists</td><td class="good">Default engine (RapidOCR/ONNX) on every page</td></tr>
+            <tr><td>GPU/ML for base extraction</td><td class="good">None (default text-layer path)</td><td>ONNX Runtime required (CPU/CUDA/DirectML)</td></tr>
+            <tr><td>Table structure extraction</td><td>Layout-based Markdown tables</td><td class="good">Markdown/HTML, scored with a built-in TEDS evaluator</td></tr>
+            <tr><td>Formula/LaTeX parsing</td><td>Unicode math symbols only, relies on downstream LLM to interpret as LaTeX</td><td class="good">Built-in LaTeX ($...$, $$...$$) to KaTeX conversion</td></tr>
+            <tr><td>Native MCP server</td><td>Yes &mdash; <code>pymupdf4llm-mcp</code>, a companion package from the PyMuPDF/Artifex team</td><td class="good">Yes &mdash; built into the core library (<code>blast_ocr/mcp_server.py</code>)</td></tr>
+            <tr><td>License of own source</td><td>AGPL-3.0 (commercial license via Artifex)</td><td class="good">MIT</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h2>License nuance (read before you pick a side)</h2>
+        <p>B.L.A.S.T.'s own source is 100% MIT. But B.L.A.S.T. ships an <em>optional</em> <code>pdf</code> extra (<code>pyproject.toml</code>: <code>pdf = ["pymupdf&gt;=1.23.0"]</code>) used for dual-layer sandwich PDF generation and PDF page streaming. That extra depends on the base <code>pymupdf</code> (<code>fitz</code>) library &mdash; the same AGPL-3.0/commercial-dual-licensed engine underneath PyMuPDF4LLM.</p>
+        <p class="callout">This is not a case where B.L.A.S.T. avoids that dependency entirely. B.L.A.S.T.'s core OCR pipeline does not require <code>pymupdf</code> at all &mdash; it's imported lazily, only inside the sandwich-PDF and streaming code paths, and only when that optional extra is installed &mdash; whereas PyMuPDF4LLM's core text extraction <em>is</em> PyMuPDF, so the AGPL obligation is unavoidable there regardless of which features you use. If your deployment needs to stay clear of AGPL entirely, check whether you're installing B.L.A.S.T.'s <code>pdf</code> extra &mdash; the base install without it does not pull in <code>pymupdf</code>.</p>
+
+        <h2>Bottom line: who should choose what?</h2>
+        <ul>
+          <li><strong>Choose PyMuPDF4LLM if</strong>: your PDFs are mostly born-digital (exported from Word, LaTeX, or a web page) and already have a real text layer. You get Markdown extraction with zero ML overhead and no GPU, with OCR only as a fallback for the occasional scanned page.</li>
+          <li><strong>Choose B.L.A.S.T. if</strong>: your source documents are scanned paper, faxes, or flat images with no text layer at all, and you also want table structure extraction, LaTeX formula parsing, a native MCP server, and a permissively-licensed (MIT) core engine.</li>
+        </ul>
+        <p class="callout">Full writeup, including the JSON-LD source and author box, is at <a href="{GH}/docs/comparisons/blast-vs-pymupdf4llm.md">docs/comparisons/blast-vs-pymupdf4llm.md</a>.</p>
+        """,
+    )
+
+    print("all 7 guides + 1 comparison done")

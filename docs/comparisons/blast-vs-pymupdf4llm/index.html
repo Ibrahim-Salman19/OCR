@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>B.L.A.S.T. OCR vs PyMuPDF4LLM: OCR vs Text-Layer Extraction</title>
+<meta name="description" content="PyMuPDF4LLM extracts Markdown from a PDF's existing text layer with OCR as an opt-in fallback. B.L.A.S.T. is OCR-first for scanned/image PDFs. Includes an honest AGPL dependency disclosure.">
+<meta name="keywords" content="blast vs pymupdf4llm, pymupdf4llm alternative, pymupdf4llm ocr, scanned pdf to markdown python">
+<meta name="author" content="Ibrahim Salman">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<link rel="canonical" href="https://ibrahim-salman19.github.io/OCR/docs/comparisons/blast-vs-pymupdf4llm/">
+<link rel="alternate" type="text/markdown" href="https://ibrahim-salman19.github.io/OCR/docs/comparisons/blast-vs-pymupdf4llm.md" title="Raw Markdown (LLM/agent-readable)">
+<meta property="og:title" content="B.L.A.S.T. OCR vs PyMuPDF4LLM: OCR vs Text-Layer Extraction">
+<meta property="og:description" content="PyMuPDF4LLM extracts Markdown from a PDF's existing text layer with OCR as an opt-in fallback. B.L.A.S.T. is OCR-first for scanned/image PDFs. Includes an honest AGPL dependency disclosure.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ibrahim-salman19.github.io/OCR/docs/comparisons/blast-vs-pymupdf4llm/">
+<meta property="og:site_name" content="B.L.A.S.T. OCR Engine">
+<meta property="og:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="B.L.A.S.T. OCR vs PyMuPDF4LLM: OCR vs Text-Layer Extraction">
+<meta name="twitter:description" content="PyMuPDF4LLM extracts Markdown from a PDF's existing text layer with OCR as an opt-in fallback. B.L.A.S.T. is OCR-first for scanned/image PDFs. Includes an honest AGPL dependency disclosure.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #09090b;
+    --surface: #141417;
+    --surface-raised: #1c1c20;
+    --border: #27272a;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --accent: #f59e0b;
+    --accent-bright: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  a { color: var(--accent-bright); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+  header.site {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(9,9,11,0.85); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  header.site .inner { max-width: 1080px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  header.site .brand { font-weight: 700; letter-spacing: 0.02em; color: var(--text); text-decoration: none; }
+  header.site .brand span { color: var(--accent); }
+  header.site nav a { color: var(--text-muted); text-decoration: none; margin-left: 1.5rem; font-size: 0.9rem; }
+  header.site nav a:hover { color: var(--text); }
+  main { padding: 2.5rem 0 1rem; }
+  .breadcrumb { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem; }
+  .breadcrumb a { color: var(--text-muted); }
+  .status-badge {
+    display: inline-block; border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 999px; padding: 0.2rem 0.75rem; font-size: 0.72rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-family: ui-monospace, monospace; margin-bottom: 1rem;
+  }
+  h1 { font-size: clamp(1.7rem, 4.2vw, 2.35rem); line-height: 1.25; margin: 0 0 0.6rem; font-weight: 800; }
+  .meta-row { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 2rem; }
+  .meta-row code { background: var(--surface); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.05rem 0.4rem; }
+  h2 { font-size: 1.35rem; margin: 2.4rem 0 0.9rem; font-weight: 700; }
+  h3 { font-size: 1.05rem; margin: 1.6rem 0 0.6rem; }
+  p { margin: 0 0 1rem; }
+  .direct-answer {
+    background: var(--surface); border-left: 3px solid var(--accent);
+    border-radius: 0 0.5rem 0.5rem 0; padding: 1.1rem 1.3rem; margin: 0 0 1.5rem;
+  }
+  .direct-answer strong.tag { display: block; color: var(--accent-bright); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; font-family: ui-monospace, monospace; }
+  pre {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 0.6rem;
+    padding: 1rem 1.1rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.55;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  p code, li code { background: var(--surface); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.05rem 0.35rem; font-size: 0.88em; }
+  .overflow-x { overflow-x: auto; margin-bottom: 1.5rem; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  table.data th, table.data td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  table.data th { color: var(--text-muted); font-weight: 600; }
+  table.data td.good { color: var(--accent-bright); font-weight: 600; }
+  ol.steps { list-style: none; margin: 0 0 1.5rem; padding: 0; counter-reset: step; }
+  ol.steps li { counter-increment: step; margin-bottom: 1rem; padding-left: 2.6rem; position: relative; }
+  ol.steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--surface-raised);
+    border: 1px solid var(--accent); color: var(--accent-bright); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-family: ui-monospace, monospace; font-size: 0.85rem;
+  }
+  .callout { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.2rem; margin: 1.5rem 0; font-size: 0.9rem; color: var(--text-muted); }
+  .callout strong { color: var(--text); }
+  .author-box { background: var(--surface); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1.3rem 1.4rem; margin-top: 2.5rem; font-size: 0.88rem; }
+  .author-box h3 { margin-top: 0; }
+  .author-box ul { list-style: none; padding: 0; margin: 0.6rem 0 0; }
+  .author-box li { margin-bottom: 0.3rem; color: var(--text-muted); }
+  .more-guides { margin: 2.5rem 0; }
+  .more-guides ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.7rem; }
+  .more-guides li a { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.8rem 1rem; font-size: 0.85rem; text-decoration: none; color: var(--text); }
+  .more-guides li a:hover { border-color: var(--accent); }
+  footer { border-top: 1px solid var(--border); padding: 2.5rem 0; color: var(--text-muted); font-size: 0.85rem; margin-top: 2rem; }
+  footer .inner { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+  footer a { color: var(--text-muted); }
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="inner">
+    <a class="brand" href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T.<span> OCR</span></a>
+    <nav>
+      <a href="https://ibrahim-salman19.github.io/OCR/#features">Features</a>
+      <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a>
+      <a href="https://github.com/Ibrahim-Salman19/OCR">GitHub</a>
+      <a href="https://ocr-book.streamlit.app/">Live Demo</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/index.md">Comparisons</a> / B.L.A.S.T. OCR vs PyMuPDF4LLM: Scanned-PDF OCR vs Text-Layer Extraction</p>
+    <span class="status-badge">Figures Checked Against Source, 2026-09-10</span>
+    <h1>B.L.A.S.T. OCR vs PyMuPDF4LLM: Scanned-PDF OCR vs Text-Layer Extraction</h1>
+    <p class="meta-row">Primary query: <code>blast vs pymupdf4llm</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/comparisons/blast-vs-pymupdf4llm.md">raw markdown</a></p>
+    
+        <div class="direct-answer">
+          <strong class="tag">Is PyMuPDF4LLM good enough for scanned PDFs, or do I need an OCR engine?</strong>
+          <p>PyMuPDF4LLM and B.L.A.S.T. OCR solve different halves of the same problem. PyMuPDF4LLM extracts Markdown directly from a PDF's existing text layer with no ML models or GPU, and only runs OCR as an opt-in plugin on pages that lack one. B.L.A.S.T. is built OCR-first for scanned and image-only documents, running ONNX inference by default with table structure, formula parsing, and MCP integration.</p>
+        </div>
+
+        <h2>Executive summary</h2>
+        <p>They have not been run head-to-head on the same corpus in this project's eval harness, so no throughput or CER comparison is made here. The table below compares documented architecture and features only.</p>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Dimension</th><th>PyMuPDF4LLM (Artifex)</th><th>B.L.A.S.T. OCR Engine</th></tr></thead>
+          <tbody>
+            <tr><td>Primary design target</td><td>Born-digital PDFs with an existing text layer</td><td class="good">Scanned/image PDFs with no text layer</td></tr>
+            <tr><td>OCR behavior</td><td>Opt-in plugin, skipped by default when text exists</td><td class="good">Default engine (RapidOCR/ONNX) on every page</td></tr>
+            <tr><td>GPU/ML for base extraction</td><td class="good">None (default text-layer path)</td><td>ONNX Runtime required (CPU/CUDA/DirectML)</td></tr>
+            <tr><td>Table structure extraction</td><td>Layout-based Markdown tables</td><td class="good">Markdown/HTML, scored with a built-in TEDS evaluator</td></tr>
+            <tr><td>Formula/LaTeX parsing</td><td>Unicode math symbols only, relies on downstream LLM to interpret as LaTeX</td><td class="good">Built-in LaTeX ($...$, $$...$$) to KaTeX conversion</td></tr>
+            <tr><td>Native MCP server</td><td>Yes &mdash; <code>pymupdf4llm-mcp</code>, a companion package from the PyMuPDF/Artifex team</td><td class="good">Yes &mdash; built into the core library (<code>blast_ocr/mcp_server.py</code>)</td></tr>
+            <tr><td>License of own source</td><td>AGPL-3.0 (commercial license via Artifex)</td><td class="good">MIT</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h2>License nuance (read before you pick a side)</h2>
+        <p>B.L.A.S.T.'s own source is 100% MIT. But B.L.A.S.T. ships an <em>optional</em> <code>pdf</code> extra (<code>pyproject.toml</code>: <code>pdf = ["pymupdf&gt;=1.23.0"]</code>) used for dual-layer sandwich PDF generation and PDF page streaming. That extra depends on the base <code>pymupdf</code> (<code>fitz</code>) library &mdash; the same AGPL-3.0/commercial-dual-licensed engine underneath PyMuPDF4LLM.</p>
+        <p class="callout">This is not a case where B.L.A.S.T. avoids that dependency entirely. B.L.A.S.T.'s core OCR pipeline does not require <code>pymupdf</code> at all &mdash; it's imported lazily, only inside the sandwich-PDF and streaming code paths, and only when that optional extra is installed &mdash; whereas PyMuPDF4LLM's core text extraction <em>is</em> PyMuPDF, so the AGPL obligation is unavoidable there regardless of which features you use. If your deployment needs to stay clear of AGPL entirely, check whether you're installing B.L.A.S.T.'s <code>pdf</code> extra &mdash; the base install without it does not pull in <code>pymupdf</code>.</p>
+
+        <h2>Bottom line: who should choose what?</h2>
+        <ul>
+          <li><strong>Choose PyMuPDF4LLM if</strong>: your PDFs are mostly born-digital (exported from Word, LaTeX, or a web page) and already have a real text layer. You get Markdown extraction with zero ML overhead and no GPU, with OCR only as a fallback for the occasional scanned page.</li>
+          <li><strong>Choose B.L.A.S.T. if</strong>: your source documents are scanned paper, faxes, or flat images with no text layer at all, and you also want table structure extraction, LaTeX formula parsing, a native MCP server, and a permissively-licensed (MIT) core engine.</li>
+        </ul>
+        <p class="callout">Full writeup, including the JSON-LD source and author box, is at <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-pymupdf4llm.md">docs/comparisons/blast-vs-pymupdf4llm.md</a>.</p>
+        
+    <div class="more-guides">
+  <h2>More B.L.A.S.T. OCR guides</h2>
+  <ul>
+    <li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/">High-Throughput PDF OCR</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python/">Extract Tables from Scanned PDFs</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/mcp-server-ocr-setup-guide/">OCR MCP Server Setup</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/searchable-pdf-sandwich-generation/">Searchable PDF Sandwich Generation</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">PDF OCR Memory Leak Prevention</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/local-ocr-vs-cloud-vision-cost-comparison/">Local OCR vs Cloud Vision: TCO</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/distributed-ocr-worker-swarm-redis/">Distributed OCR Worker Swarm (Redis)</a></li>
+  </ul>
+</div>
+    <div class="author-box">
+  <h3>Author &amp; Engineering Authority</h3>
+  <p>Engineered &amp; maintained by <a href="https://ibrahimsalman.vercel.app">Ibrahim Salman</a>, Full-Stack Software Engineer &amp; AI Systems Architect (UET Taxila).</p>
+  <ul>
+    <li><a href="https://ibrahimsalman.vercel.app/projects/blast">B.L.A.S.T. architecture case study</a></li>
+    <li><a href="https://www.linkedin.com/in/ibrahim-salman-dev/">LinkedIn</a> &middot; <a href="https://github.com/Ibrahim-Salman19">GitHub</a> &middot; <a href="https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8">Upwork</a></li>
+  </ul>
+</div>
+  </div>
+</main>
+<footer>
+  <div class="inner">
+    <p>
+      <a href="https://ibrahim-salman19.github.io/OCR/">&larr; B.L.A.S.T. OCR Engine</a> &middot;
+      <a href="https://github.com/Ibrahim-Salman19/OCR">Source Code</a> &middot;
+      <a href="https://ocr-book.streamlit.app/">Live Demo</a> &middot;
+      <a href="https://ibrahim-salman19.github.io/OCR/llms.txt">llms.txt</a>
+    </p>
+    <p>&copy; 2026 B.L.A.S.T. OCR Project. Distributed under the MIT License. Written and maintained by <a href="https://ibrahimsalman.vercel.app">Ibrahim Salman</a>.</p>
+  </div>
+</footer>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://ibrahimsalman.vercel.app/#person",
+      "name": "Ibrahim Salman",
+      "alternateName": [
+        "Ibrahim-Salman19",
+        "Ibrahim Salman Dev"
+      ],
+      "url": "https://ibrahimsalman.vercel.app",
+      "jobTitle": "Full-Stack Software Engineer & AI Systems Architect",
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "University of Engineering and Technology, Taxila",
+        "url": "https://uettaxila.edu.pk/"
+      },
+      "sameAs": [
+        "https://github.com/Ibrahim-Salman19",
+        "https://www.linkedin.com/in/ibrahim-salman-dev/",
+        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8"
+      ]
+    },
+    {
+      "@type": "TechArticle",
+      "headline": "B.L.A.S.T. OCR vs PyMuPDF4LLM \u2014 Scanned-PDF OCR vs Text-Layer Extraction",
+      "description": "Architectural comparison between B.L.A.S.T. OCR and PyMuPDF4LLM covering OCR behavior, GPU requirements, table/formula extraction, MCP support, and licensing.",
+      "author": {
+        "@id": "https://ibrahimsalman.vercel.app/#person"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "B.L.A.S.T. Core Engineering",
+        "url": "https://github.com/Ibrahim-Salman19/OCR"
+      },
+      "keywords": "blast vs pymupdf4llm, pymupdf4llm alternative, pymupdf4llm ocr, scanned pdf to markdown python",
+      "datePublished": "2026-09-10",
+      "dateModified": "2026-09-10",
+      "inLanguage": "en",
+      "mainEntityOfPage": "https://ibrahim-salman19.github.io/OCR/docs/comparisons/blast-vs-pymupdf4llm/"
+    }
+  ]
+}
+</script>
+</body>
+</html>

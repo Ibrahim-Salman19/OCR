@@ -25,8 +25,8 @@ They have not been run head-to-head on the same corpus in this project's eval ha
 | **OCR Behavior** | Opt-in plugin (Tesseract/RapidOCR/PaddleOCR); skipped by default when a page already has extractable text | Default engine (RapidOCR/ONNX) run on every routed page | B.L.A.S.T. does not attempt to skip OCR based on an existing text layer |
 | **GPU/ML Requirement for Base Extraction** | None — the default text-layer path uses no ML model at all | ONNX Runtime required (CUDA/DirectML/CPU auto-fallback) | PyMuPDF4LLM's non-OCR path is lighter when the input is already born-digital |
 | **Table Structure Extraction** | Layout-based Markdown tables | Markdown/HTML tables, scored with a built-in TEDS evaluator (`eval/teds_evaluator.py`); no end-to-end TEDS corpus score recorded yet | Not benchmarked head-to-head |
-| **Formula/LaTeX Parsing** | Not found documented in PyMuPDF4LLM's own docs as of this writing | Built-in LaTeX ($...$, $$...$$) to KaTeX Markdown conversion | Unverified for PyMuPDF4LLM — check their docs directly before relying on this row |
-| **Native MCP Server** | Not found in PyMuPDF4LLM's own repo as of this writing | ✅ Built-in `stdio`/`sse` MCP server (`blast_ocr/mcp_server.py`) | Unverified for PyMuPDF4LLM |
+| **Formula/LaTeX Parsing** | No native LaTeX output — extracts Unicode math symbols only, relies on a downstream LLM to reinterpret them as LaTeX | Built-in LaTeX ($...$, $$...$$) to KaTeX Markdown conversion | Confirmed via PyMuPDF4LLM's own documentation |
+| **Native MCP Server** | ✅ `pymupdf4llm-mcp`, published by the PyMuPDF/Artifex team as a companion project | ✅ Built-in `stdio`/`sse` MCP server (`blast_ocr/mcp_server.py`) | Both projects have one; PyMuPDF4LLM's ships as a separate package rather than built into the core library |
 | **License of Own Source** | AGPL-3.0 (commercial license available from Artifex) | MIT | See license nuance below — this is not a clean-room comparison |
 
 ---

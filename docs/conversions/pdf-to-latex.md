@@ -1,6 +1,6 @@
 # PDF to LaTeX Converter in Python (Extracting Math & Formulas)
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `pdf to latex python`  
 **Secondary Queries**: `extract formulas from pdf python`, `pdf math ocr`, `convert equations to latex`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  
@@ -18,7 +18,7 @@
 
 ```bash
 # Extract equations and tables from scientific papers
-blast-ocr physics_paper.pdf --formats markdown
+python -m blast_ocr.cli physics_paper.pdf --formats md
 ```
 
 ---

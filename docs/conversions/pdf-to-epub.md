@@ -1,6 +1,6 @@
 # Scanned PDF to EPUB 3.0 Converter in Python (E-Book Digitization)
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `scanned pdf to epub python`  
 **Secondary Queries**: `convert scanned book to epub`, `pdf to ebook ocr`, `digitize books to epub`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  
@@ -18,7 +18,7 @@
 
 ```bash
 # Convert multi-page scanned book to responsive EPUB 3.0
-blast-ocr scanned_book.pdf --formats epub
+python -m blast_ocr.cli scanned_book.pdf --formats epub
 ```
 
 ---
