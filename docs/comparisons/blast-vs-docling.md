@@ -10,7 +10,7 @@
 
 ## How does B.L.A.S.T. OCR compare to IBM Docling?
 > **Direct Answer (55 Words)**:  
-> B.L.A.S.T. OCR outperforms IBM Docling in execution throughput (**29.1 pps vs 3.2 pps on CPU**), raw text recognition accuracy (0.1916 vs 0.2010 CER), and native AI agent tooling. While Docling focuses on layout tree parsing, B.L.A.S.T. provides an end-to-end bounded streaming engine with native Model Context Protocol (MCP) server integration and zero-leak memory stability.
+> B.L.A.S.T. and IBM Docling have not been run head-to-head on the same corpus in this project's eval harness -- no throughput or CER comparison between them is benchmarked here. What is verifiable: B.L.A.S.T. measures a 0.1916 CER on its own 14-page gold corpus ([`docs/BENCHMARKS_2026.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md)), ships a native Model Context Protocol (MCP) server, and B.L.A.S.T.'s ONNX runtime footprint is architecturally lighter than Docling's PyTorch/HuggingFace stack (see below).
 
 ---
 
@@ -18,9 +18,9 @@
 
 | Feature / Dimension | IBM Docling | B.L.A.S.T. OCR Engine | Advantage |
 |---|---|---|---|
-| **CPU Throughput** | 3.2 Pages / Second | **29.1 Pages / Second** | **9.1x Faster** |
-| **Character Error Rate (CER)** | 0.2010 on scanned corpus | **0.1916 (Gold Standard)** | **Higher Character Accuracy** |
-| **Memory Growth Slope** | 0.0180 MB / Page | **0.0002 MB / Page (Zero-leak)** | **90x Lower Memory Growth** |
+| **CPU Throughput** | Not benchmarked head-to-head here | ~15.3s/page on B.L.A.S.T.'s own 14-page corpus | Not directly comparable yet |
+| **Character Error Rate (CER)** | Not benchmarked head-to-head here | **0.1916 on B.L.A.S.T.'s own 14-page corpus** | Not directly comparable yet |
+| **Memory Growth Slope** | Not benchmarked head-to-head here | **0.0002 MB/page (measured, 1,000-page stress test)** | Not directly comparable yet |
 | **Runtime Architecture** | Heavy PyTorch / HuggingFace stack | **Lightweight ONNX Runtime SIMD** | **Instant startup, small image** |
 | **Model Weight Download** | >1.5 GB PyTorch model weights | **~15 MB quantized ONNX models** | **100x Smaller Footprint** |
 | **Native MCP Server** | ❌ None (Requires custom wrapper) | **✅ Built-in `stdio` and `sse` MCP Server** | **Claude Desktop & Cursor Native** |
@@ -35,9 +35,9 @@
 IBM Docling relies heavily on modern HuggingFace transformers and PyTorch layout segmentation models. While this provides rich document tree hierarchies, it imposes massive hardware constraints:
 - Container images typically exceed 6 to 8 GB in size.
 - Startup times require 10 to 30 seconds simply to load model weights into CPU RAM.
-- CPU inference is heavily bottlenecked at ~3.2 pages per second.
+- CPU inference is correspondingly slow (not independently benchmarked by this project).
 
-B.L.A.S.T. was engineered specifically for lightweight, high-density production containers. The entire B.L.A.S.T. core engine with all ONNX weights installs in under 150 MB, boots in under 120 milliseconds, and delivers 29.1 pages/second on standard Intel/AMD server CPUs.
+B.L.A.S.T. was engineered specifically for lightweight, high-density production containers. The entire B.L.A.S.T. core engine with all ONNX weights installs in under 150 MB and measures ~15.3s/page on standard Intel/AMD server CPUs on its own 14-page gold corpus ([ADR 0005](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md)).
 
 ### 2. Native AI Agent Protocol Integration
 Docling provides Python SDK exports. However, modern autonomous workflows require direct tool calling via Anthropic's **Model Context Protocol (MCP)**. B.L.A.S.T. includes a built-in MCP server that exposes tools (`read_pdf`, `extract_tables`, `extract_formulas`, `generate_searchable_pdf`) directly to Cursor, Claude Desktop, and LangChain agents.

@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Prevent Memory Leaks in Python Batch OCR Pipelines</title>
-<meta name="description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 10,000 pages. Real PageStreamGenerator code.">
+<meta name="description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 1,000 pages, measured. Real PageStreamGenerator code.">
 <meta name="keywords" content="python ocr memory leak, pdf ocr memory leak prevention, large pdf ocr oom crash, sliding window bounded buffer python">
 <meta name="author" content="Ibrahim Salman">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <link rel="canonical" href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">
 <link rel="alternate" type="text/markdown" href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention.md" title="Raw Markdown (LLM/agent-readable)">
 <meta property="og:title" content="Prevent Memory Leaks in Python Batch OCR Pipelines">
-<meta property="og:description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 10,000 pages. Real PageStreamGenerator code.">
+<meta property="og:description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 1,000 pages, measured. Real PageStreamGenerator code.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">
 <meta property="og:site_name" content="B.L.A.S.T. OCR Engine">
@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Prevent Memory Leaks in Python Batch OCR Pipelines">
-<meta name="twitter:description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 10,000 pages. Real PageStreamGenerator code.">
+<meta name="twitter:description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 1,000 pages, measured. Real PageStreamGenerator code.">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
 <style>
@@ -129,7 +129,7 @@
     
     <div class="direct-answer">
       <strong class="tag">How can I prevent memory leaks when running batch OCR in Python?</strong>
-      <p>Memory leaks in Python batch OCR are prevented with a <strong>sliding-window bounded streaming buffer</strong> and scratch-file recycling. B.L.A.S.T. measures a memory growth slope of &le; 0.0002 MB/page across 10,000 continuous pages, capping RAM at a fixed ceiling regardless of document length. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a>.</p>
+      <p>Memory leaks in Python batch OCR are prevented with a <strong>sliding-window bounded streaming buffer</strong> and scratch-file recycling. B.L.A.S.T. measures a memory growth slope of &le; 0.0002 MB/page across a 1,000-page continuous streaming test, capping RAM at a fixed ceiling regardless of document length. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a>.</p>
     </div>
 
     <h2>CLI Quickstart</h2>

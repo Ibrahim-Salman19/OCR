@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>High-Throughput PDF OCR in Python (29.1 pps)</title>
-<meta name="description" content="B.L.A.S.T. OCR hits 29.1 pages/second on CPU via SIMD preprocessing and ONNX Runtime, 16x faster than Tesseract at 0.1916 CER. Benchmark + Python code.">
+<title>High-Throughput PDF OCR in Python (RapidOCR, 7.7x)</title>
+<meta name="description" content="B.L.A.S.T.'s RapidOCR/ONNX engine processes PDFs at ~15.3s/page on CPU -- 7.7x faster than its own EasyOCR baseline (117.8s/page) -- with an 18% lower CER. Reproducible 14-page benchmark, Python code.">
 <meta name="keywords" content="high throughput pdf ocr python, fastest python ocr, batched onnx ocr, simd pdf ocr python">
 <meta name="author" content="Ibrahim Salman">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <link rel="canonical" href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/">
 <link rel="alternate" type="text/markdown" href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python.md" title="Raw Markdown (LLM/agent-readable)">
-<meta property="og:title" content="High-Throughput PDF OCR in Python (29.1 pps)">
-<meta property="og:description" content="B.L.A.S.T. OCR hits 29.1 pages/second on CPU via SIMD preprocessing and ONNX Runtime, 16x faster than Tesseract at 0.1916 CER. Benchmark + Python code.">
+<meta property="og:title" content="High-Throughput PDF OCR in Python (RapidOCR, 7.7x)">
+<meta property="og:description" content="B.L.A.S.T.'s RapidOCR/ONNX engine processes PDFs at ~15.3s/page on CPU -- 7.7x faster than its own EasyOCR baseline (117.8s/page) -- with an 18% lower CER. Reproducible 14-page benchmark, Python code.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/">
 <meta property="og:site_name" content="B.L.A.S.T. OCR Engine">
@@ -19,8 +19,8 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="High-Throughput PDF OCR in Python (29.1 pps)">
-<meta name="twitter:description" content="B.L.A.S.T. OCR hits 29.1 pages/second on CPU via SIMD preprocessing and ONNX Runtime, 16x faster than Tesseract at 0.1916 CER. Benchmark + Python code.">
+<meta name="twitter:title" content="High-Throughput PDF OCR in Python (RapidOCR, 7.7x)">
+<meta name="twitter:description" content="B.L.A.S.T.'s RapidOCR/ONNX engine processes PDFs at ~15.3s/page on CPU -- 7.7x faster than its own EasyOCR baseline (117.8s/page) -- with an 18% lower CER. Reproducible 14-page benchmark, Python code.">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
 <style>
@@ -122,14 +122,14 @@
 </header>
 <main>
   <div class="wrap">
-    <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / High-Throughput PDF OCR in Python (29.1 Pages/Second on CPU)</p>
+    <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / High-Throughput PDF OCR in Python: RapidOCR's 7.7x Speedup Over EasyOCR</p>
     <span class="status-badge">Verified Production Guide</span>
-    <h1>High-Throughput PDF OCR in Python (29.1 Pages/Second on CPU)</h1>
+    <h1>High-Throughput PDF OCR in Python: RapidOCR's 7.7x Speedup Over EasyOCR</h1>
     <p class="meta-row">Primary query: <code>high throughput pdf ocr python</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python.md">raw markdown</a></p>
     
     <div class="direct-answer">
       <strong class="tag">What is the fastest Python OCR library for PDFs?</strong>
-      <p>B.L.A.S.T. OCR Engine achieves <strong>29.1 pages/second on commodity CPU hardware</strong>. By combining vectorized SIMD image preprocessing, dynamic aspect-ratio tensor bucketing, and ONNX Runtime execution, B.L.A.S.T. processes documents 16x faster than Tesseract while holding a certified 0.1916 Character Error Rate (CER).</p>
+      <p>B.L.A.S.T. OCR's default RapidOCR/ONNX Runtime engine processes documents at <strong>~15.3 seconds per page on commodity CPU hardware</strong> -- <strong>7.7x faster</strong> than the project's own EasyOCR/PyTorch baseline (117.8s/page) -- while cutting mean Character Error Rate by 18% (0.2338 &rarr; 0.1916) on a 14-page gold-standard corpus. No GPU throughput has been measured for this project yet; every number below is CPU-only and reproducible.</p>
     </div>
 
     <h2>CLI Quickstart</h2>
@@ -153,28 +153,28 @@ result = pipeline.process_job(
 print(f"Status: {result['status']}")
 print(f"Pages Processed: {result['pages_processed']}")
 print(f"Generated Markdown: {result['generated_files'].get('markdown')}")</code></pre>
-    <p class="callout">Per-page throughput isn't returned inline by <code>process_job()</code> -- it's measured by the reproducible benchmark harness below (<code>python -m eval.run</code>).</p>
+    <p class="callout">Per-page latency isn't returned inline by <code>process_job()</code> -- it's measured by the reproducible benchmark harness below (<code>python -m eval.run</code>).</p>
 
-    <h2>Empirical Benchmark Comparison (128-Page Enterprise Corpus)</h2>
+    <h2>Engine bake-off (in-repo, reproducible, 14-page gold corpus)</h2>
+    <p>This compares OCR backends B.L.A.S.T. has actually shipped and measured on the same corpus -- not a claim about Docling, Marker, or AWS Textract, which have not been run against this corpus.</p>
     <div class="overflow-x">
     <table class="data">
-      <thead><tr><th>Engine / Framework</th><th>Hardware Target</th><th>Throughput (pps)</th><th>Memory Slope</th><th>CER</th></tr></thead>
+      <thead><tr><th>Metric</th><th>RapidOCR (current default)</th><th>EasyOCR (previous)</th><th>Phase-0 (Tesseract-backed)</th></tr></thead>
       <tbody>
-        <tr><td class="good">B.L.A.S.T. OCR</td><td class="good">CPU (Intel i7 / AMD Ryzen)</td><td class="good">29.1 pps</td><td class="good">0.0002 MB/page</td><td class="good">0.1916</td></tr>
-        <tr><td>Legacy Tesseract v5</td><td>CPU Single-Threaded</td><td>1.8 pps</td><td>0.0450 MB/page</td><td>0.2840</td></tr>
-        <tr><td>JaidedAI EasyOCR</td><td>CPU (Torch)</td><td>1.2 pps</td><td>0.0620 MB/page</td><td>0.2410</td></tr>
-        <tr><td>IBM Docling</td><td>CPU (PyTorch)</td><td>3.2 pps</td><td>0.0180 MB/page</td><td>0.2010</td></tr>
-        <tr><td>Marker 2</td><td>CPU (PyTorch/Surya)</td><td>2.4 pps</td><td>0.0240 MB/page</td><td>0.1950</td></tr>
+        <tr><td class="good">Mean CER</td><td class="good">0.1916</td><td>0.2338</td><td>0.4992</td></tr>
+        <tr><td class="good">Mean WER</td><td class="good">0.4739</td><td>0.4968</td><td>0.7288</td></tr>
+        <tr><td class="good">Reading Order &tau;</td><td class="good">0.9758</td><td>0.9641</td><td>n/a</td></tr>
+        <tr><td class="good">Avg. CPU latency/page</td><td class="good">~15.3s</td><td>~117.8s</td><td>n/a (not measured)</td></tr>
       </tbody>
     </table>
     </div>
-    <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/rapidocr_candidate.json">eval/results/rapidocr_candidate.json</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md">ADR 0005</a>. In-repo bake-off against B.L.A.S.T.'s own previous engines on the same corpus -- not vendor-reported third-party numbers.</p>
+    <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/rapidocr_candidate.json">eval/results/rapidocr_candidate.json</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md">ADR 0005</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md">docs/BENCHMARKS_2026.md</a>. Reproduce with <code>python -m eval.run</code>.</p>
 
     <h2>How vectorized SIMD pre-processing works</h2>
     <ol class="steps">
-      <li><strong>Vectorized SIMD normalization</strong> &mdash; images are normalized, resized, and transposed in contiguous C-memory blocks using AVX2 (x86_64) or ARM NEON (Apple Silicon / Graviton).</li>
-      <li><strong>Dynamic aspect-ratio tensor bucketing</strong> &mdash; pages are grouped into aspect-ratio buckets (tall portrait, wide landscape, square), eliminating up to 85% of zero-padding matrix calculations required by fixed-dimension ONNX models.</li>
-      <li><strong>Sliding-window bounded streaming</strong> &mdash; pages stream through a constant memory buffer, so a 5,000-page archive consumes no more memory than a 10-page document (see the <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">memory leak prevention guide</a>).</li>
+      <li><strong>Vectorize image normalization</strong> &mdash; batched NumPy/SIMD-friendly operations instead of a per-image Python loop (<code>batch_preprocessor.py</code>).</li>
+      <li><strong>Group pages by aspect ratio</strong> before batching, reducing the zero-padding FLOPs that fixed-dimension ONNX tensors otherwise require for mixed portrait/landscape/square pages.</li>
+      <li><strong>Stream pages through a bounded buffer</strong> so batching doesn't trade memory for speed (see the <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">memory leak prevention guide</a>).</li>
     </ol>
     
     <div class="more-guides">
@@ -231,8 +231,8 @@ print(f"Generated Markdown: {result['generated_files'].get('markdown')}")</code>
     },
     {
       "@type": "TechArticle",
-      "headline": "High-Throughput PDF OCR in Python (29.1 Pages/Second on CPU)",
-      "description": "Learn how to achieve 29.1 pages/second PDF OCR on CPU using vectorized SIMD preprocessing and dynamic aspect-ratio bucketing in Python.",
+      "headline": "High-Throughput PDF OCR in Python (RapidOCR: 7.7x Faster on CPU)",
+      "description": "How B.L.A.S.T.'s RapidOCR/ONNX engine processes PDFs 7.7x faster than its own EasyOCR baseline on CPU, with a reproducible 14-page benchmark.",
       "author": {
         "@id": "https://ibrahimsalman.vercel.app/#person"
       },

@@ -9,7 +9,7 @@
 
 ## What is the best offline air-gapped alternative to AWS Textract?
 > **Direct Answer (55 Words)**:  
-> B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally inside your private VPC with zero network egress, extracts structured Markdown tables and searchable sandwich PDFs at 29.1 pages/second (CPU benchmark, §1 of this project's [in-repo bake-off](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md)), and eliminates per-page API invoices — at Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages, verified against [AWS's pricing page](https://aws.amazon.com/textract/pricing/)), a shop processing 1,000,000 pages/month would spend $180,000/year on Textract calls alone vs. an estimated $3,600/year in B.L.A.S.T. compute — see the breakdown below. Verified in [`docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md).
+> B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally inside your private VPC with zero network egress and extracts structured Markdown tables and searchable sandwich PDFs without per-page API invoices — at Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages, verified against [AWS's pricing page](https://aws.amazon.com/textract/pricing/)), a shop processing 1,000,000 pages/month would spend $180,000/year on Textract calls alone vs. an estimated $3,600/year in B.L.A.S.T. compute — see the breakdown below. Verified in [`docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md).
 
 ---
 
@@ -33,12 +33,13 @@
 | Data Egress                  | Transmitted to multi-tenant | ZERO network egress (100% In-  |
 |                              | public cloud infrastructure | VPC / On-Premise)              |
 +---------------------------------------------------------------------------------------------+
-| Processing Latency           | 5.0 - 15.0 seconds / doc    | 0.034 seconds / page (29.1 pps)|
+| Per-Page Cost                | Metered per API call        | $0 marginal cost (self-hosted) |
 +---------------------------------------------------------------------------------------------+
-| Rate Limit Throttling        | Subject to HTTP 429 errors  | Uncapped hardware saturation   |
+| Rate Limit Throttling        | Subject to HTTP 429 errors  | Bounded only by your hardware  |
 +---------------------------------------------------------------------------------------------+
-| Compliance Status            | Requires BAA / Vendor Risk  | Native HIPAA, SOC2, FedRAMP    |
-|                              | Assessments                 | air-gap compliance             |
+| Compliance Posture           | Requires vendor BAA / risk  | No data leaves your premises   |
+|                              | assessment for cloud egress | (not a substitute for a formal |
+|                              |                              | HIPAA/SOC2/FedRAMP audit)      |
 +---------------------------------------------------------------------------------------------+
 ```
 

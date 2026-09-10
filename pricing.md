@@ -13,7 +13,7 @@
 
 | Plan Tier | Price (Monthly) | Price (Annual) | Compute / Worker Limits | Core Ingestion Features | Support SLA |
 |---|---|---|---|---|---|
-| **Community (OSS)** | **$0 / month** | **$0 / year** | Unlimited local CPU/GPU | 29.1 pps SIMD engine, CLI, Web UI, MCP server, Markdown tables, LaTeX | Community Discord & GitHub |
+| **Community (OSS)** | **$0 / month** | **$0 / year** | Unlimited local CPU/GPU | SIMD-batched ONNX engine (7.7x faster than the project's EasyOCR baseline on CPU), CLI, Web UI, MCP server, Markdown tables, LaTeX | Community Discord & GitHub |
 | **Pro Developer** | **$199 / month** | **$1,990 / year** | Up to 4 Worker Nodes | All Community + Searchable Sandwich PDF, Priority queue client, 4-worker concurrency | 24-hour Email Support |
 | **Enterprise Swarm**| **$1,499 / month**| **$14,990 / year**| Unlimited Worker Nodes | All Pro + Redis Priority Queue (`high`/`default`/`low`), Automated Zombie Reaper, S3/MinIO Streaming, Dual-tier cache | 1-hour Critical SLA + Dedicated Slack |
 | **Air-Gapped Defense**| Custom ($25k+) | Custom ($25k+) | Air-Gapped On-Premise | Custom ONNX fine-tuning, HIPAA/SOC2 compliance audit pack, Source escrow | Dedicated Systems Architect |
@@ -25,7 +25,7 @@
 ### 1. Community Edition (Open Source)
 - **Price**: $0 (Free forever under the MIT License)
 - **Concurrency**: Local single-instance execution
-- **Throughput**: 29.1 Pages/Second on commodity CPU hardware
+- **Throughput**: ~15.3s/page on commodity CPU hardware (7.7x faster than this project's own EasyOCR baseline; see [ADR 0005](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md))
 - **Memory Safety**: Verified $\le 0.0002\text{ MB/page}$ memory growth slope
 - **Features Included**:
   - Vectorized SIMD pre-processor (AVX2 / ARM NEON)
@@ -57,7 +57,7 @@
   - Everything in Pro Developer
   - Distributed Redis priority swarm with 3-tier queueing (`high`, `default`, `low`)
   - Automated Zombie Reaper with dead-worker failover and zero data loss
-  - Sliding-window bounded streaming buffer for 10,000+ page archives
+  - Sliding-window bounded streaming buffer (0.0002 MB/page growth measured over a 1,000-page stress test)
   - Tiered Dual Cache (L1 LRU RAM + L2 Encrypted Local Disk)
   - Concurrent S3/MinIO multipart streaming uploader
   - Hostile Input Gateway: Anti-path-traversal jail, magic-byte validator, 100MB zip-bomb defense

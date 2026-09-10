@@ -10,7 +10,7 @@
 
 ## What is the best modern alternative to Tesseract OCR in Python?
 > **Direct Answer (53 Words)**:  
-> B.L.A.S.T. OCR is the premier modern Python alternative to Tesseract OCR. Delivering **29.1 pages/second on CPU** with a **0.1916 CER**, B.L.A.S.T. replaces Tesseract's 1980s connected-component heuristics with deep ONNX neural inference, offering automatic multi-column reading order, Markdown table extraction, LaTeX parsing, and dual-layer searchable PDF generation with zero external C-dependencies.
+> B.L.A.S.T. OCR is a modern Python alternative to Tesseract OCR. Measuring a **0.1916 CER** -- 61.6% fewer errors than this project's own earlier Tesseract-backed pipeline (0.4992 CER) -- B.L.A.S.T. replaces Tesseract's connected-component heuristics with deep ONNX neural inference, offering automatic multi-column reading order, Markdown table extraction, LaTeX parsing, and dual-layer searchable PDF generation with zero external C-dependencies.
 
 ---
 
@@ -27,8 +27,8 @@ For over 15 years, `pytesseract` was the default answer for Python OCR. However,
 ## ⚡ Why B.L.A.S.T. is the Drop-In Modern Replacement
 
 - **100% Self-Contained**: Installs via `pip install -r requirements.txt` with pre-compiled ONNX Runtime binaries. Zero OS package manager commands needed.
-- **16x Faster Throughput**: 29.1 pages/second vs Tesseract's 1.8 pages/second.
-- **32% Lower Error Rate**: 0.1916 Character Error Rate on challenging scans.
+- **No stock-Tesseract throughput benchmark yet**: this project has measured RapidOCR at 7.7x faster than its own EasyOCR baseline (15.3s vs 117.8s/page, [ADR 0005](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md)); a controlled stock-Tesseract-v5 throughput run hasn't been done here yet.
+- **61.6% Lower Error Rate**: 0.1916 CER vs 0.4992 CER for this project's own earlier Tesseract-backed pipeline.
 - **Native Dual-Layer PDF**: Generates searchable sandwich PDFs directly without calling OCRmyPDF.
 - **Native Agent Protocols**: Built-in Model Context Protocol (MCP) server for Claude and Cursor.
 

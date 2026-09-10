@@ -129,7 +129,7 @@
     
     <div class="direct-answer">
       <strong class="tag">What is the best offline air-gapped alternative to AWS Textract?</strong>
-      <p>B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally with zero network egress at 29.1 pages/second (CPU) and eliminates per-page API invoices. At Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages), a shop processing 1,000,000 pages/month spends $180,000/year on Textract calls alone &mdash; see the breakdown below.</p>
+      <p>B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally with zero network egress and eliminates per-page API invoices. At Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages), a shop processing 1,000,000 pages/month spends $180,000/year on Textract calls alone &mdash; see the breakdown below.</p>
     </div>
 
     <h2>Annual cost breakdown by monthly document volume</h2>
@@ -152,7 +152,7 @@
       <thead><tr><th>Dimension</th><th>AWS Textract / Azure Doc AI</th><th>B.L.A.S.T. Air-Gapped OCR</th></tr></thead>
       <tbody>
         <tr><td>Data egress</td><td>Transmitted to multi-tenant public cloud</td><td class="good">Zero network egress (in-VPC / on-prem)</td></tr>
-        <tr><td>Processing latency</td><td>5.0-15.0s/doc (network round-trip)</td><td class="good">~0.034s/page (29.1 pps, CPU benchmark)</td></tr>
+        <tr><td>Per-page cost</td><td>Metered per API call</td><td class="good">$0 marginal cost (self-hosted)</td></tr>
         <tr><td>Rate limiting</td><td>Subject to HTTP 429 throttling</td><td class="good">Bounded only by your own hardware</td></tr>
       </tbody>
     </table>

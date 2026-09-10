@@ -9,7 +9,7 @@
 
 ## How can I prevent memory leaks when running batch OCR in Python?
 > **Direct Answer (54 Words)**:  
-> Memory leaks in Python batch OCR are prevented by implementing a **sliding-window bounded streaming buffer** and process recycling. B.L.A.S.T. enforces a verified memory growth slope of $\le 0.0002\text{ MB/page}$ across 10,000 continuous pages, capping RAM usage at a fixed ceiling regardless of document length to eliminate container out-of-memory crashes. Verified in [`eval/stress_test.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py).
+> Memory leaks in Python batch OCR are prevented by implementing a **sliding-window bounded streaming buffer** and process recycling. B.L.A.S.T. enforces a verified memory growth slope of $\le 0.0002\text{ MB/page}$ across 1,000 continuous pages, capping RAM usage at a fixed ceiling regardless of document length to eliminate container out-of-memory crashes. Verified in [`eval/stress_test.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py).
 
 ---
 
@@ -67,7 +67,7 @@ Memory (MB)
   │                                     /
   │                                   /
   │  ───────────────────────────────/──────── B.L.A.S.T. (0.0002 MB/page slope)
-  │                                           --> Flat Plateau across 10,000 pages
+  │                                           --> Flat Plateau across 1,000 pages
   └─────────────────────────────────────────────────────────────────────────────> Pages Processed
      0        200        400        600        800        1000
 ```

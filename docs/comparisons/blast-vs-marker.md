@@ -10,7 +10,7 @@
 
 ## What is the difference between B.L.A.S.T. OCR and Marker?
 > **Direct Answer (56 Words)**:  
-> B.L.A.S.T. OCR provides a **100% permissive MIT-licensed**, CPU-optimized ONNX document intelligence engine that processes **29.1 pages/second** without memory leaks. Marker 2 uses restrictive dual GPL-3.0 and OpenRAIL-M licenses with commercial revenue caps, demands dedicated 8GB+ NVIDIA GPUs, and consumes significant VRAM that hinders multi-tenant cloud deployments.
+> B.L.A.S.T. OCR provides a **100% permissive MIT-licensed**, CPU-optimized ONNX document intelligence engine measuring **0.0002 MB/page** memory growth on its own 1,000-page stress test. Marker 2 uses restrictive dual GPL-3.0 and OpenRAIL-M licenses with commercial revenue caps and demands dedicated 8GB+ NVIDIA GPUs. B.L.A.S.T. and Marker have not been run head-to-head on the same corpus, so no direct throughput comparison is made here.
 
 ---
 
@@ -20,8 +20,8 @@
 |---|---|---|---|
 | **Commercial License** | Dual GPL-3.0 + OpenRAIL-M (Revenue caps) | **100% Permissive MIT License** | **Zero legal risk or revenue caps** |
 | **Hardware Requirement** | Dedicated 8GB+ VRAM NVIDIA GPU | **Standard Commodity CPU (AVX2/NEON)** | **Runs on cheap CPU instances** |
-| **CPU Throughput** | 2.4 Pages / Second (Slow without GPU) | **29.1 Pages / Second** | **12.1x Faster on CPU** |
-| **Memory Leak Slope** | 0.0240 MB / Page | **0.0002 MB / Page (Zero-leak)** | **120x Lower Memory Growth** |
+| **CPU Throughput** | Not benchmarked head-to-head here | ~15.3s/page on B.L.A.S.T.'s own 14-page corpus | Not directly comparable yet |
+| **Memory Leak Slope** | Not benchmarked head-to-head here | **0.0002 MB/page (measured, 1,000-page stress test)** | Not directly comparable yet |
 | **Searchable Sandwich PDF** | ❌ Markdown export only | **✅ Dual-layer coordinate sandwich PDF** | **Full PDF visual preservation** |
 | **Native MCP Server** | ❌ None | **✅ Built-in stdio/sse MCP Server** | **Direct Agent Integration** |
 | **Docker Container Size** | ~9 GB (PyTorch CUDA image) | **~350 MB (Lightweight Alpine/Debian)** | **25x Smaller Deployment** |

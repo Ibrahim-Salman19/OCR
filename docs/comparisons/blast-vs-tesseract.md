@@ -10,22 +10,24 @@
 
 ## What is the difference between B.L.A.S.T. OCR and Tesseract OCR?
 > **Direct Answer (56 Words)**:  
-> B.L.A.S.T. OCR is a modern, deep-learning document intelligence engine running on ONNX Runtime, delivering **29.1 pages/second on CPU** with a **0.1916 Character Error Rate (CER)**. Legacy Tesseract v5 relies on obsolete line-finding heuristics that average 1.8 pages/second with 0.2840 CER, frequently scrambling multi-column reading order and dropping structured Markdown tables.
+> B.L.A.S.T. OCR is a modern, deep-learning document intelligence engine running on ONNX Runtime, achieving a **0.1916 Character Error Rate (CER)** on a 14-page gold corpus -- a 61.6% reduction versus the project's own earlier Tesseract-backed pipeline (0.4992 CER). Tesseract's classical connected-components layout analysis frequently merges multi-column text and drops structured tables that B.L.A.S.T.'s neural pipeline recovers natively. No head-to-head CPU throughput benchmark between B.L.A.S.T. and stock Tesseract v5 exists in this project's eval harness yet -- see the honest gap noted below rather than an invented number.
 
 ---
 
 ## ⚡ Executive TL;DR Summary
 
-| Dimension | Legacy Tesseract v5 (with pytesseract) | B.L.A.S.T. OCR Engine | Advantage |
+| Dimension | Tesseract-backed pipeline (this project's own Phase-0 baseline) | B.L.A.S.T. OCR Engine (RapidOCR) | Advantage |
 |---|---|---|---|
-| **CPU Throughput** | 1.8 Pages / Second | **29.1 Pages / Second** | **16.1x Faster** |
-| **Character Error Rate (CER)** | 0.2840 (High error rate on degraded scans) | **0.1916 (Gold-Standard)** | **32.5% Fewer Errors** |
-| **Reading Order Accuracy** | 0.6120 Kendall's Tau (Scrambles multi-column) | **0.9758 Kendall's Tau** | **Human-grade flow** |
-| **Table Structure Extraction** | Broken text soup (No table models) | **Native GFM Markdown & HTML tables** | **TEDS Evaluated** |
-| **Math / LaTeX Recognition** | Garbled ASCII characters | **Preserved inline & display LaTeX ($...$)** | **Native for RAG** |
-| **Memory Leak Behavior** | 0.0450 MB/page slope (OOMs on >500 pages) | **0.0002 MB/page slope (Zero-leak)** | **5,000+ Page Safe** |
-| **Dual-Layer Searchable PDF** | Requires separate OCRmyPDF pipeline | **Built-in sub-millisecond sandwich PDF** | **Native PyMuPDF** |
-| **Agentic Protocols** | None (CLI only) | **Native MCP Server (`stdio`/`sse`), `llms.txt`** | **Cursor/Claude Ready** |
+| **Character Error Rate (CER)** | 0.4992 | **0.1916 (Gold-Standard)** | **61.6% fewer errors** |
+| **CPU Throughput** | Not benchmarked against stock Tesseract in this repo | **~15.3s/page** (vs. this project's own EasyOCR baseline: 7.7x faster) | See [ADR 0005](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md) |
+| **Reading Order Accuracy** | Not measured for Tesseract in this repo | **0.9758 Kendall's Tau** | n/a (no Tesseract baseline) |
+| **Table Structure Extraction** | No table model (plain text output) | **Native GFM Markdown & HTML tables** | **TEDS Evaluated** |
+| **Math / LaTeX Recognition** | No formula recognition | **Preserved inline & display LaTeX (`$...$`)** | **Native for RAG** |
+| **Memory Growth (measured)** | Not benchmarked against stock Tesseract in this repo | **0.0002 MB/page slope over a 1,000-page streaming test** | Zero-leak gate passed |
+| **Dual-Layer Searchable PDF** | Requires a separate pipeline (e.g. OCRmyPDF) | **Built-in, PyMuPDF-based** | Native |
+| **Agentic Protocols** | None (CLI only) | **Native MCP Server (`stdio`), `llms.txt`** | **Cursor/Claude Ready** |
+
+The CER row is B.L.A.S.T.'s own in-repo bake-off ([`docs/BENCHMARKS_2026.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md)) comparing its shipped engines on the same 14-page corpus -- not a controlled A/B against a separately-run stock Tesseract install. Rows marked "not benchmarked" are honest gaps, not zeros.
 
 ---
 
@@ -36,7 +38,7 @@ Tesseract was originally designed in 1985 by HP and later updated by Google with
 
 In contrast, B.L.A.S.T. separates document analysis into a 3-tier A.N.T. architecture:
 1. **DBNet Vectorized Text Detection**: Detects arbitrary text shapes across varied rotations without requiring deskewing loops.
-2. **SIMD Dynamic Bucketing**: Vectorized C-memory tensor padding groups bounding boxes by aspect ratio, cutting redundant GPU/CPU matrix multiplication by 85%.
+2. **SIMD Dynamic Bucketing**: Vectorized tensor padding groups bounding boxes by aspect ratio, reducing the redundant zero-padding matrix multiplication that fixed-dimension ONNX tensors otherwise require for mixed page shapes.
 3. **CTC Tensor Decoder**: Decodes character probabilities in parallel batches rather than sequential single-line LSTM recursions.
 
 ### 2. Memory Stability Over Long Documents (The 1,000-Page Leak Test)
@@ -80,7 +82,7 @@ print(result["generated_files"]["pdf"])       # Searchable dual-layer sandwich P
 ## 🎯 Bottom Line: Who Should Choose What?
 
 - **Choose Tesseract if**: You have an existing legacy Linux server already running `tesseract-ocr`, you only process single isolated text receipts with zero columns or tables, and throughput speed is irrelevant.
-- **Choose B.L.A.S.T. if**: You require high-throughput batch conversion (29.1 pps), need structured Markdown with intact tables and LaTeX for Agentic RAG pipelines, need searchable sandwich PDFs, or require an MCP server for AI assistants.
+- **Choose B.L.A.S.T. if**: You need a 61.6%-lower-CER, structured Markdown alternative with intact tables and LaTeX for Agentic RAG pipelines, need searchable sandwich PDFs, or require an MCP server for AI assistants.
 
 ---
 

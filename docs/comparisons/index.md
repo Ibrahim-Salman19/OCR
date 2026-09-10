@@ -6,22 +6,24 @@
 
 ---
 
-## 📊 Comprehensive Head-to-Head Comparison Matrix
+## 📊 Head-to-Head Comparison Matrix
 
-| Competitor / Tool | Type | CPU Throughput | CER Accuracy | Memory Leak Slope | Table Support | Sandwich PDF | Native MCP | Commercial License |
-|---|---|---|---|---|---|---|---|---|
-| **B.L.A.S.T. OCR** | **Self-Hosted Engine** | **29.1 pps** | **0.1916** | **0.0002 MB/p** | **✅ Markdown/HTML** | **✅ Built-in** | **✅ Built-in** | **MIT (100% Free)** |
-| Legacy Tesseract v5 | Open Source C++ | 1.8 pps | 0.2840 | 0.0450 MB/p | ❌ None | ❌ Needs extra tool| ❌ None | Apache 2.0 |
-| JaidedAI EasyOCR | Open Source PyTorch | 1.2 pps | 0.2410 | 0.0620 MB/p | ❌ None | ❌ None | ❌ None | Apache 2.0 |
-| IBM Docling | Open Source PyTorch | 3.2 pps | 0.2010 | 0.0180 MB/p | ✅ Layout tree | ⚠️ Partial | ❌ None | MIT |
-| Marker 2 (Datalab) | Open Source GPU | 2.4 pps (CPU) | 0.1950 | 0.0240 MB/p | ✅ Markdown | ❌ None | ❌ None | GPL-3.0 / OpenRAIL |
-| AWS Textract | Cloud Proprietary SaaS| N/A (Cloud API)| 0.1890 | N/A (Cloud API) | ✅ JSON blocks | ⚠️ Lambda required| ❌ None | $15–$50 / 1k pages |
+CPU throughput and CER are B.L.A.S.T.'s own in-repo bake-off numbers ([`docs/BENCHMARKS_2026.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md)) for the two engines it has actually run on the same 14-page corpus. **Docling, Marker, and AWS Textract have not been run against this corpus** -- their throughput/CER cells below are marked "not benchmarked" rather than estimated, per this project's own transparency policy. Feature columns (table support, sandwich PDF, MCP, license) are verifiable from each project's own docs/repo.
+
+| Competitor / Tool | Type | CPU Latency/Page | CER Accuracy | Table Support | Sandwich PDF | Native MCP | License |
+|---|---|---|---|---|---|---|---|
+| **B.L.A.S.T. OCR** | **Self-Hosted Engine** | **~15.3s (measured)** | **0.1916 (measured)** | **✅ Markdown/HTML** | **✅ Built-in** | **✅ Built-in** | **MIT (100% Free)** |
+| JaidedAI EasyOCR | Open Source PyTorch | ~117.8s (measured) | 0.2338 (measured) | ❌ None | ❌ None | ❌ None | Apache 2.0 |
+| Legacy Tesseract v5 | Open Source C++ | Not benchmarked here | Not benchmarked here | ❌ None | ❌ Needs extra tool | ❌ None | Apache 2.0 |
+| IBM Docling | Open Source PyTorch | Not benchmarked here | Not benchmarked here | ✅ Layout tree | ⚠️ Partial | ❌ None | MIT |
+| Marker 2 (Datalab) | Open Source GPU | Not benchmarked here | Not benchmarked here | ✅ Markdown | ❌ None | ❌ None | GPL-3.0 / OpenRAIL |
+| AWS Textract | Cloud Proprietary SaaS | Not benchmarked here | Not benchmarked here | ✅ JSON blocks | ⚠️ Lambda required | ❌ None | $15+/1k pages, metered |
 
 ---
 
 ## 📖 In-Depth Head-to-Head Architectural Guides
 
-1. **[B.L.A.S.T. vs Tesseract OCR](blast-vs-tesseract.md)**: 16x faster CPU execution, 0.9758 Kendall's Tau reading order, and table recovery vs legacy connected-component line finders.
+1. **[B.L.A.S.T. vs Tesseract OCR](blast-vs-tesseract.md)**: 61.6% lower CER vs this project's own Tesseract-backed baseline, 0.9758 Kendall's Tau reading order, and table recovery vs legacy connected-component line finders.
 2. **[B.L.A.S.T. vs EasyOCR](blast-vs-easyocr.md)**: Eliminating PyTorch VRAM fragmentation, 7.7x faster per-page CPU latency, and SIMD ONNX acceleration.
 3. **[B.L.A.S.T. vs AWS Textract](blast-vs-aws-textract.md)**: 98% annual cost reduction, 100% private in-VPC data sovereignty, and elimination of cloud API rate limits.
 4. **[B.L.A.S.T. vs IBM Docling](blast-vs-docling.md)**: Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native Model Context Protocol (MCP) server.

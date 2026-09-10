@@ -194,7 +194,7 @@ _SEO_META_TAGS = """<div id="seo-metadata" style="display:none;" aria-hidden="tr
           "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold."
+            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (PageStreamGenerator) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold."
           }
         },
         {

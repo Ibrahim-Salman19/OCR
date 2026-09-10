@@ -112,7 +112,7 @@ RapidOCR cut mean CER by 18% versus EasyOCR, with a 0.9758 reading-order tau cor
 4/8 But latency and accuracy mean nothing if your process crashes on an 800-page document.
 
 PyTorch models frequently accumulate memory on long runs.
-We built a bounded sliding-window streaming architecture (`StreamingPDFProcessor`) to guarantee zero memory leaks.
+We built a bounded sliding-window streaming architecture (`PageStreamGenerator`) to guarantee zero memory leaks.
 
 5/8 We verified this with a 1,000-page continuous streaming stress test (`eval/stress_test.py`).
 

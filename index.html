@@ -214,7 +214,7 @@
     <div class="grid-4">
       <div class="card">
         <h3><a href="./docs/seo/high-throughput-pdf-ocr-python/">High-Throughput PDF OCR in Python</a></h3>
-        <p>29.1 pages/second on CPU with SIMD preprocessing and ONNX Runtime.</p>
+        <p>7.7x faster than this project's own EasyOCR baseline on CPU (15.3s vs 117.8s/page).</p>
       </div>
       <div class="card">
         <h3><a href="./docs/seo/extract-tables-from-scanned-pdf-python/">Extract Tables from Scanned PDFs</a></h3>
@@ -230,7 +230,7 @@
       </div>
       <div class="card">
         <h3><a href="./docs/seo/pdf-ocr-memory-leak-prevention/">PDF OCR Memory Leak Prevention</a></h3>
-        <p>Sliding-window bounded buffers for flat memory on 10,000+ page archives.</p>
+        <p>Sliding-window bounded buffers: 0.0002 MB/page growth measured over a 1,000-page stress test.</p>
       </div>
       <div class="card">
         <h3><a href="./docs/seo/local-ocr-vs-cloud-vision-cost-comparison/">Local OCR vs AWS Textract: TCO</a></h3>
@@ -253,7 +253,7 @@
     </details>
     <details class="faq">
       <summary>How does B.L.A.S.T. prevent memory leaks on large PDF archives?</summary>
-      <p>B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold.</p>
+      <p>B.L.A.S.T. implements a bounded sliding-window streaming architecture (PageStreamGenerator) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold.</p>
     </details>
     <details class="faq">
       <summary>How does B.L.A.S.T. extract tables?</summary>
@@ -422,7 +422,7 @@
         {
           "@type": "Question",
           "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
-          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold." }
+          "acceptedAnswer": { "@type": "Answer", "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (PageStreamGenerator) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold." }
         },
         {
           "@type": "Question",

@@ -92,18 +92,21 @@ print(f"Extracted Text:\n{result['text']}")
 print(f"Generated Files: {result['generated_files']}")
 ```
 
-### 4.2 Streaming Processing for 1,000+ Page Archives
+### 4.2 Streaming Processing for Large Archives
+
+`BlastPipeline.process_job()` already streams internally (see 4.1) -- no extra
+flags are needed for the bounded-memory guarantee. To use the underlying
+windowed renderer directly:
+
 ```python
-from blast_ocr.core.streaming import StreamingPDFProcessor
+from blast_ocr.core.streaming import PageStreamGenerator
 
-processor = StreamingPDFProcessor(
-    window_size=10,          # Sliding window chunk limit
-    scratch_dir=".tmp/scratch"
-)
-
-for chunk in processor.stream_pages("massive_archive.pdf"):
-    print(f"Processed pages {chunk.start_page} to {chunk.end_page}")
-    # Process or persist chunk without accumulating full document in memory
+with PageStreamGenerator("massive_archive.pdf", chunk_size=16) as stream:
+    for window in stream:  # each window: List[Tuple[int, Path]]
+        for page_number, rendered_page_path in window:
+            print(f"Rendered page {page_number} -> {rendered_page_path}")
+        # this window's scratch files are purged automatically once the
+        # loop moves past it
 ```
 
 ---
@@ -195,7 +198,7 @@ The repository maintains an exhaustive 50-skill marketing and GTM portfolio in `
 ## 9. SEO & High-Intent Developer Technical Guides (`docs/seo/`)
 
 Dedicated technical reference guides featuring 40–60 word direct citation answers, copy-pasteable Python implementations, and embedded Schema.org JSON-LD structured data:
-- [High-Throughput PDF OCR in Python (29.1 pps)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/high-throughput-pdf-ocr-python.md): Vectorized SIMD image pre-processing and dynamic aspect-ratio bucketing.
+- [High-Throughput PDF OCR in Python (7.7x Faster)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/high-throughput-pdf-ocr-python.md): Vectorized SIMD image pre-processing and dynamic aspect-ratio bucketing.
 - [Extract Tables from Scanned PDFs into Markdown](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/extract-tables-from-scanned-pdf-python.md): Morphological table detection and TEDS-certified structural Markdown conversion.
 - [Prevent Memory Leaks in Python Batch OCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/pdf-ocr-memory-leak-prevention.md): Sliding-window bounded streaming buffers eliminating Kubernetes OOM crashes.
 - [Document OCR MCP Server Setup Guide](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/mcp-server-ocr-setup-guide.md): Connecting B.L.A.S.T. to Claude Desktop and Cursor using Model Context Protocol.
@@ -205,7 +208,7 @@ Dedicated technical reference guides featuring 40–60 word direct citation answ
 
 
 ## Competitor Comparisons & Modern Alternatives
-- [B.L.A.S.T. vs Tesseract OCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-tesseract.md): 16x faster CPU execution, table recovery, 0.9758 reading order vs legacy connected-components.
+- [B.L.A.S.T. vs Tesseract OCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-tesseract.md): 61.6% lower CER vs this project's own Tesseract-backed baseline, table recovery, 0.9758 reading order.
 - [B.L.A.S.T. vs EasyOCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-easyocr.md): 7.7x faster per-page latency, zero PyTorch VRAM leaks, ONNX multi-provider acceleration.
 - [B.L.A.S.T. vs AWS Textract](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-aws-textract.md): 98% cloud cost reduction, 100% private in-VPC data sovereignty, no API rate limits.
 - [B.L.A.S.T. vs IBM Docling](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-docling.md): Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native MCP server.

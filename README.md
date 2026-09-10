@@ -167,7 +167,7 @@ python run.py thick_book.pdf --dewarp --engine ensemble --out book_results/
 B.L.A.S.T.'s default engine (RapidOCR, ONNX Runtime with `CUDA` → `DirectML` → `CPU` fallback) replaced an EasyOCR/PyTorch baseline after a documented bake-off on the project's 14-page gold corpus, cutting average CPU per-page latency from ~117.8s to ~15.3s (a 7.7x improvement) while also reducing mean CER by 18% — see [ADR 0005](docs/adr/0005-phase3-engine-bakeoff.md) for the full methodology and raw results.
 
 ### How does B.L.A.S.T. prevent memory leaks on large PDF archives?
-B.L.A.S.T. implements a bounded sliding-window streaming architecture (`StreamingPDFProcessor`) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold — see [`eval/results/stress_report.json`](eval/results/stress_report.json).
+B.L.A.S.T. implements a bounded sliding-window streaming architecture (`PageStreamGenerator`) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold — see [`eval/results/stress_report.json`](eval/results/stress_report.json).
 
 ### How does B.L.A.S.T. extract tables and mathematical formulas?
 B.L.A.S.T. uses a morphological table detection and cell reconstruction engine (`TableExtractor`) that analyzes horizontal and vertical grid lines, merges spanning cells, and preserves hierarchical header structures into clean Markdown and HTML tables, scored against a built-in Tree-Edit-Distance (TEDS) evaluator (`eval/teds_evaluator.py`). Mathematical expressions are recognized into LaTeX KaTeX format ($...$ and $$...$$).
@@ -370,7 +370,7 @@ Distributed under the **MIT License**. Free for commercial and private use.
           "name": "How does B.L.A.S.T. prevent memory leaks on large PDF archives?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (StreamingPDFProcessor) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold."
+            "text": "B.L.A.S.T. implements a bounded sliding-window streaming architecture (PageStreamGenerator) that caps concurrent in-memory page buffers and recycles intermediate image tensors. A 1,000-page streaming stress test measured a growth slope of 0.0002 MB/page against a 0.005 MB/page fail threshold."
           }
         },
         {

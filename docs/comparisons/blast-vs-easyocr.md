@@ -10,7 +10,7 @@
 
 ## Is B.L.A.S.T. OCR faster than EasyOCR?
 > **Direct Answer (54 Words)**:  
-> Yes, B.L.A.S.T. OCR is **7.7x faster per page on CPU** than EasyOCR (15.3s vs 117.8s per page) and processes multi-page documents at **29.1 pages/second in batched execution**. While EasyOCR relies on unoptimized PyTorch models causing memory fragmentation, B.L.A.S.T. utilizes lightweight ONNX Runtime with SIMD batch pre-processing and zero memory leaks.
+> Yes, B.L.A.S.T. OCR is **7.7x faster per page on CPU** than EasyOCR (15.3s vs 117.8s per page), measured on the project's own 14-page gold corpus (ADR 0005). While EasyOCR relies on unoptimized PyTorch models causing memory fragmentation, B.L.A.S.T. utilizes lightweight ONNX Runtime with SIMD batch pre-processing and zero measured memory leaks.
 
 ---
 
@@ -19,7 +19,6 @@
 | Metric / Dimension | JaidedAI EasyOCR (PyTorch) | B.L.A.S.T. OCR (ONNX Runtime) | Advantage |
 |---|---|---|---|
 | **CPU Latency Per Page** | 117.8 Seconds | **15.3 Seconds** | **7.7x Faster Latency** |
-| **Batch CPU Throughput** | 1.2 Pages / Second | **29.1 Pages / Second** | **24.2x Higher Throughput** |
 | **Memory Leak Slope** | 0.0620 MB / Page (PyTorch VRAM leak) | **0.0002 MB / Page (Zero-leak)** | **310x More Memory Stable** |
 | **Character Error Rate (CER)** | 0.2410 on gold standard corpus | **0.1916 (18% improvement)** | **Significantly Higher Accuracy** |
 | **Table Extraction** | ❌ None (BBox coordinates only) | **✅ Native Markdown & HTML Tables** | **TEDS-Evaluated** |
@@ -78,7 +77,7 @@ markdown_text = Path(result["generated_files"]["markdown"]).read_text()
 ## 🎯 Bottom Line: Who Should Choose What?
 
 - **Choose EasyOCR if**: You need rare language support across 80+ spoken languages and do not care about multi-minute CPU latency, table extraction, or memory leakage.
-- **Choose B.L.A.S.T. if**: You need fast CPU execution (15.3s per page), high-throughput enterprise batching (29.1 pps), Markdown table structure for RAG, searchable sandwich PDFs, and guaranteed zero-crash memory stability.
+- **Choose B.L.A.S.T. if**: You need fast CPU execution (15.3s per page, 7.7x faster than EasyOCR on this project's own corpus), Markdown table structure for RAG, searchable sandwich PDFs, and measured zero-leak memory stability.
 
 ---
 
