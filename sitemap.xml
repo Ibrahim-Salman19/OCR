@@ -199,6 +199,12 @@
     <priority>0.95</priority>
   </url>
   <url>
+    <loc>https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-pymupdf4llm.md</loc>
+    <lastmod>2026-09-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/index.md</loc>
     <lastmod>2026-09-06</lastmod>
     <changefreq>weekly</changefreq>

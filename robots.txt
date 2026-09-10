@@ -1,6 +1,6 @@
 # B.L.A.S.T. OCR Engine - Robots & AI Agent Directives
 # Optimized for Search Engine Optimization (SEO), Generative Engine Optimization (GEO) & Answer Engine Optimization (AEO)
-# Last Updated: 2026-09-06
+# Last Updated: 2026-09-10
 
 User-agent: *
 Allow: /
@@ -38,6 +38,9 @@ User-agent: PerplexityBot
 Allow: /
 
 User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
 Allow: /
 
 User-agent: ClaudeBot

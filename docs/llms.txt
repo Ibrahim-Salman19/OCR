@@ -92,6 +92,7 @@ parentheses.
 - [B.L.A.S.T. vs AWS Textract](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-aws-textract.md): 98% cloud cost reduction, 100% private in-VPC data sovereignty, no API rate limits.
 - [B.L.A.S.T. vs IBM Docling](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-docling.md): Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native MCP server.
 - [B.L.A.S.T. vs Marker 2](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-marker.md): Permissive MIT license vs GPL-3.0/OpenRAIL commercial caps, CPU-native execution.
+- [B.L.A.S.T. vs PyMuPDF4LLM](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/blast-vs-pymupdf4llm.md): OCR-first scanned-document engine vs text-layer-first extractor, plus an honest look at the shared AGPL-licensed PyMuPDF dependency.
 - [Best Tesseract Alternative (2026 Guide)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/tesseract-alternative.md): 60-second migration guide eliminating OS package dependencies.
 - [Best Self-Hosted AWS Textract Alternative](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/comparisons/aws-textract-alternative.md): Enterprise blueprint for private in-VPC OCR migration.
 

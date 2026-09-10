@@ -64,6 +64,7 @@
 - **[B.L.A.S.T. vs AWS Textract](comparisons/blast-vs-aws-textract.md)**
 - **[B.L.A.S.T. vs IBM Docling](comparisons/blast-vs-docling.md)**
 - **[B.L.A.S.T. vs Marker 2](comparisons/blast-vs-marker.md)**
+- **[B.L.A.S.T. vs PyMuPDF4LLM](comparisons/blast-vs-pymupdf4llm.md)**
 - **[Best Tesseract Alternative (2026 Guide)](comparisons/tesseract-alternative.md)**
 - **[Best Self-Hosted AWS Textract Alternative](comparisons/aws-textract-alternative.md)**
 

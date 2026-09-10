@@ -18,6 +18,7 @@ CPU throughput and CER are B.L.A.S.T.'s own in-repo bake-off numbers ([`docs/BEN
 | IBM Docling | Open Source PyTorch | Not benchmarked here | Not benchmarked here | ✅ Layout tree | ⚠️ Partial | ❌ None | MIT |
 | Marker 2 (Datalab) | Open Source GPU | Not benchmarked here | Not benchmarked here | ✅ Markdown | ❌ None | ❌ None | GPL-3.0 / OpenRAIL |
 | AWS Textract | Cloud Proprietary SaaS | Not benchmarked here | Not benchmarked here | ✅ JSON blocks | ⚠️ Lambda required | ❌ None | $15+/1k pages, metered |
+| PyMuPDF4LLM | Open Source Text-Layer Extractor | Not benchmarked here (no-OCR text-layer path, different problem) | Not benchmarked here | ✅ Layout Markdown | ❌ None | ❌ None | AGPL-3.0 (commercial via Artifex) |
 
 ---
 
@@ -28,6 +29,7 @@ CPU throughput and CER are B.L.A.S.T.'s own in-repo bake-off numbers ([`docs/BEN
 3. **[B.L.A.S.T. vs AWS Textract](blast-vs-aws-textract.md)**: 98% annual cost reduction, 100% private in-VPC data sovereignty, and elimination of cloud API rate limits.
 4. **[B.L.A.S.T. vs IBM Docling](blast-vs-docling.md)**: Lightweight 15MB ONNX weights vs 1.5GB PyTorch transformer models, native Model Context Protocol (MCP) server.
 5. **[B.L.A.S.T. vs Marker 2](blast-vs-marker.md)**: Permissive MIT license vs GPL-3.0 / OpenRAIL commercial restrictions, CPU-native execution vs 8GB+ GPU requirements.
+6. **[B.L.A.S.T. vs PyMuPDF4LLM](blast-vs-pymupdf4llm.md)**: OCR-first scanned-document engine vs text-layer-first extractor, plus an honest look at the shared AGPL-licensed PyMuPDF dependency.
 
 ---
 
