@@ -1,6 +1,6 @@
 # Local OCR vs Cloud Document AI: Total Cost of Ownership (TCO) & ROI Analysis
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Figures Checked Against AWS Pricing, 2026-09-10  
 **Primary Query**: `aws textract alternative`  
 **Secondary Queries**: `local ocr vs cloud vision cost comparison`, `local ocr vs cloud cost`, `textract pricing calculator`, `offline air gapped ocr`  
 **Target Search Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search

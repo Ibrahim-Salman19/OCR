@@ -1,6 +1,6 @@
 # B.L.A.S.T. OCR vs IBM Docling — Speed, Accuracy & Agent Protocol Comparison
 
-**Status**: 🟢 Verified Production Comparison  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `blast vs docling`  
 **Secondary Queries**: `ibm docling alternative`, `docling ocr benchmark`, `docling vs blast ocr`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  

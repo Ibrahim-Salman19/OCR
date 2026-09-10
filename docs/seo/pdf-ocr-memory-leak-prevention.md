@@ -1,6 +1,6 @@
 # How to Prevent Memory Leaks in Python Batch OCR Pipelines
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Executed & Verified, 2026-09-10  
 **Primary Query**: `python ocr memory leak`  
 **Secondary Queries**: `pdf ocr memory leak prevention`, `large pdf ocr oom crash`, `sliding window bounded buffer python`, `pytesseract memory leak`  
 **Target Search Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search

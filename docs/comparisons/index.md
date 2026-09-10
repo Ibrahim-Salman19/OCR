@@ -1,6 +1,6 @@
 # B.L.A.S.T. OCR Competitor Comparisons & Modern Alternatives Index
 
-**Status**: 🟢 Certified Production Matrix  
+**Status**: 🟡 Figures Checked Against Source, 2026-09-10  
 **Canonical Directory**: `docs/comparisons/`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  
 

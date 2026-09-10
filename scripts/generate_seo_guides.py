@@ -202,7 +202,8 @@ def more_guides(current_slug):
 </div>"""
 
 
-def render(slug, title, description, keywords, h1, meta_row_html, jsonld_graph, body_html):
+def render(slug, title, description, keywords, h1, meta_row_html, jsonld_graph, body_html,
+           status_badge="Code Read Against Source, 2026-09-10"):
     canonical = f"{BASE_URL}/docs/seo/{slug}/"
     ld = {"@context": "https://schema.org", "@graph": jsonld_graph}
     ld_json = json.dumps(ld, indent=2)
@@ -239,7 +240,7 @@ def render(slug, title, description, keywords, h1, meta_row_html, jsonld_graph, 
 <main>
   <div class="wrap">
     {breadcrumb}
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">{status_badge}</span>
     <h1>{h1}</h1>
     <p class="meta-row">{meta_row_html}</p>
     {body_html}
@@ -270,6 +271,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 1 --
     render(
         slug="high-throughput-pdf-ocr-python",
+    status_badge="Code Executed &amp; Verified, 2026-09-10",
         title="High-Throughput PDF OCR in Python (RapidOCR, 7.7x)",
         description="B.L.A.S.T.'s RapidOCR/ONNX engine processes PDFs at ~15.3s/page on CPU -- 7.7x faster than its own EasyOCR baseline (117.8s/page) -- with an 18% lower CER. Reproducible 14-page benchmark, Python code.",
         keywords="high throughput pdf ocr python, fastest python ocr, batched onnx ocr, simd pdf ocr python",
@@ -346,8 +348,9 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 2 --
     render(
         slug="extract-tables-from-scanned-pdf-python",
+    status_badge="Code Executed &amp; Verified, 2026-09-10",
         title="Extract Tables from Scanned PDFs in Python",
-        description="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s TEDS-certified evaluator (mean TEDS > 0.94). Working Python code, no LLM hallucination.",
+        description="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s built-in TEDS evaluator. Working Python code, no LLM hallucination, no fabricated accuracy score.",
         keywords="extract tables from scanned pdf python, pdf table extraction markdown, teds table ocr, parse borderless tables python",
         h1="How to Extract Tables from Scanned PDFs into Markdown in Python",
         meta_row_html=f'Primary query: <code>extract tables from scanned pdf python</code> &middot; <a href="{BASE_URL}/docs/seo/extract-tables-from-scanned-pdf-python.md">raw markdown</a>',
@@ -368,7 +371,7 @@ if __name__ == "__main__":
         body_html=f"""
         <div class="direct-answer">
           <strong class="tag">How do you extract tables from scanned PDFs into Markdown in Python?</strong>
-          <p>B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its TEDS-certified Table Evaluator. It identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-Flavored Markdown or DOCX tables. Verified in <a href="{GH}/eval/teds_evaluator.py">eval/teds_evaluator.py</a>.</p>
+          <p>B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its built-in TEDS (Tree Edit Distance-based Similarity) evaluator. It identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-Flavored Markdown or DOCX tables. Verified in <a href="{GH}/eval/teds_evaluator.py">eval/teds_evaluator.py</a>.</p>
         </div>
 
         <h2>CLI Quickstart</h2>
@@ -412,7 +415,7 @@ if __name__ == "__main__":
         <h2>The TEDS protocol for table evaluation</h2>
         <p>Plain-text OCR is scored with Character Error Rate (CER); table structure needs a different metric because row/column topology matters as much as the text. <strong>Tree Edit Distance-based Similarity (TEDS)</strong> treats each table as an HTML DOM tree and scores:</p>
         <pre><code>TEDS(Ta, Tb) = 1 - EditDistance(Ta, Tb) / max(|Ta|, |Tb|)</code></pre>
-        <p>Tree nodes are <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>, <code>&lt;th&gt;</code>, and their text content; edit operations are insertion, deletion, and substitution. A score of <code>1.000</code> is a perfect match. B.L.A.S.T. measures a mean TEDS score &gt; 0.94 on complex financial filings.</p>
+        <p>Tree nodes are <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>, <code>&lt;th&gt;</code>, and their text content; edit operations are insertion, deletion, and substitution. A score of <code>1.000</code> is a perfect match. <strong>The evaluator itself is unit-tested for correctness</strong> (<code>tests/test_teds_evaluator.py</code>), but this project has not yet recorded an end-to-end TEDS score on a real table corpus -- per <a href="{GH}/docs/BENCHMARKS_2026.md">docs/BENCHMARKS_2026.md</a>, treat any specific TEDS percentage for this project as aspirational until that file reports one.</p>
         """,
     )
 
@@ -421,6 +424,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 3 --
     render(
         slug="mcp-server-ocr-setup-guide",
+    status_badge="Code Read Against Source, 2026-09-10",
         title="OCR MCP Server Setup for Claude Desktop & Cursor",
         description="Connect self-hosted OCR to Claude Desktop and Cursor via MCP. Real config JSON and the 4 blast_ocr_* MCP tools -- no cloud API calls.",
         keywords="ocr model context protocol mcp, mcp server ocr setup guide, claude desktop ocr tool, cursor ide ocr mcp server, agentic rag mcp python",
@@ -443,7 +447,7 @@ if __name__ == "__main__":
         body_html=f"""
         <div class="direct-answer">
           <strong class="tag">How do you connect OCR to Claude Desktop or Cursor for agentic RAG?</strong>
-          <p>B.L.A.S.T. connects natively to Claude Desktop and Cursor using the <strong>Model Context Protocol (MCP)</strong>. Registering <code>blast_ocr.mcp_server</code> over stdio gives an agent structured Markdown/tables, TEDS-certified table extraction, and inline LaTeX equations without sending files to a third-party cloud API. Verified in <a href="{GH}/blast_ocr/mcp_server.py">blast_ocr/mcp_server.py</a>.</p>
+          <p>B.L.A.S.T. connects natively to Claude Desktop and Cursor using the <strong>Model Context Protocol (MCP)</strong>. Registering <code>blast_ocr.mcp_server</code> over stdio gives an agent structured Markdown/tables, TEDS-evaluable table extraction, and inline LaTeX equations without sending files to a third-party cloud API. Verified in <a href="{GH}/blast_ocr/mcp_server.py">blast_ocr/mcp_server.py</a>.</p>
         </div>
 
         <h2>Step 1: Claude Desktop configuration</h2>
@@ -485,6 +489,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 4 --
     render(
         slug="searchable-pdf-sandwich-generation",
+    status_badge="Code Read Against Source, 2026-09-10",
         title="Create Searchable Sandwich PDFs in Python",
         description="Generate searchable sandwich PDFs with an invisible text layer in Python using PyMuPDF/ReportLab. Working SearchablePDFGenerator example from the source.",
         keywords="create searchable pdf python, searchable pdf sandwich generation, invisible text layer pdf, fitz searchable pdf",
@@ -543,6 +548,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 5 --
     render(
         slug="pdf-ocr-memory-leak-prevention",
+    status_badge="Code Executed &amp; Verified, 2026-09-10",
         title="Prevent Memory Leaks in Python Batch OCR Pipelines",
         description="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 1,000 pages, measured. Real PageStreamGenerator code.",
         keywords="python ocr memory leak, pdf ocr memory leak prevention, large pdf ocr oom crash, sliding window bounded buffer python",
@@ -608,6 +614,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 6 --
     render(
         slug="local-ocr-vs-cloud-vision-cost-comparison",
+    status_badge="Figures Checked Against AWS Pricing, 2026-09-10",
         title="Local OCR vs AWS Textract: TCO & ROI Comparison",
         description="AWS Textract costs $15/1,000 pages with tables ($180K/yr at 1M pages/mo). Air-gapped B.L.A.S.T. OCR runs on your own compute. Cost breakdown vs. AWS pricing.",
         keywords="aws textract alternative, local ocr vs cloud vision cost comparison, local ocr vs cloud cost, textract pricing calculator, offline air gapped ocr",
@@ -663,6 +670,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------- Guide 7 --
     render(
         slug="distributed-ocr-worker-swarm-redis",
+    status_badge="Code Read Against Source, 2026-09-10",
         title="Scale Batch OCR with Redis Worker Swarms in Python",
         description="Scale batch OCR across nodes with B.L.A.S.T.'s Redis priority swarm: 3-tier queues, heartbeat tracking, zombie reaper. Real QueueClient code.",
         keywords="distributed ocr worker queue redis, distributed ocr worker swarm redis, redis priority queue python, batch ocr worker swarm, zombie worker failover",

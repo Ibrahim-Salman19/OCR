@@ -1,6 +1,6 @@
 # Scaling Batch OCR with Distributed Redis Worker Swarms in Python
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `distributed ocr worker queue redis`  
 **Secondary Queries**: `distributed ocr worker swarm redis`, `redis priority queue python`, `batch ocr worker swarm`, `zombie worker failover`  
 **Target Search Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search

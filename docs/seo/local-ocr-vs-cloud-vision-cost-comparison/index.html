@@ -123,41 +123,41 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / Local OCR vs Cloud Document AI: Total Cost of Ownership (TCO) & ROI Analysis</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Figures Checked Against AWS Pricing, 2026-09-10</span>
     <h1>Local OCR vs Cloud Document AI: Total Cost of Ownership (TCO) & ROI Analysis</h1>
     <p class="meta-row">Primary query: <code>aws textract alternative</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/local-ocr-vs-cloud-vision-cost-comparison.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">What is the best offline air-gapped alternative to AWS Textract?</strong>
-      <p>B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally with zero network egress and eliminates per-page API invoices. At Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages), a shop processing 1,000,000 pages/month spends $180,000/year on Textract calls alone &mdash; see the breakdown below.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">What is the best offline air-gapped alternative to AWS Textract?</strong>
+          <p>B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally with zero network egress and eliminates per-page API invoices. At Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages), a shop processing 1,000,000 pages/month spends $180,000/year on Textract calls alone &mdash; see the breakdown below.</p>
+        </div>
 
-    <h2>Annual cost breakdown by monthly document volume</h2>
-    <div class="overflow-x">
-    <table class="data">
-      <thead><tr><th>Monthly Volume</th><th>Textract (Text Only, $1.50/1k)</th><th>Textract (+Tables, $15/1k)</th><th>B.L.A.S.T. Self-Hosted (2 Nodes)</th><th>Net Annual Savings</th></tr></thead>
-      <tbody>
-        <tr><td>50,000 pages/mo</td><td>$900/yr</td><td>$9,000/yr</td><td class="good">$0 (existing nodes)</td><td class="good">$9,000 (100%)</td></tr>
-        <tr><td>200,000 pages/mo</td><td>$3,600/yr</td><td>$36,000/yr</td><td class="good">$1,200/yr</td><td class="good">$34,800 (96%)</td></tr>
-        <tr><td>1,000,000 pages/mo</td><td>$18,000/yr</td><td>$180,000/yr</td><td class="good">$3,600/yr</td><td class="good">$176,400 (98%)</td></tr>
-        <tr><td>5,000,000 pages/mo</td><td>$90,000/yr</td><td>$900,000/yr</td><td class="good">$14,400/yr</td><td class="good">$885,600 (98%)</td></tr>
-      </tbody>
-    </table>
-    </div>
-    <p class="callout">Textract rates verified against <a href="https://aws.amazon.com/textract/pricing/">AWS's public pricing page</a> (us-east-1 list price, DetectDocumentText $1.50/1,000 pages; AnalyzeDocument+Tables $15/1,000 pages). B.L.A.S.T. compute cost is an estimate for a 2-node self-hosted deployment, not a Textract-published figure -- see <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md">the full battlecard</a> for methodology.</p>
+        <h2>Annual cost breakdown by monthly document volume</h2>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Monthly Volume</th><th>Textract (Text Only, $1.50/1k)</th><th>Textract (+Tables, $15/1k)</th><th>B.L.A.S.T. Self-Hosted (2 Nodes)</th><th>Net Annual Savings</th></tr></thead>
+          <tbody>
+            <tr><td>50,000 pages/mo</td><td>$900/yr</td><td>$9,000/yr</td><td class="good">$0 (existing nodes)</td><td class="good">$9,000 (100%)</td></tr>
+            <tr><td>200,000 pages/mo</td><td>$3,600/yr</td><td>$36,000/yr</td><td class="good">$1,200/yr</td><td class="good">$34,800 (96%)</td></tr>
+            <tr><td>1,000,000 pages/mo</td><td>$18,000/yr</td><td>$180,000/yr</td><td class="good">$3,600/yr</td><td class="good">$176,400 (98%)</td></tr>
+            <tr><td>5,000,000 pages/mo</td><td>$90,000/yr</td><td>$900,000/yr</td><td class="good">$14,400/yr</td><td class="good">$885,600 (98%)</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="callout">Textract rates verified against <a href="https://aws.amazon.com/textract/pricing/">AWS's public pricing page</a> (us-east-1 list price, DetectDocumentText $1.50/1,000 pages; AnalyzeDocument+Tables $15/1,000 pages). B.L.A.S.T. compute cost is an estimate for a 2-node self-hosted deployment, not a Textract-published figure -- see <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md">the full battlecard</a> for methodology.</p>
 
-    <h2>Architectural comparison: cloud vs air-gapped local</h2>
-    <div class="overflow-x">
-    <table class="data">
-      <thead><tr><th>Dimension</th><th>AWS Textract / Azure Doc AI</th><th>B.L.A.S.T. Air-Gapped OCR</th></tr></thead>
-      <tbody>
-        <tr><td>Data egress</td><td>Transmitted to multi-tenant public cloud</td><td class="good">Zero network egress (in-VPC / on-prem)</td></tr>
-        <tr><td>Per-page cost</td><td>Metered per API call</td><td class="good">$0 marginal cost (self-hosted)</td></tr>
-        <tr><td>Rate limiting</td><td>Subject to HTTP 429 throttling</td><td class="good">Bounded only by your own hardware</td></tr>
-      </tbody>
-    </table>
-    </div>
-    
+        <h2>Architectural comparison: cloud vs air-gapped local</h2>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Dimension</th><th>AWS Textract / Azure Doc AI</th><th>B.L.A.S.T. Air-Gapped OCR</th></tr></thead>
+          <tbody>
+            <tr><td>Data egress</td><td>Transmitted to multi-tenant public cloud</td><td class="good">Zero network egress (in-VPC / on-prem)</td></tr>
+            <tr><td>Per-page cost</td><td>Metered per API call</td><td class="good">$0 marginal cost (self-hosted)</td></tr>
+            <tr><td>Rate limiting</td><td>Subject to HTTP 429 throttling</td><td class="good">Bounded only by your own hardware</td></tr>
+          </tbody>
+        </table>
+        </div>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>

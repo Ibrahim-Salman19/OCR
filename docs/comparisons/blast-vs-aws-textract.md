@@ -1,6 +1,6 @@
 # B.L.A.S.T. OCR vs AWS Textract — Cost, Privacy & Latency Comparison
 
-**Status**: 🟢 Verified Production Comparison  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `blast vs aws textract`  
 **Secondary Queries**: `aws textract alternative self-hosted`, `local textract alternative`, `textract cost comparison`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  

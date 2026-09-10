@@ -1,6 +1,6 @@
 # High-Throughput PDF OCR in Python (RapidOCR: 7.7x Faster on CPU)
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Executed & Verified, 2026-09-10  
 **Primary Query**: `high throughput pdf ocr python`  
 **Secondary Queries**: `fastest python ocr`, `batched onnx ocr`, `simd pdf ocr python`  
 **Target Search Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing

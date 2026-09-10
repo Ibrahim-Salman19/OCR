@@ -123,60 +123,60 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / High-Throughput PDF OCR in Python: RapidOCR's 7.7x Speedup Over EasyOCR</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Code Executed &amp; Verified, 2026-09-10</span>
     <h1>High-Throughput PDF OCR in Python: RapidOCR's 7.7x Speedup Over EasyOCR</h1>
     <p class="meta-row">Primary query: <code>high throughput pdf ocr python</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">What is the fastest Python OCR library for PDFs?</strong>
-      <p>B.L.A.S.T. OCR's default RapidOCR/ONNX Runtime engine processes documents at <strong>~15.3 seconds per page on commodity CPU hardware</strong> -- <strong>7.7x faster</strong> than the project's own EasyOCR/PyTorch baseline (117.8s/page) -- while cutting mean Character Error Rate by 18% (0.2338 &rarr; 0.1916) on a 14-page gold-standard corpus. No GPU throughput has been measured for this project yet; every number below is CPU-only and reproducible.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">What is the fastest Python OCR library for PDFs?</strong>
+          <p>B.L.A.S.T. OCR's default RapidOCR/ONNX Runtime engine processes documents at <strong>~15.3 seconds per page on commodity CPU hardware</strong> -- <strong>7.7x faster</strong> than the project's own EasyOCR/PyTorch baseline (117.8s/page) -- while cutting mean Character Error Rate by 18% (0.2338 &rarr; 0.1916) on a 14-page gold-standard corpus. No GPU throughput has been measured for this project yet; every number below is CPU-only and reproducible.</p>
+        </div>
 
-    <h2>CLI Quickstart</h2>
-    <pre><code># No PyPI package published yet -- this is a source install
-git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
-pip install -r requirements.txt
-python -m blast_ocr.cli large_document.pdf --formats md,docx,pdf</code></pre>
+        <h2>CLI Quickstart</h2>
+        <pre><code># No PyPI package published yet -- this is a source install
+    git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
+    pip install -r requirements.txt
+    python -m blast_ocr.cli large_document.pdf --formats md,docx,pdf</code></pre>
 
-    <h2>Production Python Implementation</h2>
-    <pre><code>from blast_ocr.pipeline import BlastPipeline
+        <h2>Production Python Implementation</h2>
+        <pre><code>from blast_ocr.pipeline import BlastPipeline
 
-# config_overrides accepts any JobConfig field
-pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr", "max_workers": 4})
+    # config_overrides accepts any JobConfig field
+    pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr", "max_workers": 4})
 
-# process_job() returns a plain dict, not an object
-result = pipeline.process_job(
-    source_path="samples/financial_report.pdf",
-    formats=["markdown", "docx", "pdf"],
-)
+    # process_job() returns a plain dict, not an object
+    result = pipeline.process_job(
+        source_path="samples/financial_report.pdf",
+        formats=["markdown", "docx", "pdf"],
+    )
 
-print(f"Status: {result['status']}")
-print(f"Pages Processed: {result['pages_processed']}")
-print(f"Generated Markdown: {result['generated_files'].get('markdown')}")</code></pre>
-    <p class="callout">Per-page latency isn't returned inline by <code>process_job()</code> -- it's measured by the reproducible benchmark harness below (<code>python -m eval.run</code>).</p>
+    print(f"Status: {result['status']}")
+    print(f"Pages Processed: {result['pages_processed']}")
+    print(f"Generated Markdown: {result['generated_files'].get('markdown')}")</code></pre>
+        <p class="callout">Per-page latency isn't returned inline by <code>process_job()</code> -- it's measured by the reproducible benchmark harness below (<code>python -m eval.run</code>).</p>
 
-    <h2>Engine bake-off (in-repo, reproducible, 14-page gold corpus)</h2>
-    <p>This compares OCR backends B.L.A.S.T. has actually shipped and measured on the same corpus -- not a claim about Docling, Marker, or AWS Textract, which have not been run against this corpus.</p>
-    <div class="overflow-x">
-    <table class="data">
-      <thead><tr><th>Metric</th><th>RapidOCR (current default)</th><th>EasyOCR (previous)</th><th>Phase-0 (Tesseract-backed)</th></tr></thead>
-      <tbody>
-        <tr><td class="good">Mean CER</td><td class="good">0.1916</td><td>0.2338</td><td>0.4992</td></tr>
-        <tr><td class="good">Mean WER</td><td class="good">0.4739</td><td>0.4968</td><td>0.7288</td></tr>
-        <tr><td class="good">Reading Order &tau;</td><td class="good">0.9758</td><td>0.9641</td><td>n/a</td></tr>
-        <tr><td class="good">Avg. CPU latency/page</td><td class="good">~15.3s</td><td>~117.8s</td><td>n/a (not measured)</td></tr>
-      </tbody>
-    </table>
-    </div>
-    <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/rapidocr_candidate.json">eval/results/rapidocr_candidate.json</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md">ADR 0005</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md">docs/BENCHMARKS_2026.md</a>. Reproduce with <code>python -m eval.run</code>.</p>
+        <h2>Engine bake-off (in-repo, reproducible, 14-page gold corpus)</h2>
+        <p>This compares OCR backends B.L.A.S.T. has actually shipped and measured on the same corpus -- not a claim about Docling, Marker, or AWS Textract, which have not been run against this corpus.</p>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Metric</th><th>RapidOCR (current default)</th><th>EasyOCR (previous)</th><th>Phase-0 (Tesseract-backed)</th></tr></thead>
+          <tbody>
+            <tr><td class="good">Mean CER</td><td class="good">0.1916</td><td>0.2338</td><td>0.4992</td></tr>
+            <tr><td class="good">Mean WER</td><td class="good">0.4739</td><td>0.4968</td><td>0.7288</td></tr>
+            <tr><td class="good">Reading Order &tau;</td><td class="good">0.9758</td><td>0.9641</td><td>n/a</td></tr>
+            <tr><td class="good">Avg. CPU latency/page</td><td class="good">~15.3s</td><td>~117.8s</td><td>n/a (not measured)</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/rapidocr_candidate.json">eval/results/rapidocr_candidate.json</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md">ADR 0005</a>, <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md">docs/BENCHMARKS_2026.md</a>. Reproduce with <code>python -m eval.run</code>.</p>
 
-    <h2>How vectorized SIMD pre-processing works</h2>
-    <ol class="steps">
-      <li><strong>Vectorize image normalization</strong> &mdash; batched NumPy/SIMD-friendly operations instead of a per-image Python loop (<code>batch_preprocessor.py</code>).</li>
-      <li><strong>Group pages by aspect ratio</strong> before batching, reducing the zero-padding FLOPs that fixed-dimension ONNX tensors otherwise require for mixed portrait/landscape/square pages.</li>
-      <li><strong>Stream pages through a bounded buffer</strong> so batching doesn't trade memory for speed (see the <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">memory leak prevention guide</a>).</li>
-    </ol>
-    
+        <h2>How vectorized SIMD pre-processing works</h2>
+        <ol class="steps">
+          <li><strong>Vectorize image normalization</strong> &mdash; batched NumPy/SIMD-friendly operations instead of a per-image Python loop (<code>batch_preprocessor.py</code>).</li>
+          <li><strong>Group pages by aspect ratio</strong> before batching, reducing the zero-padding FLOPs that fixed-dimension ONNX tensors otherwise require for mixed portrait/landscape/square pages.</li>
+          <li><strong>Stream pages through a bounded buffer</strong> so batching doesn't trade memory for speed (see the <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">memory leak prevention guide</a>).</li>
+        </ol>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>

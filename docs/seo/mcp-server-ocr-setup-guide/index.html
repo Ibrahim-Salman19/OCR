@@ -123,49 +123,49 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / Setting Up a Document OCR MCP Server for Claude Desktop & Cursor</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Code Read Against Source, 2026-09-10</span>
     <h1>Setting Up a Document OCR MCP Server for Claude Desktop & Cursor</h1>
     <p class="meta-row">Primary query: <code>ocr model context protocol mcp</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/mcp-server-ocr-setup-guide.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">How do you connect OCR to Claude Desktop or Cursor for agentic RAG?</strong>
-      <p>B.L.A.S.T. connects natively to Claude Desktop and Cursor using the <strong>Model Context Protocol (MCP)</strong>. Registering <code>blast_ocr.mcp_server</code> over stdio gives an agent structured Markdown/tables, TEDS-certified table extraction, and inline LaTeX equations without sending files to a third-party cloud API. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/mcp_server.py">blast_ocr/mcp_server.py</a>.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">How do you connect OCR to Claude Desktop or Cursor for agentic RAG?</strong>
+          <p>B.L.A.S.T. connects natively to Claude Desktop and Cursor using the <strong>Model Context Protocol (MCP)</strong>. Registering <code>blast_ocr.mcp_server</code> over stdio gives an agent structured Markdown/tables, TEDS-evaluable table extraction, and inline LaTeX equations without sending files to a third-party cloud API. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/mcp_server.py">blast_ocr/mcp_server.py</a>.</p>
+        </div>
 
-    <h2>Step 1: Claude Desktop configuration</h2>
-    <p>Add the server to <code>claude_desktop_config.json</code>:</p>
-    <ul>
-      <li><strong>macOS</strong>: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
-      <li><strong>Windows</strong>: <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
-      <li><strong>Linux</strong>: <code>~/.config/Claude/claude_desktop_config.json</code></li>
-    </ul>
-    <pre><code>{
-  "mcpServers": {
-    "blast_ocr": {
-      "command": "python",
-      "args": ["-m", "blast_ocr.mcp_server"]
-    }
-  }
-}</code></pre>
+        <h2>Step 1: Claude Desktop configuration</h2>
+        <p>Add the server to <code>claude_desktop_config.json</code>:</p>
+        <ul>
+          <li><strong>macOS</strong>: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+          <li><strong>Windows</strong>: <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+          <li><strong>Linux</strong>: <code>~/.config/Claude/claude_desktop_config.json</code></li>
+        </ul>
+        <pre><code>{
+      "mcpServers": {
+        "blast_ocr": {
+          "command": "python",
+          "args": ["-m", "blast_ocr.mcp_server"]
+        }
+      }
+    }</code></pre>
 
-    <h2>Step 2: Cursor IDE configuration</h2>
-    <p>Cursor Settings &rarr; Features &rarr; MCP Servers &rarr; <strong>Add New MCP Server</strong>:</p>
-    <ul>
-      <li><strong>Name</strong>: <code>blast_ocr</code></li>
-      <li><strong>Type</strong>: <code>command</code></li>
-      <li><strong>Command</strong>: <code>python -m blast_ocr.mcp_server</code></li>
-    </ul>
+        <h2>Step 2: Cursor IDE configuration</h2>
+        <p>Cursor Settings &rarr; Features &rarr; MCP Servers &rarr; <strong>Add New MCP Server</strong>:</p>
+        <ul>
+          <li><strong>Name</strong>: <code>blast_ocr</code></li>
+          <li><strong>Type</strong>: <code>command</code></li>
+          <li><strong>Command</strong>: <code>python -m blast_ocr.mcp_server</code></li>
+        </ul>
 
-    <h2>MCP tools exposed to AI agents</h2>
-    <p>Once registered, four deterministic tools are available (<code>blast_ocr/mcp_server.py</code>, <code>MCP_TOOLS</code>):</p>
-    <ol class="steps">
-      <li><code>blast_ocr_process(source_path, formats=["markdown"], engine="rapidocr", secure_mode=False, dewarp=False)</code> &mdash; runs the full pipeline, returns <code>generated_files</code>, a <code>text_snippet</code>, and job <code>metadata</code>.</li>
-      <li><code>blast_ocr_extract_tables(source_path)</code> &mdash; runs <code>TableExtractor</code> on a single image, returns <code>tables_markdown</code> and <code>tables_html</code>.</li>
-      <li><code>blast_ocr_extract_formulas(text)</code> &mdash; takes already-extracted plain text (not a file path), isolates inline/block LaTeX math.</li>
-      <li><code>blast_ocr_semantic_chunk(source_path, max_tokens=512, overlap_tokens=64)</code> &mdash; processes to Markdown, then splits into RAG-ready chunks.</li>
-    </ol>
-    <p class="callout">All four validate incoming paths via <code>_is_safe_mcp_path()</code>, which blocks resolved paths under system directories (<code>/etc</code>, <code>/root</code>, <code>/boot</code>, <code>/sys</code>, <code>/proc</code>, <code>/dev</code>, <code>/usr</code>, <code>/home</code>, <code>/var</code>) unless they fall inside the current working directory or the OS temp directory.</p>
-    
+        <h2>MCP tools exposed to AI agents</h2>
+        <p>Once registered, four deterministic tools are available (<code>blast_ocr/mcp_server.py</code>, <code>MCP_TOOLS</code>):</p>
+        <ol class="steps">
+          <li><code>blast_ocr_process(source_path, formats=["markdown"], engine="rapidocr", secure_mode=False, dewarp=False)</code> &mdash; runs the full pipeline, returns <code>generated_files</code>, a <code>text_snippet</code>, and job <code>metadata</code>.</li>
+          <li><code>blast_ocr_extract_tables(source_path)</code> &mdash; runs <code>TableExtractor</code> on a single image, returns <code>tables_markdown</code> and <code>tables_html</code>.</li>
+          <li><code>blast_ocr_extract_formulas(text)</code> &mdash; takes already-extracted plain text (not a file path), isolates inline/block LaTeX math.</li>
+          <li><code>blast_ocr_semantic_chunk(source_path, max_tokens=512, overlap_tokens=64)</code> &mdash; processes to Markdown, then splits into RAG-ready chunks.</li>
+        </ol>
+        <p class="callout">All four validate incoming paths via <code>_is_safe_mcp_path()</code>, which blocks resolved paths under system directories (<code>/etc</code>, <code>/root</code>, <code>/boot</code>, <code>/sys</code>, <code>/proc</code>, <code>/dev</code>, <code>/usr</code>, <code>/home</code>, <code>/var</code>) unless they fall inside the current working directory or the OS temp directory.</p>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>

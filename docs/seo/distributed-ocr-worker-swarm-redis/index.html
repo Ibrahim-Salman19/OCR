@@ -123,40 +123,40 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / Scaling Batch OCR with Distributed Redis Worker Swarms in Python</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Code Read Against Source, 2026-09-10</span>
     <h1>Scaling Batch OCR with Distributed Redis Worker Swarms in Python</h1>
     <p class="meta-row">Primary query: <code>distributed ocr worker queue redis</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/distributed-ocr-worker-swarm-redis.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">How do you scale batch OCR with Redis worker queues in Python?</strong>
-      <p>Batch OCR is scaled across nodes using B.L.A.S.T.'s distributed Redis priority swarm: 3-tier priority queues (<code>high</code>, <code>default</code>, <code>low</code>), heartbeat worker tracking, and an automated Zombie Reaper that detects crashed workers and reschedules orphaned jobs. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/swarm.py">blast_ocr/queue/swarm.py</a>.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">How do you scale batch OCR with Redis worker queues in Python?</strong>
+          <p>Batch OCR is scaled across nodes using B.L.A.S.T.'s distributed Redis priority swarm: 3-tier priority queues (<code>high</code>, <code>default</code>, <code>low</code>), heartbeat worker tracking, and an automated Zombie Reaper that detects crashed workers and reschedules orphaned jobs. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/swarm.py">blast_ocr/queue/swarm.py</a>.</p>
+        </div>
 
-    <h2>Docker Swarm Quickstart</h2>
-    <pre><code># Launch a 4-worker Redis priority swarm with automated zombie reaper
-docker compose up --scale worker=4 -d</code></pre>
+        <h2>Docker Swarm Quickstart</h2>
+        <pre><code># Launch a 4-worker Redis priority swarm with automated zombie reaper
+    docker compose up --scale worker=4 -d</code></pre>
 
-    <h2>Python enqueueing &amp; priority scheduling</h2>
-    <pre><code>import redis
-from blast_ocr.queue.client import QueueClient
+        <h2>Python enqueueing &amp; priority scheduling</h2>
+        <pre><code>import redis
+    from blast_ocr.queue.client import QueueClient
 
-# 1. Connect to Redis and wrap it in the priority-queue client
-r = redis.Redis.from_url("redis://localhost:6379/0")
-client = QueueClient(redis_client=r)
+    # 1. Connect to Redis and wrap it in the priority-queue client
+    r = redis.Redis.from_url("redis://localhost:6379/0")
+    client = QueueClient(redis_client=r)
 
-# 2. Enqueue a high-priority job (client stamps a job_id + enqueued_at)
-job_id = client.enqueue(
-    job_data={"file_path": "contracts/urgent_acquisition.pdf", "formats": ["markdown", "docx", "pdf"]},
-    priority="high",  # 'high', 'default', or 'low'
-)
-print(f"Enqueued High-Priority Job ID: {job_id}")
+    # 2. Enqueue a high-priority job (client stamps a job_id + enqueued_at)
+    job_id = client.enqueue(
+        job_data={"file_path": "contracts/urgent_acquisition.pdf", "formats": ["markdown", "docx", "pdf"]},
+        priority="high",  # 'high', 'default', or 'low'
+    )
+    print(f"Enqueued High-Priority Job ID: {job_id}")
 
-# 3. Inspect queue depth per priority tier (a worker calls pop_next_job()
-# to dequeue strictly HIGH -&gt; DEFAULT -&gt; LOW; job *state* -- queued,
-# processing, succeeded -- lives in OCRDatabase, not on the queue client)
-print(client.get_all_queue_depths())</code></pre>
-    <p class="callout">Full worker lifecycle (heartbeats, zombie detection, dead-letter quarantine) is in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/swarm.py">SwarmWorker</a> / <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/reaper.py">ZombieReaper</a> / <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/heartbeat.py">HeartbeatDaemon</a>.</p>
-    
+    # 3. Inspect queue depth per priority tier (a worker calls pop_next_job()
+    # to dequeue strictly HIGH -&gt; DEFAULT -&gt; LOW; job *state* -- queued,
+    # processing, succeeded -- lives in OCRDatabase, not on the queue client)
+    print(client.get_all_queue_depths())</code></pre>
+        <p class="callout">Full worker lifecycle (heartbeats, zombie detection, dead-letter quarantine) is in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/swarm.py">SwarmWorker</a> / <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/reaper.py">ZombieReaper</a> / <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/heartbeat.py">HeartbeatDaemon</a>.</p>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>

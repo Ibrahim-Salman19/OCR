@@ -1,6 +1,6 @@
 # How to Extract Tables from Scanned PDFs into Markdown in Python
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Executed & Verified, 2026-09-10  
 **Primary Query**: `extract tables from scanned pdf python`  
 **Secondary Queries**: `pdf table extraction markdown`, `teds table ocr`, `parse borderless tables python`  
 **Target Search Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search
@@ -9,7 +9,7 @@
 
 ## How do you extract tables from scanned PDFs into Markdown in Python?
 > **Direct Answer (50 Words)**:  
-> In Python, B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its TEDS-certified Table Evaluator. The engine identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-flavored Markdown tables or Microsoft Word (.docx) tables without LLM hallucinations. Verified in [`eval/teds_evaluator.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/teds_evaluator.py).
+> In Python, B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its built-in TEDS (Tree Edit Distance-based Similarity) evaluator. The engine identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-flavored Markdown tables or Microsoft Word (.docx) tables without LLM hallucinations. Verified in [`eval/teds_evaluator.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/teds_evaluator.py).
 
 ---
 
@@ -83,7 +83,7 @@ $$\text{TEDS}(T_a, T_b) = 1 - \frac{\text{EditDistance}(T_a, T_b)}{\max(|T_a|, |
 Where:
 - Tree nodes represent `<table>`, `<tr>`, `<td>`, `<th>`, and text contents.
 - Edit operations encompass insertion, deletion, and cell substitution.
-- A score of `1.000` indicates a perfect structural and lexical match. B.L.A.S.T. achieves a verified mean TEDS score $> 0.94$ on complex financial filings.
+- A score of `1.000` indicates a perfect structural and lexical match. **The evaluator itself is unit-tested for correctness** (`tests/test_teds_evaluator.py`), but this project has not yet recorded an end-to-end TEDS score on a real table corpus -- per [`docs/BENCHMARKS_2026.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md), treat any specific TEDS percentage for this project as aspirational until that file reports one.
 
 ---
 

@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Extract Tables from Scanned PDFs in Python</title>
-<meta name="description" content="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s TEDS-certified evaluator (mean TEDS > 0.94). Working Python code, no LLM hallucination.">
+<meta name="description" content="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s built-in TEDS evaluator. Working Python code, no LLM hallucination, no fabricated accuracy score.">
 <meta name="keywords" content="extract tables from scanned pdf python, pdf table extraction markdown, teds table ocr, parse borderless tables python">
 <meta name="author" content="Ibrahim Salman">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <link rel="canonical" href="https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python/">
 <link rel="alternate" type="text/markdown" href="https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python.md" title="Raw Markdown (LLM/agent-readable)">
 <meta property="og:title" content="Extract Tables from Scanned PDFs in Python">
-<meta property="og:description" content="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s TEDS-certified evaluator (mean TEDS > 0.94). Working Python code, no LLM hallucination.">
+<meta property="og:description" content="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s built-in TEDS evaluator. Working Python code, no LLM hallucination, no fabricated accuracy score.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python/">
 <meta property="og:site_name" content="B.L.A.S.T. OCR Engine">
@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Extract Tables from Scanned PDFs in Python">
-<meta name="twitter:description" content="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s TEDS-certified evaluator (mean TEDS > 0.94). Working Python code, no LLM hallucination.">
+<meta name="twitter:description" content="Extract tables from scanned PDFs into GitHub Markdown with B.L.A.S.T.'s built-in TEDS evaluator. Working Python code, no LLM hallucination, no fabricated accuracy score.">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
 <style>
@@ -123,58 +123,58 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / How to Extract Tables from Scanned PDFs into Markdown in Python</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Code Executed &amp; Verified, 2026-09-10</span>
     <h1>How to Extract Tables from Scanned PDFs into Markdown in Python</h1>
     <p class="meta-row">Primary query: <code>extract tables from scanned pdf python</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">How do you extract tables from scanned PDFs into Markdown in Python?</strong>
-      <p>B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its TEDS-certified Table Evaluator. It identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-Flavored Markdown or DOCX tables. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/teds_evaluator.py">eval/teds_evaluator.py</a>.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">How do you extract tables from scanned PDFs into Markdown in Python?</strong>
+          <p>B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its built-in TEDS (Tree Edit Distance-based Similarity) evaluator. It identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-Flavored Markdown or DOCX tables. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/teds_evaluator.py">eval/teds_evaluator.py</a>.</p>
+        </div>
 
-    <h2>CLI Quickstart</h2>
-    <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
-pip install -r requirements.txt
-python -m blast_ocr.cli balance_sheet.pdf --formats md</code></pre>
+        <h2>CLI Quickstart</h2>
+        <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
+    pip install -r requirements.txt
+    python -m blast_ocr.cli balance_sheet.pdf --formats md</code></pre>
 
-    <h2>Python implementation: table extraction with layout geometry</h2>
-    <pre><code>from blast_ocr.pipeline import BlastPipeline
-from eval.teds_evaluator import TEDSEvaluator
+        <h2>Python implementation: table extraction with layout geometry</h2>
+        <pre><code>from blast_ocr.pipeline import BlastPipeline
+    from eval.teds_evaluator import TEDSEvaluator
 
-# 1. Initialize pipeline with Markdown output
-pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
-result = pipeline.process_job(source_path="samples/quarterly_earnings.pdf", formats=["markdown"])
+    # 1. Initialize pipeline with Markdown output
+    pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+    result = pipeline.process_job(source_path="samples/quarterly_earnings.pdf", formats=["markdown"])
 
-# 2. Inspect extracted Markdown tables
-with open(result["generated_files"]["markdown"], "r") as f:
-    markdown_content = f.read()
-print(markdown_content)
+    # 2. Inspect extracted Markdown tables
+    with open(result["generated_files"]["markdown"], "r") as f:
+        markdown_content = f.read()
+    print(markdown_content)
 
-# 3. Optional: validate structural similarity against a reference table
-score = TEDSEvaluator.evaluate(
-    gold_html="&lt;table&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;/th&gt;&lt;th&gt;Q3&lt;/th&gt;&lt;/tr&gt;...&lt;/table&gt;",
-    hyp_html="&lt;table&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;/th&gt;&lt;th&gt;Q3&lt;/th&gt;&lt;/tr&gt;...&lt;/table&gt;",
-)
-print(f"Table TEDS Structural Accuracy: {score:.4f}")</code></pre>
+    # 3. Optional: validate structural similarity against a reference table
+    score = TEDSEvaluator.evaluate(
+        gold_html="&lt;table&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;/th&gt;&lt;th&gt;Q3&lt;/th&gt;&lt;/tr&gt;...&lt;/table&gt;",
+        hyp_html="&lt;table&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;/th&gt;&lt;th&gt;Q3&lt;/th&gt;&lt;/tr&gt;...&lt;/table&gt;",
+    )
+    print(f"Table TEDS Structural Accuracy: {score:.4f}")</code></pre>
 
-    <h2>Visual table alignment comparison</h2>
-    <div class="overflow-x">
-    <table class="data">
-      <thead><tr><th>Account Name</th><th>FY2025</th><th>FY2026</th></tr></thead>
-      <tbody>
-        <tr><td>Operating Revenue</td><td>$450,200</td><td>$612,400</td></tr>
-        <tr><td>Research &amp; Dev (SIMD)</td><td>$120,500</td><td>$145,000</td></tr>
-        <tr><td>Net Operating Income</td><td>$329,700</td><td>$467,400</td></tr>
-      </tbody>
-    </table>
-    </div>
-    <p class="callout">That's the exact GitHub-Flavored Markdown table B.L.A.S.T. writes to disk -- no post-processing needed to paste it into a README or RAG index.</p>
+        <h2>Visual table alignment comparison</h2>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Account Name</th><th>FY2025</th><th>FY2026</th></tr></thead>
+          <tbody>
+            <tr><td>Operating Revenue</td><td>$450,200</td><td>$612,400</td></tr>
+            <tr><td>Research &amp; Dev (SIMD)</td><td>$120,500</td><td>$145,000</td></tr>
+            <tr><td>Net Operating Income</td><td>$329,700</td><td>$467,400</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="callout">That's the exact GitHub-Flavored Markdown table B.L.A.S.T. writes to disk -- no post-processing needed to paste it into a README or RAG index.</p>
 
-    <h2>The TEDS protocol for table evaluation</h2>
-    <p>Plain-text OCR is scored with Character Error Rate (CER); table structure needs a different metric because row/column topology matters as much as the text. <strong>Tree Edit Distance-based Similarity (TEDS)</strong> treats each table as an HTML DOM tree and scores:</p>
-    <pre><code>TEDS(Ta, Tb) = 1 - EditDistance(Ta, Tb) / max(|Ta|, |Tb|)</code></pre>
-    <p>Tree nodes are <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>, <code>&lt;th&gt;</code>, and their text content; edit operations are insertion, deletion, and substitution. A score of <code>1.000</code> is a perfect match. B.L.A.S.T. measures a mean TEDS score &gt; 0.94 on complex financial filings.</p>
-    
+        <h2>The TEDS protocol for table evaluation</h2>
+        <p>Plain-text OCR is scored with Character Error Rate (CER); table structure needs a different metric because row/column topology matters as much as the text. <strong>Tree Edit Distance-based Similarity (TEDS)</strong> treats each table as an HTML DOM tree and scores:</p>
+        <pre><code>TEDS(Ta, Tb) = 1 - EditDistance(Ta, Tb) / max(|Ta|, |Tb|)</code></pre>
+        <p>Tree nodes are <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, <code>&lt;td&gt;</code>, <code>&lt;th&gt;</code>, and their text content; edit operations are insertion, deletion, and substitution. A score of <code>1.000</code> is a perfect match. <strong>The evaluator itself is unit-tested for correctness</strong> (<code>tests/test_teds_evaluator.py</code>), but this project has not yet recorded an end-to-end TEDS score on a real table corpus -- per <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md">docs/BENCHMARKS_2026.md</a>, treat any specific TEDS percentage for this project as aspirational until that file reports one.</p>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>

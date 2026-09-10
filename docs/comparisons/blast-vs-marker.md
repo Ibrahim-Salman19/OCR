@@ -1,6 +1,6 @@
 # B.L.A.S.T. OCR vs Marker 2 — Licensing, GPU Footprint & Memory Comparison
 
-**Status**: 🟢 Verified Production Comparison  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `blast vs marker`  
 **Secondary Queries**: `marker ocr alternative`, `marker pdf to markdown alternative`, `marker licensing commercial`  
 **Target Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search, Bing  

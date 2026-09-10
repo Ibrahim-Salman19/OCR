@@ -1,6 +1,6 @@
 # How to Create Searchable Sandwich PDFs with Invisible Text in Python
 
-**Status**: 🟢 Verified Production Guide  
+**Status**: 🟡 Code Read Against Source, 2026-09-10  
 **Primary Query**: `create searchable pdf python`  
 **Secondary Queries**: `searchable pdf sandwich generation`, `searchable pdf sandwich reportlab pymupdf`, `invisible text layer pdf`, `fitz searchable pdf`  
 **Target Search Engines**: Google Search, Perplexity AI, ChatGPT Search, Claude Search

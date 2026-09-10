@@ -123,51 +123,51 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / How to Prevent Memory Leaks in Python Batch OCR Pipelines</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Code Executed &amp; Verified, 2026-09-10</span>
     <h1>How to Prevent Memory Leaks in Python Batch OCR Pipelines</h1>
     <p class="meta-row">Primary query: <code>python ocr memory leak</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">How can I prevent memory leaks when running batch OCR in Python?</strong>
-      <p>Memory leaks in Python batch OCR are prevented with a <strong>sliding-window bounded streaming buffer</strong> and scratch-file recycling. B.L.A.S.T. measures a memory growth slope of &le; 0.0002 MB/page across a 1,000-page continuous streaming test, capping RAM at a fixed ceiling regardless of document length. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a>.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">How can I prevent memory leaks when running batch OCR in Python?</strong>
+          <p>Memory leaks in Python batch OCR are prevented with a <strong>sliding-window bounded streaming buffer</strong> and scratch-file recycling. B.L.A.S.T. measures a memory growth slope of &le; 0.0002 MB/page across a 1,000-page continuous streaming test, capping RAM at a fixed ceiling regardless of document length. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a>.</p>
+        </div>
 
-    <h2>CLI Quickstart</h2>
-    <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
-pip install -r requirements.txt
-# Bounded-memory streaming is the pipeline's default behavior, not an opt-in flag
-python -m blast_ocr.cli large_book_1000_pages.pdf --formats md</code></pre>
+        <h2>CLI Quickstart</h2>
+        <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
+    pip install -r requirements.txt
+    # Bounded-memory streaming is the pipeline's default behavior, not an opt-in flag
+    python -m blast_ocr.cli large_book_1000_pages.pdf --formats md</code></pre>
 
-    <h2>Python implementation: sliding-window bounded buffer</h2>
-    <p>The recommended path is <code>BlastPipeline.process_job()</code> &mdash; it renders and OCRs pages through the windowed generator below internally, so no extra flags are needed for the bounded-memory guarantee:</p>
-    <pre><code>from blast_ocr.pipeline import BlastPipeline
+        <h2>Python implementation: sliding-window bounded buffer</h2>
+        <p>The recommended path is <code>BlastPipeline.process_job()</code> &mdash; it renders and OCRs pages through the windowed generator below internally, so no extra flags are needed for the bounded-memory guarantee:</p>
+        <pre><code>from blast_ocr.pipeline import BlastPipeline
 
-pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
-result = pipeline.process_job(source_path="massive_archive.pdf", formats=["markdown"])
-print(f"{result['pages_processed']} pages processed, status={result['status']}")</code></pre>
-    <p>For the mechanism itself: <code>PageStreamGenerator</code> renders pages in fixed-size windows (default 8), yields each window as a list of <code>(page_number, rendered_image_path)</code> tuples, and deterministically unlinks that window's scratch files once the caller moves past it &mdash; so RSS is bounded by one window's worth of rendered pages, not the whole document:</p>
-    <pre><code>from blast_ocr.core.streaming import PageStreamGenerator
+    pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+    result = pipeline.process_job(source_path="massive_archive.pdf", formats=["markdown"])
+    print(f"{result['pages_processed']} pages processed, status={result['status']}")</code></pre>
+        <p>For the mechanism itself: <code>PageStreamGenerator</code> renders pages in fixed-size windows (default 8), yields each window as a list of <code>(page_number, rendered_image_path)</code> tuples, and deterministically unlinks that window's scratch files once the caller moves past it &mdash; so RSS is bounded by one window's worth of rendered pages, not the whole document:</p>
+        <pre><code>from blast_ocr.core.streaming import PageStreamGenerator
 
-with PageStreamGenerator("massive_archive.pdf", chunk_size=16) as stream:
-    for window in stream:  # each window: List[Tuple[int, Path]]
-        for page_number, rendered_page_path in window:
-            print(f"Rendered page {page_number} -&gt; {rendered_page_path}")
-        # this window's scratch files are purged automatically once the
-        # loop moves past it</code></pre>
+    with PageStreamGenerator("massive_archive.pdf", chunk_size=16) as stream:
+        for window in stream:  # each window: List[Tuple[int, Path]]
+            for page_number, rendered_page_path in window:
+                print(f"Rendered page {page_number} -&gt; {rendered_page_path}")
+            # this window's scratch files are purged automatically once the
+            # loop moves past it</code></pre>
 
-    <h2>The memory slope leak regression</h2>
-    <div class="overflow-x">
-    <table class="data">
-      <thead><tr><th>Pipeline Configuration</th><th>100 Pages RAM</th><th>500 Pages RAM</th><th>1,000 Pages RAM</th><th>OOM Failure Mode</th></tr></thead>
-      <tbody>
-        <tr><td class="good">B.L.A.S.T. Bounded Buffer</td><td class="good">48.2 MB</td><td class="good">51.4 MB</td><td class="good">52.1 MB</td><td class="good">Zero Crashes (Stable)</td></tr>
-        <tr><td>PyTesseract / C++ Pipe</td><td>92.0 MB</td><td>318.0 MB</td><td>740.0 MB</td><td>Pod Killed (OOMKilled)</td></tr>
-        <tr><td>JaidedAI EasyOCR (Torch)</td><td>450.0 MB</td><td>1,820.0 MB</td><td>Crashes</td><td>VRAM Exhaustion</td></tr>
-      </tbody>
-    </table>
-    </div>
-    <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a> and <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/stress_report.json">eval/results/stress_report.json</a> (1,000-page streaming stress run, 0.005 MB/page fail threshold).</p>
-    
+        <h2>The memory slope leak regression</h2>
+        <div class="overflow-x">
+        <table class="data">
+          <thead><tr><th>Pipeline Configuration</th><th>100 Pages RAM</th><th>500 Pages RAM</th><th>1,000 Pages RAM</th><th>OOM Failure Mode</th></tr></thead>
+          <tbody>
+            <tr><td class="good">B.L.A.S.T. Bounded Buffer</td><td class="good">48.2 MB</td><td class="good">51.4 MB</td><td class="good">52.1 MB</td><td class="good">Zero Crashes (Stable)</td></tr>
+            <tr><td>PyTesseract / C++ Pipe</td><td>92.0 MB</td><td>318.0 MB</td><td>740.0 MB</td><td>Pod Killed (OOMKilled)</td></tr>
+            <tr><td>JaidedAI EasyOCR (Torch)</td><td>450.0 MB</td><td>1,820.0 MB</td><td>Crashes</td><td>VRAM Exhaustion</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a> and <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/stress_report.json">eval/results/stress_report.json</a> (1,000-page streaming stress run, 0.005 MB/page fail threshold).</p>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>

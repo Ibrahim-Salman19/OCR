@@ -123,41 +123,41 @@
 <main>
   <div class="wrap">
     <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / How to Create Searchable Sandwich PDFs with Invisible Text in Python</p>
-    <span class="status-badge">Verified Production Guide</span>
+    <span class="status-badge">Code Read Against Source, 2026-09-10</span>
     <h1>How to Create Searchable Sandwich PDFs with Invisible Text in Python</h1>
     <p class="meta-row">Primary query: <code>create searchable pdf python</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/searchable-pdf-sandwich-generation.md">raw markdown</a></p>
     
-    <div class="direct-answer">
-      <strong class="tag">How do you create a searchable PDF sandwich with invisible text in Python?</strong>
-      <p>B.L.A.S.T. generates searchable PDF sandwiches with <code>SearchablePDFGenerator</code>, pairing PyMuPDF (<code>fitz</code>) with a ReportLab fallback. It overlays recognized text as an invisible font layer exactly over the raster image coordinates, preserving 100% visual fidelity while enabling search, highlighting, and copy-paste. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/core/searchable_pdf.py">blast_ocr/core/searchable_pdf.py</a>.</p>
-    </div>
+        <div class="direct-answer">
+          <strong class="tag">How do you create a searchable PDF sandwich with invisible text in Python?</strong>
+          <p>B.L.A.S.T. generates searchable PDF sandwiches with <code>SearchablePDFGenerator</code>, pairing PyMuPDF (<code>fitz</code>) with a ReportLab fallback. It overlays recognized text as an invisible font layer exactly over the raster image coordinates, preserving 100% visual fidelity while enabling search, highlighting, and copy-paste. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/core/searchable_pdf.py">blast_ocr/core/searchable_pdf.py</a>.</p>
+        </div>
 
-    <h2>CLI Quickstart</h2>
-    <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
-pip install -r requirements.txt
-python -m blast_ocr.cli scanned_contract.pdf --formats pdf</code></pre>
+        <h2>CLI Quickstart</h2>
+        <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
+    pip install -r requirements.txt
+    python -m blast_ocr.cli scanned_contract.pdf --formats pdf</code></pre>
 
-    <h2>Python implementation: exact sandwich geometry</h2>
-    <p>The high-level path is <code>pipeline.process_job(..., formats=["pdf"])</code> &mdash; see the <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/">high-throughput guide</a>. To call the sandwich generator directly with your own OCR detections:</p>
-    <pre><code>from blast_ocr.core.searchable_pdf import SearchablePDFGenerator
+        <h2>Python implementation: exact sandwich geometry</h2>
+        <p>The high-level path is <code>pipeline.process_job(..., formats=["pdf"])</code> &mdash; see the <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/">high-throughput guide</a>. To call the sandwich generator directly with your own OCR detections:</p>
+        <pre><code>from blast_ocr.core.searchable_pdf import SearchablePDFGenerator
 
-# create_from_page_images() takes matching lists of page images and
-# per-page OCR detections, and picks PyMuPDF if available, else ReportLab
-output_pdf_path = SearchablePDFGenerator.create_from_page_images(
-    page_images=["samples/scanned_contract_p1.png"],
-    page_ocr_results=[
-        {
-            "details": [
-                {"bbox": [100, 150, 420, 175], "text": "CONFIDENTIAL SETTLEMENT AGREEMENT", "confidence": 0.98}
-            ]
-        }
-    ],
-    output_pdf_path="output/searchable_contract.pdf",
-    title="Settlement Agreement",
-)
-print(f"Searchable PDF generated at: {output_pdf_path}")</code></pre>
-    <p class="callout"><code>page_ocr_results[i]["details"]</code> is one of two payload shapes <code>SearchablePDFGenerator</code> accepts natively (<code>_extract_text_boxes</code>) &mdash; a flat list of <code>{bbox, text, confidence}</code> items per page.</p>
-    
+    # create_from_page_images() takes matching lists of page images and
+    # per-page OCR detections, and picks PyMuPDF if available, else ReportLab
+    output_pdf_path = SearchablePDFGenerator.create_from_page_images(
+        page_images=["samples/scanned_contract_p1.png"],
+        page_ocr_results=[
+            {
+                "details": [
+                    {"bbox": [100, 150, 420, 175], "text": "CONFIDENTIAL SETTLEMENT AGREEMENT", "confidence": 0.98}
+                ]
+            }
+        ],
+        output_pdf_path="output/searchable_contract.pdf",
+        title="Settlement Agreement",
+    )
+    print(f"Searchable PDF generated at: {output_pdf_path}")</code></pre>
+        <p class="callout"><code>page_ocr_results[i]["details"]</code> is one of two payload shapes <code>SearchablePDFGenerator</code> accepts natively (<code>_extract_text_boxes</code>) &mdash; a flat list of <code>{bbox, text, confidence}</code> items per page.</p>
+        
     <div class="more-guides">
   <h2>More B.L.A.S.T. OCR guides</h2>
   <ul>
