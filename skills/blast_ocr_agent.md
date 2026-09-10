@@ -35,14 +35,13 @@ An agent can invoke B.L.A.S.T. OCR via 4 primary modalities:
 
 ### Modality A: Python SDK (In-Process)
 ```python
-from blast_ocr.pipeline import OCRPipeline
+from blast_ocr.pipeline import BlastPipeline
 
 # 1-Line In-Process Processing
-pipeline = OCRPipeline(engine="rapidocr", secure_mode=True)
-result = pipeline.process(
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr", "secure_mode": True})
+result = pipeline.process_job(
     source_path="/path/to/document.pdf",
     formats=["markdown", "docx", "pdf"],
-    dewarp=False
 )
 
 markdown_text = result["text"]

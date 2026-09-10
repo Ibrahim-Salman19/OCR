@@ -61,7 +61,7 @@ Unlike legacy OCR tools (Tesseract, EasyOCR) that are slow, single-threaded, and
   - *What they buy:* 100% offline local execution, SHA-256 integrity audits, PII redaction, air-gapped enterprise licensing.
 
 ### 4. Business Model Logic
-1. **Open-Core Engine:** Core ONNX/RapidOCR engine, single-node CLI, Streamlit UI, and MCP server are permissive Apache-2.0 / MIT to maximize developer velocity and bottom-up developer adoption.
+1. **Open-Core Engine:** Core ONNX/RapidOCR engine, single-node CLI, Streamlit UI, and MCP server are permissively MIT-licensed to maximize developer velocity and bottom-up developer adoption.
 2. **Commercial Commercialization:**
    - *Enterprise Cluster License ($12,000–$48,000/yr):* Multi-node Redis priority queue swarm, automated dead-worker zombie reaper, distributed deduplication locks, S3/MinIO concurrent multipart uploader.
    - *Air-Gapped Compliance License ($25,000–$75,000/yr):* Offline air-gapped binary distribution, specialized Urdu/Arabic custom model training, SLA support, and verified zero-telemetry certification.
@@ -133,7 +133,7 @@ Scored against the 17-section fCMO marketing maturity rubric (0–5 scale):
 ### Time-to-First-OCR Target: < 60 Seconds
 1. **Terminal CLI Path:**
    ```bash
-   pip install blast-ocr
+   pip install -r requirements.txt
    blast-ocr scan sample.pdf --formats markdown,docx
    ```
    Outputs formatted Markdown and DOCX with table structures intact in under 2 seconds.
@@ -167,7 +167,7 @@ Scored against the 17-section fCMO marketing maturity rubric (0–5 scale):
 
 | Tier | Price | Target Audience | Features |
 |---|---|---|---|
-| **Community Open Core** | **$0 (Apache-2.0)** | Solo Devs, Academics, Hackers | Full ONNX engine, CLI, Streamlit UI, MCP server, single-node batching. |
+| **Community Open Core** | **$0 (MIT)** | Solo Devs, Academics, Hackers | Full ONNX engine, CLI, Streamlit UI, MCP server, single-node batching. |
 | **Developer Pro** | **$49 / month** | Small AI Startups & Boutiques | Priority bug fixes, pre-built high-accuracy Urdu/Arabic weights, cloud sync recipes. |
 | **Cluster Swarm** | **$999 / month** | Mid-Market & Scaleups | Redis 3-tier priority swarm, zombie reaper, MinIO/S3 concurrent uploader, multi-GPU bucketing. |
 | **Air-Gapped Enterprise** | **$24,000+ / yr** | Banks, Defense, Healthcare | 100% offline air-gapped installation, custom font training, 24/7 SLA, zero-telemetry certification. |

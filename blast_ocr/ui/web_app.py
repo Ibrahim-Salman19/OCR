@@ -261,12 +261,12 @@ _SEO_META_TAGS = """<div id="seo-metadata" style="display:none;" aria-hidden="tr
         {
           "@type": "HowToStep",
           "name": "Initialize Pipeline",
-          "text": "Instantiate OCRPipeline(engine='rapidocr', secure_mode=True)"
+          "text": "Instantiate BlastPipeline(config_overrides={'ocr_engine': 'rapidocr', 'secure_mode': True})"
         },
         {
           "@type": "HowToStep",
           "name": "Execute Document Processing",
-          "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])"
+          "text": "Call pipeline.process_job(source_path='doc.pdf', formats=['markdown', 'pdf'])"
         }
       ]
     },

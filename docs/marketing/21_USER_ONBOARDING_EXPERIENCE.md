@@ -79,7 +79,7 @@ When opening `http://localhost:8501` for the first time, users encounter an intu
 
 ```markdown
 ### Your B.L.A.S.T. Document Sovereignty Checklist:
-- [x] Step 1: Install B.L.A.S.T. Core (`pip install blast-ocr`)
+- [x] Step 1: Install B.L.A.S.T. Core (`pip install -r requirements.txt`)
 - [ ] Step 2: Parse your first multi-page PDF locally
 - [ ] Step 3: Inspect Markdown table extraction fidelity
 - [ ] Step 4: Connect B.L.A.S.T. to your IDE or LLM via Model Context Protocol (MCP)

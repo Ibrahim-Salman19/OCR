@@ -33,7 +33,7 @@ Video is the highest-conversion distribution medium for developer tools when exe
 | **0:45 - 0:58** | **Architectural Pillar 3: LaTeX Math Parsing** | A camera zoom on a physics textbook page with double integrals and square roots. KaTeX equations render instantly in real-time in an Obsidian note preview. | VO: "Textbook equations and scientific research papers are automatically extracted into clean inline and display LaTeX syntax." | `LaTeX Formula Extraction` / `$...$ and $$...$$ KaTeX Markdown` |
 | **0:58 - 1:12** | **Architectural Pillar 4: Native MCP & AI Agent RAG** | Cursor IDE and Claude Desktop UI appears. User asks Claude: @blast-ocr process this archive. B.L.A.S.T. stdio MCP server executes tools `blast_ocr_process` and returns structured JSON chunks. | VO: "Connect B.L.A.S.T. directly to Claude Desktop, Cursor, or your LangChain and LlamaIndex agents with native Model Context Protocol support." | `Native MCP Server (mcp.json)` / `Zero-Hallucination Agentic RAG` |
 | **1:12 - 1:22** | **Privacy & Sandboxing** | Vault lock animation with security badges: HIPAA, GDPR, SOC 2, Air-Gapped. PII redactor automatically blacks out credit cards and SSNs. | VO: "Zero cloud telemetry. 100% offline. Automated 8-class forensic PII redaction ensures your confidential records never leave your infrastructure." | `100% Offline • Zero Telemetry` / `Forensic 8-Class PII Masking` |
-| **1:22 - 1:30** | **Call to Action (CTA)** | Clean terminal prompt showing pip install command and GitHub repo star animation. | VO: "Take back your document sovereignty. Pip install blast-ocr, clone the repo on GitHub, or launch the interactive live demo today." | `pip install blast-ocr` / `github.com/Ibrahim-Salman19/OCR` |
+| **1:22 - 1:30** | **Call to Action (CTA)** | Clean terminal prompt showing pip install command and GitHub repo star animation. | VO: "Take back your document sovereignty. Pip install blast-ocr, clone the repo on GitHub, or launch the interactive live demo today." | `pip install -r requirements.txt` / `github.com/Ibrahim-Salman19/OCR` |
 
 ---
 
@@ -54,7 +54,7 @@ Video is the highest-conversion distribution medium for developer tools when exe
 #### 0:30 - 1:15 | Configuring the MCP Server in Claude Desktop
 ```
 [Visual]: Developer opens terminal and types:
-pip install blast-ocr
+pip install -r requirements.txt
 
 Developer opens ~/Library/Application Support/Claude/claude_desktop_config.json
 Adds the configuration block:
@@ -149,7 +149,7 @@ print(f"Loaded {len(docs)} hierarchy-aware chunks with KaTeX math!")
 [0:22 - 0:30] | THE CALL TO ACTION
 [VISUAL]: B.L.A.S.T. logo pulses with electric blue neon. GitHub repository page shows 912/914 passing tests badge.
 [VERBAL]: "100% free and MIT licensed. Link in bio to star the repo and try the live demo!"
-[TEXT OVERLAY]: "Link in Bio • pip install blast-ocr 🚀"
+[TEXT OVERLAY]: "Link in Bio • pip install -r requirements.txt 🚀"
 ```
 
 ---

@@ -135,7 +135,7 @@ The structured data is embedded directly into the live DOM via Streamlit (`blast
         {
           "@type": "HowToStep",
           "name": "Install B.L.A.S.T. OCR",
-          "text": "Run pip install blast-ocr in your terminal environment."
+          "text": "Run pip install -r requirements.txt in your terminal environment."
         },
         {
           "@type": "HowToStep",

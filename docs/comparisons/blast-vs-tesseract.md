@@ -65,18 +65,14 @@ raw_text = pytesseract.image_to_string(image)  # No layout, no tables, slow
 # ==============================================================================
 # AFTER: B.L.A.S.T. High-Throughput Pipeline (Structured, Fast, Zero-Leak)
 # ==============================================================================
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
 # Zero external OS packages required — pure self-contained ONNX Runtime
-pipeline = BLASTPipeline(
-    formats=["markdown", "docx", "pdf"],
-    priority="high",
-    batch_size=16
-)
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
 
-result = pipeline.process_document("contract.pdf")
-print(result.generated_files["markdown"])  # High-fidelity Markdown with tables!
-print(result.generated_files["pdf"])       # Searchable dual-layer sandwich PDF
+result = pipeline.process_job(source_path="contract.pdf", formats=["markdown", "docx", "pdf"])
+print(result["generated_files"]["markdown"])  # High-fidelity Markdown with tables!
+print(result["generated_files"]["pdf"])       # Searchable dual-layer sandwich PDF
 ```
 
 ---

@@ -17,8 +17,8 @@ Where:
 - **$C$ (Probability of Conversion)**: Target is $> 15\%$ developer activation rate.
 - **$m$ (Motivation of the User - Weight 4)**: High-intent engineers looking to eliminate cloud OCR bills or container OOM crashes.
 - **$v$ (Clarity of Value Proposition - Weight 3)**: 29.1 pages/second on CPU + 0.0002 MB/page memory slope.
-- **$i$ (Incentive - Weight 2)**: Free Apache 2.0 open-source core, instant local execution.
-- **$f$ (Friction - Weight 2)**: Reduced to a single `pip install blast-ocr` command.
+- **$i$ (Incentive - Weight 2)**: Free MIT-licensed open-source core, instant local execution.
+- **$f$ (Friction - Weight 2)**: Reduced to a single `pip install -r requirements.txt` command.
 - **$a$ (Anxiety - Weight 2)**: Neutralized by 912/914 passing tests (2 skipped, 0 failed) and air-gapped zero-egress privacy.
 
 ---
@@ -44,7 +44,7 @@ Where:
 - **Hypothesis**: Placing an executable 1-line quickstart command directly above the fold will increase Time-to-First-OCR activation by 28%.
 - **Control**: Headline followed by paragraph description and feature bullets before installation instructions.
 - **Variant A**: Headline followed immediately by an ASCII code box:  
-  `pip install blast-ocr && blast-ocr --sample --formats markdown docx`
+  `pip install -r requirements.txt && blast-ocr --sample --formats markdown docx`
 - **Primary Metric**: Copy button clicks on installation code snippet.
 - **Minimum Sample Size**: 1,200 unique visitors per variant.
 

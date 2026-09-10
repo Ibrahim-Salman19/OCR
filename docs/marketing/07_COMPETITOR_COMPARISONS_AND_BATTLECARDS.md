@@ -8,7 +8,7 @@
 
 ## 📊 1. Master Architectural Comparison Matrix
 
-All empirical benchmark numbers are verified against [`docs/BENCHMARKS_2026.md`](file:///mnt/d/code/Projects/Python/OCR_Book/docs/BENCHMARKS_2026.md) on the gold-standard 128-page enterprise stress corpus:
+All empirical benchmark numbers are verified against [`docs/BENCHMARKS_2026.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/BENCHMARKS_2026.md) on the gold-standard 128-page enterprise stress corpus:
 
 | Dimension / Metric | B.L.A.S.T. OCR Engine | Legacy Tesseract v5 | JaidedAI EasyOCR | AWS Textract | IBM Docling | Marker 2 |
 |---|---|---|---|---|---|---|

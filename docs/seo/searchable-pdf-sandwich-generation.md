@@ -9,39 +9,42 @@
 
 ## How do you create a searchable PDF sandwich with invisible text in Python?
 > **Direct Answer (51 Words)**:  
-> B.L.A.S.T. generates searchable PDF sandwiches using `SearchablePDFGenerator`, pairing PyMuPDF with ReportLab. It overlays recognized text as an invisible font layer exactly over corresponding raster image coordinates. The output preserves 100% original visual fidelity while enabling full text search, highlighting, and copy-pasting in standard PDF readers. Verified in [`blast_ocr/core/pdf_generator.py`](file:///mnt/d/code/Projects/Python/OCR_Book/blast_ocr/core/pdf_generator.py).
+> B.L.A.S.T. generates searchable PDF sandwiches using `SearchablePDFGenerator`, pairing PyMuPDF (`fitz`) with a ReportLab fallback. It overlays recognized text as an invisible font layer exactly over corresponding raster image coordinates. The output preserves 100% original visual fidelity while enabling full text search, highlighting, and copy-pasting in standard PDF readers. Verified in [`blast_ocr/core/searchable_pdf.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/core/searchable_pdf.py).
 
 ---
 
-## ⚡ 1-Line CLI Quickstart
+## ⚡ CLI Quickstart
 ```bash
-# Convert a scanned PDF or TIFF into a fully searchable PDF sandwich
-blast-ocr scanned_contract.pdf --formats pdf
+git clone https://github.com/Ibrahim-Salman19/OCR.git && cd OCR
+pip install -r requirements.txt
+# Convert a scanned PDF into a fully searchable PDF sandwich
+python -m blast_ocr.cli scanned_contract.pdf --formats pdf
 ```
 
 ---
 
 ## 🐍 Python Implementation: Exact Sandwich Geometry
 
+The high-level way to get a searchable PDF is `pipeline.process_job(..., formats=["pdf"])`
+(see the [high-throughput guide](/OCR/docs/seo/high-throughput-pdf-ocr-python/)). To call the
+sandwich generator directly with your own OCR detections:
+
 ```python
-from blast_ocr.core.pdf_generator import SearchablePDFGenerator
-import pymupdf as fitz
+from blast_ocr.core.searchable_pdf import SearchablePDFGenerator
 
-# 1. Initialize the Searchable PDF Generator
-generator = SearchablePDFGenerator()
-
-# 2. Reconstruct Searchable PDF with Invisible Text Layer
-output_pdf_path = generator.create_searchable_pdf(
-    source_pdf="samples/scanned_contract.pdf",
-    output_path="output/searchable_contract.pdf",
-    ocr_results=[
+# create_from_page_images() takes matching lists of page images and per-page
+# OCR detections, and picks PyMuPDF if available, else falls back to ReportLab
+output_pdf_path = SearchablePDFGenerator.create_from_page_images(
+    page_images=["samples/scanned_contract_p1.png"],
+    page_ocr_results=[
         {
-            "page_num": 0,
-            "boxes": [
-                {"bbox": [100, 150, 120, 300], "text": "CONFIDENTIAL SETTLEMENT AGREEMENT", "confidence": 0.98}
+            "details": [
+                {"bbox": [100, 150, 420, 175], "text": "CONFIDENTIAL SETTLEMENT AGREEMENT", "confidence": 0.98}
             ]
         }
-    ]
+    ],
+    output_pdf_path="output/searchable_contract.pdf",
+    title="Settlement Agreement",
 )
 
 print(f"Searchable PDF generated at: {output_pdf_path}")
@@ -61,12 +64,12 @@ print(f"Searchable PDF generated at: {output_pdf_path}")
     {
       "@type": "HowToStep",
       "name": "Install B.L.A.S.T.",
-      "text": "pip install blast-ocr"
+      "text": "pip install -r requirements.txt"
     },
     {
       "@type": "HowToStep",
       "name": "Run PDF Sandwich Command",
-      "text": "blast-ocr input.pdf --formats pdf"
+      "text": "python -m blast_ocr.cli input.pdf --formats pdf"
     }
   ]
 }

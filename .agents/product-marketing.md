@@ -132,7 +132,7 @@ useful for messaging testing, label it explicitly as hypothetical (e.g. "Illustr
 
 ## Goals
 **Business goal:** Establish B.L.A.S.T. OCR as the gold-standard, self-hosted document intelligence engine for Agentic RAG and enterprise document workflows.
-**Conversion action:** GitHub star/fork, `pip install blast-ocr`, integrate via MCP or Python SDK, deploy Docker swarm.
+**Conversion action:** GitHub star/fork, `pip install -r requirements.txt`, integrate via MCP or Python SDK, deploy Docker swarm.
 **Current metrics:** 912/914 tests passed (2 skipped, 0 failed), 0.1916 CER on gold standard corpus.
 
 ## Creator & Engineering Authority

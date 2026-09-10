@@ -26,7 +26,7 @@ For over 15 years, `pytesseract` was the default answer for Python OCR. However,
 
 ## ⚡ Why B.L.A.S.T. is the Drop-In Modern Replacement
 
-- **100% Self-Contained**: Installs via `pip install blast-ocr` with pre-compiled ONNX Runtime binaries. Zero OS package manager commands needed.
+- **100% Self-Contained**: Installs via `pip install -r requirements.txt` with pre-compiled ONNX Runtime binaries. Zero OS package manager commands needed.
 - **16x Faster Throughput**: 29.1 pages/second vs Tesseract's 1.8 pages/second.
 - **32% Lower Error Rate**: 0.1916 Character Error Rate on challenging scans.
 - **Native Dual-Layer PDF**: Generates searchable sandwich PDFs directly without calling OCRmyPDF.
@@ -40,19 +40,19 @@ For over 15 years, `pytesseract` was the default answer for Python OCR. However,
 ```bash
 # Clean your Dockerfile: remove heavy OS packages
 # RUN apt-get update && apt-get install -y tesseract-ocr libtesseract-dev  <-- DELETE THIS!
-pip install blast-ocr
+pip install -r requirements.txt
 ```
 
 ### 2. Update Python Code
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
 # Initialize the self-hosted pipeline
-pipeline = BLASTPipeline(formats=["markdown", "docx", "pdf"], priority="high")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
 
 # Process any PDF, PPTX, or image file
-result = pipeline.process_document("contract.pdf")
-print(result.generated_files["markdown"])
+result = pipeline.process_job(source_path="contract.pdf", formats=["markdown", "docx", "pdf"])
+print(result["generated_files"]["markdown"])
 ```
 
 ---

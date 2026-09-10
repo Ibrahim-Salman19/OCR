@@ -23,7 +23,7 @@
 ## 📦 Tier Details & Technical Specifications
 
 ### 1. Community Edition (Open Source)
-- **Price**: $0 (Free forever under Apache 2.0 / MIT)
+- **Price**: $0 (Free forever under the MIT License)
 - **Concurrency**: Local single-instance execution
 - **Throughput**: 29.1 Pages/Second on commodity CPU hardware
 - **Memory Safety**: Verified $\le 0.0002\text{ MB/page}$ memory growth slope
@@ -35,7 +35,7 @@
   - TEDS-certified Table Evaluator & Formula/LaTeX Extractor
   - Sovereign Streamlit Mission Control GUI (`blast-ocr-ui`)
   - 8-class forensic PII redaction
-- **How to Get**: Run `pip install blast-ocr`
+- **How to Get**: Run `pip install -r requirements.txt`
 
 ### 2. Pro Developer
 - **Price**: $199 / month (billed monthly) or $1,990 / year (save 17%)

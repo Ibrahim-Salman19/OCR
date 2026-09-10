@@ -26,11 +26,11 @@ blast-ocr scan.jpg --formats pdf
 ## 🐍 Python Implementation
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-pipeline = BLASTPipeline(formats=["pdf"])
-result = pipeline.process_document("receipt.jpg")
-print(f"Searchable PDF saved to: {result.generated_files['pdf']}")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="receipt.jpg", formats=["pdf"])
+print(f"Searchable PDF saved to: {result["generated_files"]['pdf']}")
 ```
 
 ---

@@ -26,11 +26,11 @@ blast-ocr scanned_contract.pdf --formats docx
 ## 🐍 Python Implementation
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-pipeline = BLASTPipeline(formats=["docx"], priority="high")
-result = pipeline.process_document("scanned_contract.pdf")
-print(f"Editable Word Document generated at: {result.generated_files['docx']}")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="scanned_contract.pdf", formats=["docx"])
+print(f"Editable Word Document generated at: {result["generated_files"]['docx']}")
 ```
 
 ---

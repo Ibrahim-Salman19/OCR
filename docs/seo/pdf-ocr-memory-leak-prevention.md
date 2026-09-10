@@ -9,36 +9,49 @@
 
 ## How can I prevent memory leaks when running batch OCR in Python?
 > **Direct Answer (54 Words)**:  
-> Memory leaks in Python batch OCR are prevented by implementing a **sliding-window bounded streaming buffer** and process recycling. B.L.A.S.T. enforces a verified memory growth slope of $\le 0.0002\text{ MB/page}$ across 10,000 continuous pages, capping RAM usage at a fixed ceiling regardless of document length to eliminate container out-of-memory crashes. Verified in [`eval/stress_test.py`](file:///mnt/d/code/Projects/Python/OCR_Book/eval/stress_test.py).
+> Memory leaks in Python batch OCR are prevented by implementing a **sliding-window bounded streaming buffer** and process recycling. B.L.A.S.T. enforces a verified memory growth slope of $\le 0.0002\text{ MB/page}$ across 10,000 continuous pages, capping RAM usage at a fixed ceiling regardless of document length to eliminate container out-of-memory crashes. Verified in [`eval/stress_test.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py).
 
 ---
 
-## ⚡ 1-Line CLI Quickstart
+## ⚡ CLI Quickstart
 ```bash
-# Process a 1,000-page archive in constant 50MB RAM
-blast-ocr large_book_1000_pages.pdf --streaming --buffer-size 16
+git clone https://github.com/Ibrahim-Salman19/OCR.git && cd OCR
+pip install -r requirements.txt
+# Bounded-memory streaming is the pipeline's default behavior, not an opt-in flag
+python -m blast_ocr.cli large_book_1000_pages.pdf --formats md
 ```
 
 ---
 
 ## 🐍 Python Implementation: Sliding-Window Bounded Buffer
 
+The recommended path is `BlastPipeline.process_job()` -- it renders and OCRs pages through
+the windowed generator below internally, so no extra flags are needed for the bounded-memory
+guarantee:
+
 ```python
-from blast_ocr.core.streaming import SlidingWindowBuffer
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-# Initialize pipeline with bounded streaming memory configuration
-pipeline = BLASTPipeline(
-    streaming=True,
-    max_memory_buffer_mb=64,  # Strictly capped RAM ceiling
-    formats=["markdown"]
-)
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="massive_archive.pdf", formats=["markdown"])
+print(f"{result['pages_processed']} pages processed, status={result['status']}")
+```
 
-# Generator-based streaming across 1,000+ pages
-with open("output.md", "w") as out_f:
-    for page_chunk in pipeline.stream_document("massive_archive.pdf", window_size=16):
-        out_f.write(page_chunk.text)
-        print(f"Streamed page {page_chunk.page_number} | RAM: {page_chunk.current_rss_mb:.1f}MB")
+For the mechanism itself: `PageStreamGenerator` (`blast_ocr/core/streaming.py`) is what keeps
+memory flat. It renders pages in fixed-size windows (default 8), yields each window as a list
+of `(page_number, rendered_image_path)` tuples, and deterministically unlinks that window's
+scratch files the moment the caller is done with them -- so RSS is bounded by one window's
+worth of rendered pages, not the whole document:
+
+```python
+from blast_ocr.core.streaming import PageStreamGenerator
+
+with PageStreamGenerator("massive_archive.pdf", chunk_size=16) as stream:
+    for window in stream:  # each window: List[Tuple[int, Path]]
+        for page_number, rendered_page_path in window:
+            print(f"Rendered page {page_number} -> {rendered_page_path}")
+        # scratch files for this window are purged automatically once the
+        # `for window in stream` loop moves past it
 ```
 
 ---

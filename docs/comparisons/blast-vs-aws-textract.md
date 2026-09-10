@@ -69,13 +69,13 @@ with open("financial_statement.pdf", "rb") as document:
 # ==============================================================================
 # AFTER: B.L.A.S.T. In-VPC Pipeline (Zero Fees, 100% Offline, Clean Markdown)
 # ==============================================================================
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-pipeline = BLASTPipeline(formats=["markdown", "docx", "pdf"])
-result = pipeline.process_document("financial_statement.pdf")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="financial_statement.pdf", formats=["markdown", "docx", "pdf"])
 
 # Returns clean GitHub Flavored Markdown tables directly ingestible into RAG
-print(result.generated_files["markdown"])
+print(result["generated_files"]["markdown"])
 ```
 
 ---

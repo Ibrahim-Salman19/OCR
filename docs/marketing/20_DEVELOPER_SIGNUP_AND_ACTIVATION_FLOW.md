@@ -13,7 +13,7 @@ Developer adoption follows a strict logarithmic decay curve: if a developer cann
 
 ```
 00:00               00:15                        00:30                      00:45
-[GitHub / Docs] ---> [pip install blast-ocr] ---> [Run Sample PDF Command] ---> [Inspect Markdown & Tables]
+[GitHub / Docs] ---> [pip install -r requirements.txt] ---> [Run Sample PDF Command] ---> [Inspect Markdown & Tables]
       │                       │                            │                          │
   Discovery             Fast Download                 Zero-Config Run             "Aha!" Moment
 ```
@@ -42,7 +42,7 @@ Developer adoption follows a strict logarithmic decay curve: if a developer cann
 ### Path A: The 1-Line CLI Quickstart (Target: 30 Seconds)
 ```bash
 # Install and parse immediate built-in test document
-pip install blast-ocr
+pip install -r requirements.txt
 blast-ocr --sample --formats markdown docx
 ```
 

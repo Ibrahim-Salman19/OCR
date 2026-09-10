@@ -83,7 +83,7 @@ Following `references/static-ad-templates.md` in the `ad-creative` skill:
   - Electric blue badge: `NEVER AGAIN.`
   - Headline: "B.L.A.S.T. streams 1,000+ pages with a verified 0.0002 MB/page memory leak slope."
   - Metric callout: `142 MB Peak RAM Constant`.
-- **CTA Button**: `pip install blast-ocr`
+- **CTA Button**: `pip install -r requirements.txt`
 
 ---
 

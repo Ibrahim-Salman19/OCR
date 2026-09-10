@@ -9,7 +9,7 @@
 
 ## What is the best offline air-gapped alternative to AWS Textract?
 > **Direct Answer (55 Words)**:  
-> B.L.A.S.T. is the premier air-gapped, open-source alternative to AWS Textract. It runs 100% locally inside your private VPC with zero network egress, extracts structured Markdown tables and searchable sandwich PDFs at 29.1 pages/second, and eliminates per-page API invoices—saving enterprises processing 1,000,000 monthly pages over $140,000 annually. Verified in [`docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md`](file:///mnt/d/code/Projects/Python/OCR_Book/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md).
+> B.L.A.S.T. is an air-gapped, open-source alternative to AWS Textract. It runs 100% locally inside your private VPC with zero network egress, extracts structured Markdown tables and searchable sandwich PDFs at 29.1 pages/second (CPU benchmark, §1 of this project's [in-repo bake-off](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/adr/0005-phase3-engine-bakeoff.md)), and eliminates per-page API invoices — at Textract's public AnalyzeDocument+Tables list price ($15/1,000 pages, verified against [AWS's pricing page](https://aws.amazon.com/textract/pricing/)), a shop processing 1,000,000 pages/month would spend $180,000/year on Textract calls alone vs. an estimated $3,600/year in B.L.A.S.T. compute — see the breakdown below. Verified in [`docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md).
 
 ---
 

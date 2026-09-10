@@ -152,7 +152,7 @@ def generate_pages(records_file: str, output_dir: str):
                 "@type": "HowTo",
                 "name": f"How to convert {record['source_format']} to {record['target_format']} in Python",
                 "step": [
-                    {"@type": "HowToStep", "text": "Install B.L.A.S.T. Core via pip: pip install blast-ocr"},
+                    {"@type": "HowToStep", "text": "Install B.L.A.S.T. Core via pip: pip install -r requirements.txt"},
                     {"@type": "HowToStep", "text": f"Execute conversion: {record['sample_cli_command']}"}
                 ]
             }, indent=2)

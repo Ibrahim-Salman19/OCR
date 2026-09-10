@@ -16,9 +16,9 @@ This document provides complete, production-ready conversion copy for the primar
 Stop debugging container crashes at 3:00 AM. Process millions of scanned PDFs, complex tables, and non-Latin scripts locally at **29.1 pages per second**—with zero cloud API fees, zero hallucination, and guaranteed bounded streaming memory.
 
 ### Primary Action Group
-- **Primary Button:** `RUN WITH PIP (FREE)` -> `pip install blast-ocr`
+- **Primary Button:** `RUN WITH PIP (FREE)` -> `pip install -r requirements.txt`
 - **Secondary Button:** `DEPLOY DOCKER SWARM` -> `docker run -p 8501:8501 blast-ocr/engine`
-- **Microcopy Under Buttons:** *100% Open-Source Apache-2.0 • Zero Cloud Telemetry • Python 3.10+ & CUDA Ready*
+- **Microcopy Under Buttons:** *100% Open-Source MIT License • Zero Cloud Telemetry • Python 3.10+ & CUDA Ready*
 
 ### Proof Ticker (Right Below Hero)
 - **29.1 Pages/Sec** (Single-core CPU)
@@ -66,17 +66,16 @@ Stop debugging container crashes at 3:00 AM. Process millions of scanned PDFs, c
 ### Ingest Your First Document in 45 Seconds.
 
 ```python
-# Install with: pip install blast-ocr
-from blast_ocr.pipeline import SovereignOCR
+# Install with: pip install -r requirements.txt
+from blast_ocr.pipeline import BlastPipeline
 
 # Initialize deterministic engine (uses GPU if available, falls back to CPU)
-engine = SovereignOCR()
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
 
 # Process multi-page document with bounded streaming memory
-result = engine.process("annual_report_2026.pdf", output_formats=["markdown", "docx"])
+result = pipeline.process_job(source_path="annual_report_2026.pdf", formats=["markdown", "docx"])
 
-print(f"Pages: {result.page_count} in {result.execution_time_seconds:.2f}s")
-print(f"Throughput: {result.pages_per_second:.1f} pages/sec")
+print(f"Pages: {result['pages_processed']}, status: {result['status']}")
 print(f"Markdown saved to: {result.markdown_path}")
 ```
 
@@ -115,6 +114,6 @@ print(f"Markdown saved to: {result.markdown_path}")
 ### Headline
 ### Ready to Eliminate Memory Leaks and Cloud OCR Bills?
 
-- **Free & Open Source:** `pip install blast-ocr`
+- **Free & Open Source:** `pip install -r requirements.txt`
 - **Docker Compose:** `docker-compose up -d`
 - **Need Enterprise Support or Air-Gapped Clusters?** [Talk to Our Engineering Team](/enterprise)

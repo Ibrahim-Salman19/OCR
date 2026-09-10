@@ -25,7 +25,7 @@ We charge based on **Concurrent Processing Capacity & Cluster Architecture** (Wo
 │ COMMUNITY FREE  │    │  DEVELOPER PRO  │    │  CLUSTER SWARM  │    │ ENTERPRISE AIR  │
 │   $0 / forever  │    │   $49 / month   │    │  $499 / month   │    │  $24,000 / year │
 ├─────────────────┤    ├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ • Apache 2.0    │    │ • Everything in │    │ • Everything in │    │ • Everything in │
+│ • MIT License   │    │ • Everything in │    │ • Everything in │    │ • Everything in │
 │ • Single node   │    │   Free plus:    │    │   Pro plus:     │    │   Cluster plus: │
 │ • ONNX Engine   │    │ • Pre-compiled  │    │ • Redis 3-Tier  │    │ • 100% Air-Gap  │
 │ • CLI & Streamlit│   │   Urdu/Arabic   │    │   Swarm Workers │    │   Offline Image │

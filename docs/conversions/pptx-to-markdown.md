@@ -26,11 +26,11 @@ blast-ocr presentation.pptx --formats markdown
 ## 🐍 Python Implementation
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-pipeline = BLASTPipeline(formats=["markdown"])
-result = pipeline.process_document("quarterly_deck.pptx")
-print(f"Slide Markdown generated at: {result.generated_files['markdown']}")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="quarterly_deck.pptx", formats=["markdown"])
+print(f"Slide Markdown generated at: {result["generated_files"]['markdown']}")
 ```
 
 ---

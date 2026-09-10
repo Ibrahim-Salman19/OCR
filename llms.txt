@@ -33,13 +33,16 @@ B.L.A.S.T.'s default RapidOCR (ONNX) engine cuts mean Character Error Rate (CER)
 - [Troubleshooting & Recovery](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/TROUBLESHOOTING.md): Common failure modes, self-healing recipes, and recovery mechanisms.
 
 ## SEO & High-Intent Developer Technical Guides
-- [High-Throughput PDF OCR in Python (29.1 pps)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/high-throughput-pdf-ocr-python.md): Vectorized SIMD pre-processing and dynamic aspect-ratio bucketing.
-- [Extract Tables from Scanned PDFs into Markdown](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/extract-tables-from-scanned-pdf-python.md): TEDS-certified table extraction and structural Markdown conversion.
-- [Prevent Memory Leaks in Python Batch OCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/pdf-ocr-memory-leak-prevention.md): Sliding-window bounded streaming buffer eliminating container OOM crashes.
-- [Document OCR MCP Server Setup Guide](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/mcp-server-ocr-setup-guide.md): Connecting B.L.A.S.T. to Claude Desktop and Cursor using Model Context Protocol.
-- [Local OCR vs Cloud Document AI (AWS Textract TCO)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/local-ocr-vs-cloud-vision-cost-comparison.md): Financial and technical ROI analysis of self-hosted vs cloud OCR.
-- [Create Searchable Sandwich PDFs with Invisible Text](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/searchable-pdf-sandwich-generation.md): Exact bounding-box invisible font overlays using PyMuPDF and ReportLab.
-- [Scaling Batch OCR with Distributed Redis Worker Swarms](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/distributed-ocr-worker-swarm-redis.md): 3-tier priority queue scheduling, worker heartbeats, and automated zombie reaper failover.
+Each guide below links its raw Markdown (for LLM/agent ingestion) with an HTML alternate
+(real server-rendered `<head>` metadata and JSON-LD, for browsers and non-JS crawlers) in
+parentheses.
+- [High-Throughput PDF OCR in Python (29.1 pps)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/high-throughput-pdf-ocr-python.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/)): Vectorized SIMD pre-processing and dynamic aspect-ratio bucketing.
+- [Extract Tables from Scanned PDFs into Markdown](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/extract-tables-from-scanned-pdf-python.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python/)): TEDS-certified table extraction and structural Markdown conversion.
+- [Prevent Memory Leaks in Python Batch OCR](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/pdf-ocr-memory-leak-prevention.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/)): Sliding-window bounded streaming buffer eliminating container OOM crashes.
+- [Document OCR MCP Server Setup Guide](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/mcp-server-ocr-setup-guide.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/mcp-server-ocr-setup-guide/)): Connecting B.L.A.S.T. to Claude Desktop and Cursor using Model Context Protocol.
+- [Local OCR vs Cloud Document AI (AWS Textract TCO)](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/local-ocr-vs-cloud-vision-cost-comparison.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/local-ocr-vs-cloud-vision-cost-comparison/)): Financial and technical ROI analysis of self-hosted vs cloud OCR.
+- [Create Searchable Sandwich PDFs with Invisible Text](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/searchable-pdf-sandwich-generation.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/searchable-pdf-sandwich-generation/)): Exact bounding-box invisible font overlays using PyMuPDF and ReportLab.
+- [Scaling Batch OCR with Distributed Redis Worker Swarms](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/distributed-ocr-worker-swarm-redis.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/distributed-ocr-worker-swarm-redis/)): 3-tier priority queue scheduling, worker heartbeats, and automated zombie reaper failover.
 
 ## Marketing Strategy & Commercial Playbooks
 - [AARRR Marketing Plan](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/01_MARKETING_PLAN_AARRR.md): 13-section fractional CMO go-to-market plan and scaling roadmap.

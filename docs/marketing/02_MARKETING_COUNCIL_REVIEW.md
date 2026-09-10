@@ -104,7 +104,7 @@ In *How Brands Grow*, Sharp shows that long-term brand equity requires broad cat
   - *"We need to parse Urdu Nastaliq legal contracts and Tesseract output is gibberish."*
   - *"We need local table extraction for our LangChain RAG pipeline without paying OpenAI."*
   - *"We need to add an OCR tool to our Claude Desktop / Cursor environment."*
-- **Physical Availability:** Be everywhere a developer looks. PyPI (`pip install blast-ocr`), Docker Hub (`docker pull blast-ocr/engine`), MCP Registries (Smithery, mcp.so), and GitHub trending.
+- **Physical Availability:** Be everywhere a developer looks. PyPI (`pip install -r requirements.txt`), Docker Hub (`docker pull blast-ocr/engine`), MCP Registries (Smithery, mcp.so), and GitHub trending.
 - **Distinctive Brand Assets:** The neon cyan / deep navy "Mission Control" terminal aesthetic, the B.L.A.S.T. acronym, and the verified "0.0002 MB/page" badge.
 - **Sharp's Verdict:** Do not get bogged down trying to build an exclusive club. Maximize top-of-funnel reach. Make installation so trivial that B.L.A.S.T. is the first tool an engineer tests whenever a document problem occurs.
 

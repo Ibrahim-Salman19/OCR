@@ -118,6 +118,7 @@
     <nav>
       <a href="#features">Features</a>
       <a href="#how-it-works">How It Works</a>
+      <a href="#guides">Guides</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/Ibrahim-Salman19/OCR">GitHub</a>
       <a href="https://ocr-book.streamlit.app/">Live Demo</a>
@@ -198,13 +199,48 @@
       </li>
       <li>
         Initialize the pipeline
-        <code>OCRPipeline(engine='rapidocr', secure_mode=True)</code>
+        <code>BlastPipeline(config_overrides={'ocr_engine': 'rapidocr', 'secure_mode': True})</code>
       </li>
       <li>
         Process a document
-        <code>pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])</code>
+        <code>pipeline.process_job(source_path='doc.pdf', formats=['markdown', 'pdf'])</code>
       </li>
     </ol>
+  </section>
+
+  <section id="guides">
+    <h2>Developer guides</h2>
+    <p class="section-sub">In-depth, code-verified guides for common OCR integration tasks.</p>
+    <div class="grid-4">
+      <div class="card">
+        <h3><a href="./docs/seo/high-throughput-pdf-ocr-python/">High-Throughput PDF OCR in Python</a></h3>
+        <p>29.1 pages/second on CPU with SIMD preprocessing and ONNX Runtime.</p>
+      </div>
+      <div class="card">
+        <h3><a href="./docs/seo/extract-tables-from-scanned-pdf-python/">Extract Tables from Scanned PDFs</a></h3>
+        <p>TEDS-certified table extraction into clean Markdown, with working code.</p>
+      </div>
+      <div class="card">
+        <h3><a href="./docs/seo/mcp-server-ocr-setup-guide/">OCR MCP Server Setup Guide</a></h3>
+        <p>Connect self-hosted OCR to Claude Desktop and Cursor via MCP.</p>
+      </div>
+      <div class="card">
+        <h3><a href="./docs/seo/searchable-pdf-sandwich-generation/">Searchable PDF Sandwich Generation</a></h3>
+        <p>Build invisible-text-layer searchable PDFs with PyMuPDF and ReportLab.</p>
+      </div>
+      <div class="card">
+        <h3><a href="./docs/seo/pdf-ocr-memory-leak-prevention/">PDF OCR Memory Leak Prevention</a></h3>
+        <p>Sliding-window bounded buffers for flat memory on 10,000+ page archives.</p>
+      </div>
+      <div class="card">
+        <h3><a href="./docs/seo/local-ocr-vs-cloud-vision-cost-comparison/">Local OCR vs AWS Textract: TCO</a></h3>
+        <p>Real AWS Textract pricing vs. self-hosted B.L.A.S.T. compute costs.</p>
+      </div>
+      <div class="card">
+        <h3><a href="./docs/seo/distributed-ocr-worker-swarm-redis/">Distributed OCR Worker Swarm (Redis)</a></h3>
+        <p>Scale batch OCR across nodes with a Redis priority queue and zombie reaper.</p>
+      </div>
+    </div>
   </section>
 
   <section id="faq">
@@ -427,8 +463,8 @@
       "description": "Step-by-step guide to installing and processing PDF documents to Markdown with high accuracy.",
       "step": [
         { "@type": "HowToStep", "name": "Install B.L.A.S.T. OCR", "text": "Install core dependencies using pip install -r requirements.txt" },
-        { "@type": "HowToStep", "name": "Initialize Pipeline", "text": "Instantiate OCRPipeline(engine='rapidocr', secure_mode=True)" },
-        { "@type": "HowToStep", "name": "Execute Document Processing", "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])" }
+        { "@type": "HowToStep", "name": "Initialize Pipeline", "text": "Instantiate BlastPipeline(config_overrides={'ocr_engine': 'rapidocr', 'secure_mode': True})" },
+        { "@type": "HowToStep", "name": "Execute Document Processing", "text": "Call pipeline.process_job(source_path='doc.pdf', formats=['markdown', 'pdf'])" }
       ]
     },
     {

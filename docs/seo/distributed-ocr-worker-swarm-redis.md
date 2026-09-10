@@ -9,7 +9,7 @@
 
 ## How do you scale batch OCR with Redis worker queues in Python?
 > **Direct Answer (52 Words)**:  
-> Batch OCR is scaled across nodes using B.L.A.S.T.'s distributed Redis priority swarm. The architecture provides 3-tier priority queues (`high`, `default`, `low`), heartbeat worker tracking, and an automated Zombie Reaper that atomically detects crashed workers and reschedules orphaned jobs with zero data loss. Verified in [`blast_ocr/queue/swarm.py`](file:///mnt/d/code/Projects/Python/OCR_Book/blast_ocr/queue/swarm.py).
+> Batch OCR is scaled across nodes using B.L.A.S.T.'s distributed Redis priority swarm. The architecture provides 3-tier priority queues (`high`, `default`, `low`), heartbeat worker tracking, and an automated Zombie Reaper that atomically detects crashed workers and reschedules orphaned jobs. Verified in [`blast_ocr/queue/swarm.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/blast_ocr/queue/swarm.py).
 
 ---
 
@@ -24,23 +24,24 @@ docker compose up --scale worker=4 -d
 ## 🐍 Python Enqueueing & Priority Scheduling
 
 ```python
-from blast_ocr.queue.client import SwarmQueueClient
+import redis
+from blast_ocr.queue.client import QueueClient
 
-# 1. Connect to Redis Priority Queue
-client = SwarmQueueClient(redis_url="redis://localhost:6379/0")
+# 1. Connect to Redis and wrap it in the priority-queue client
+r = redis.Redis.from_url("redis://localhost:6379/0")
+client = QueueClient(redis_client=r)
 
-# 2. Enqueue High-Priority Document Job
-job_id = client.enqueue_job(
-    file_path="contracts/urgent_acquisition.pdf",
+# 2. Enqueue a High-Priority Document Job (client stamps a job_id + enqueued_at)
+job_id = client.enqueue(
+    job_data={"file_path": "contracts/urgent_acquisition.pdf", "formats": ["markdown", "docx", "pdf"]},
     priority="high",  # 'high', 'default', or 'low'
-    formats=["markdown", "docx", "pdf"]
 )
-
 print(f"Enqueued High-Priority Job ID: {job_id}")
 
-# 3. Poll or Stream Progress via SSE
-status = client.get_job_status(job_id)
-print(f"Job Status: {status['state']} | Progress: {status['progress_pct']}%")
+# 3. Inspect queue depth per priority tier (a worker calls pop_next_job() to
+# dequeue strictly HIGH -> DEFAULT -> LOW; job *state* itself -- queued,
+# processing, succeeded -- is tracked in OCRDatabase, not on the queue client)
+print(client.get_all_queue_depths())
 ```
 
 ---

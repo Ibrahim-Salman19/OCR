@@ -46,7 +46,7 @@ Following `references/carousel-frameworks.md` in the `social` skill:
 - **Slide 4 (Feature 3 - Dual-Layer Sandwich PDFs)**: Invisible text layer aligned directly over the camera scan. "Search, copy, and highlight text while keeping 100% of the original scan look."
 - **Slide 5 (Feature 4 - Native MCP Server)**: Cursor IDE + Claude Desktop integration diagram. "Expose OCR tools directly to your LLM agent over local stdio."
 - **Slide 6 (Feature 5 - 100% Air-Gapped Privacy)**: Shield icon. "Zero cloud telemetry. Forensic 8-class PII redaction (SSNs, credit cards, emails)."
-- **Slide 7 (CTA)**: "100% MIT Licensed. Run it locally today: `pip install blast-ocr`."
+- **Slide 7 (CTA)**: "100% MIT Licensed. Run it locally today: `pip install -r requirements.txt`."
 
 ---
 
@@ -70,7 +70,7 @@ Following `references/carousel-frameworks.md` in the `social` skill:
 - **Slide 3 (The Failure Mode 2 - Compute Cost)**: "Processing a 500-page book with a 70B VLM costs ~$40.00 and takes 45 minutes on 8x H100 GPUs."
 - **Slide 4 (The Deterministic Alternative)**: "B.L.A.S.T. uses DBNet detection + CTC character recognition. 0% generative hallucination. Runs on a single laptop CPU at 29 pages/sec."
 - **Slide 5 (The Right Architecture)**: "Use deterministic OCR to extract text, tables, and formulas. Feed the clean Markdown to your LLM for reasoning."
-- **Slide 6 (CTA)**: "Stop burning GPU compute on text extraction. Switch to deterministic OCR: `pip install blast-ocr`."
+- **Slide 6 (CTA)**: "Stop burning GPU compute on text extraction. Switch to deterministic OCR: `pip install -r requirements.txt`."
 
 ---
 
@@ -78,7 +78,7 @@ Following `references/carousel-frameworks.md` in the `social` skill:
 **Title**: *Connecting B.L.A.S.T. OCR to Claude Desktop via MCP in 60 Seconds*  
 **Slides**:
 - **Slide 1 (Hook)**: "Give Claude Desktop local OCR eyes with Model Context Protocol (MCP)."
-- **Slide 2 (Step 1)**: Terminal: `pip install blast-ocr`.
+- **Slide 2 (Step 1)**: Terminal: `pip install -r requirements.txt`.
 - **Slide 3 (Step 2)**: Open `claude_desktop_config.json`, add `"blast-ocr": {"command": "python3", "args": ["-m", "blast_ocr.mcp_server"]}`.
 - **Slide 4 (Step 3)**: Restart Claude. Show 4 green tool icons: `blast_ocr_process`, `blast_ocr_extract_tables`, etc.
 - **Slide 5 (The Result)**: Claude accurately answering questions from a 100-page scanned PDF with zero hallucinations.
@@ -186,7 +186,7 @@ Check out the architecture deep dive:
 Here is how to give Claude Desktop the ability to OCR multi-page PDFs and extract tables locally using B.L.A.S.T. and MCP 🧵👇
 
 2/6 Step 1: Install B.L.A.S.T.
-$ pip install blast-ocr
+$ pip install -r requirements.txt
 
 Step 2: Open your `claude_desktop_config.json` and add:
 {

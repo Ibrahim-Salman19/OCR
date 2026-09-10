@@ -10,7 +10,7 @@
 
 ## How do you convert a scanned PDF to Markdown in Python?
 > **Direct Answer (54 Words)**:  
-> You can convert a scanned PDF to structured Markdown in Python using B.L.A.S.T. OCR (`pip install blast-ocr`). In just two lines of code, B.L.A.S.T. executes SIMD-accelerated ONNX neural OCR, extracts tables into GitHub Flavored Markdown (GFM), preserves LaTeX mathematical formulas, and guarantees zero generative hallucinations at **29.1 pages/second on CPU**.
+> You can convert a scanned PDF to structured Markdown in Python using B.L.A.S.T. OCR (`pip install -r requirements.txt`). In just two lines of code, B.L.A.S.T. executes SIMD-accelerated ONNX neural OCR, extracts tables into GitHub Flavored Markdown (GFM), preserves LaTeX mathematical formulas, and guarantees zero generative hallucinations at **29.1 pages/second on CPU**.
 
 ---
 
@@ -26,13 +26,13 @@ blast-ocr document.pdf --formats markdown --priority high
 ## 🐍 Python Implementation
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 from pathlib import Path
 
-pipeline = BLASTPipeline(formats=["markdown"], priority="high", batch_size=16)
-result = pipeline.process_document("samples/annual_report.pdf")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="samples/annual_report.pdf", formats=["markdown"])
 
-markdown_path = result.generated_files["markdown"]
+markdown_path = result["generated_files"]["markdown"]
 markdown_text = Path(markdown_path).read_text()
 print(f"Generated {len(markdown_text)} characters of clean Markdown.")
 ```

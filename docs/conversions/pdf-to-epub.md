@@ -26,11 +26,11 @@ blast-ocr scanned_book.pdf --formats epub
 ## 🐍 Python Implementation
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-pipeline = BLASTPipeline(formats=["epub"])
-result = pipeline.process_document("scanned_book.pdf")
-print(f"EPUB 3.0 e-book generated at: {result.generated_files['epub']}")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="scanned_book.pdf", formats=["epub"])
+print(f"EPUB 3.0 e-book generated at: {result["generated_files"]['epub']}")
 ```
 
 ---

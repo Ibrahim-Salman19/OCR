@@ -23,7 +23,7 @@ User stars GitHub repo, downloads Docker image, or registers on Developer Portal
   > 
   > ```bash
   > # 1. Install B.L.A.S.T. Core
-  > pip install blast-ocr
+  > pip install -r requirements.txt
   > 
   > # 2. Run a high-throughput test with Markdown and DOCX export
   > blast-ocr sample.pdf --formats markdown docx pdf

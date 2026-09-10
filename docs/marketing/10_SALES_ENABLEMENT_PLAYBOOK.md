@@ -54,7 +54,7 @@
 
 ### Slide 8: Deployment Models: From CLI to Kubernetes Swarm
 - **Visual**: Three deployment diagrams:
-  1. *Developer Workstation*: `pip install blast-ocr` + CLI / Sovereign Streamlit UI
+  1. *Developer Workstation*: `pip install -r requirements.txt` + CLI / Sovereign Streamlit UI
   2. *REST API Service*: FastAPI container with Swagger/OpenAPI endpoints
   3. *Distributed Cluster*: Docker Compose / K8s Swarm with priority workers
 - **Presenter Script**:
@@ -107,7 +107,7 @@ KEY METRICS & PROOF POINTS:
 - Formats: Markdown, DOCX, Searchable Sandwich PDF, TXT, EPUB, JSON Layout Manifests.
 
 ENTERPRISE PACKAGING & PRICING:
-- Community Edition: Free Apache 2.0 (Core Engine, CLI, MCP Server, Web App).
+- Community Edition: Free MIT License (Core Engine, CLI, MCP Server, Web App).
 - Enterprise Swarm License: $1,499/month (Unlimited Workers, Priority Queues, S3 Multipart
   Streaming, Zero-Crash SLA, Dedicated Support Channel).
 - Air-Gapped / Custom Weights: Custom Enterprise Agreement ($25k - $60k/yr).
@@ -153,7 +153,7 @@ Web: https://github.com/Ibrahim-Salman19/OCR • Docs: /v1/docs • License: ent
     "process_isolation": "Swarm workers run in isolated sub-processes with dedicated memory tracking and automatic recycling.",
     "audit_logging": "Structured JSON logging with ISO-8601 timestamps, job IDs, execution latencies, and zero PII logging.",
     "access_control": "API Key authentication dependency (`X-API-Key`) protecting all REST and SSE streaming endpoints.",
-    "license_compliance": "Apache 2.0 Open Source Core license allows commercial deployment without copyleft GPL contamination.",
+    "license_compliance": "MIT Open Source Core license allows commercial deployment without copyleft GPL contamination.",
     "high_availability": "Redis priority swarm supports active-active multi-node deployment with automatic zombie failover.",
     "disaster_recovery": "Stateless worker nodes allow instant horizontal scaling and zero-downtime rolling upgrades.",
     "container_security": "Dedicated non-root user execution in production Docker containers.",

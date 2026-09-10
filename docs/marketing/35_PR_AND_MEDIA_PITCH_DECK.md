@@ -15,7 +15,7 @@
 
 *New engine combines vectorized SIMD preprocessing, dynamic aspect-ratio bucketing, and sliding-window bounded memory streaming to eliminate cloud OCR lock-in and container out-of-memory crashes.*
 
-**SAN FRANCISCO, CA — September 2026** — Today, the B.L.A.S.T. open-source project announced the public availability of its enterprise-grade, high-throughput document OCR and intelligence engine under the permissive Apache 2.0 license.
+**SAN FRANCISCO, CA — September 2026** — Today, the B.L.A.S.T. open-source project announced the public availability of its enterprise-grade, high-throughput document OCR and intelligence engine under the permissive MIT license.
 
 Designed specifically to address the dual crises of ballooning cloud OCR API bills and unstable open-source OCR scripts, B.L.A.S.T. delivers a verified 29.1 pages/second throughput on standard commodity CPU cores—more than 16 times faster than legacy Tesseract implementations. Crucially, its sliding-window bounded streaming architecture enforces a verified memory growth slope of just 0.0002 MB/page over 10,000 continuous pages, permanently resolving the out-of-memory container crashes that plague high-volume document ingestion.
 
@@ -27,7 +27,7 @@ Designed specifically to address the dual crises of ballooning cloud OCR API bil
 - **Distributed Redis Priority Swarm**: Multi-worker scheduling across 3 priority tiers with automated zombie reaper failover.
 - **Structured Multi-Format Exports**: Generates clean Markdown tables, Microsoft Word (.docx), searchable sandwich PDFs, EPUB, and layout JSON manifests.
 
-B.L.A.S.T. is available immediately on GitHub at `https://github.com/Ibrahim-Salman19/OCR` or via `pip install blast-ocr`.
+B.L.A.S.T. is available immediately on GitHub at `https://github.com/Ibrahim-Salman19/OCR` or via `pip install -r requirements.txt`.
 
 ---
 

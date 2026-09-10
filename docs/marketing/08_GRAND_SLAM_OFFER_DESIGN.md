@@ -26,7 +26,7 @@ Value Score = ------------------------------------------------------------------
 ### Deconstructed Drivers:
 1. **Dream Outcome (Maximize)**: Complete document parsing sovereignty. High-throughput (29.1 pages/sec), multi-format extraction (tables, formulas, layouts) directly on commodity CPU or GPU without sending data to third-party cloud APIs.
 2. **Perceived Likelihood of Achievement (Maximize)**: Backed by 914 automated tests (912 passed, 2 skipped, 0 failed), $0.0002\text{ MB/page}$ zero-leak slope verification, and reproducible gold-standard benchmarks (`docs/BENCHMARKS_2026.md`).
-3. **Time Delay (Minimize to Zero)**: Single `pip install blast-ocr` command. Pre-packaged ONNX runtime sessions eliminate CUDA version mismatches. Instant local execution in $\le 45$ seconds.
+3. **Time Delay (Minimize to Zero)**: Single `pip install -r requirements.txt` command. Pre-packaged ONNX runtime sessions eliminate CUDA version mismatches. Instant local execution in $\le 45$ seconds.
 4. **Effort & Sacrifice (Minimize to Zero)**: No complex Kubernetes clusters required for small jobs; auto-scaling Redis swarm supervisor included for enterprise scale. Zero cloud vendor API keys, zero egress costs, zero privacy review friction.
 
 ---
@@ -102,7 +102,7 @@ Following Hormozi's M.A.G.I.C. formula (Magnetic, Avatar, Goal, Interval, Contai
 
 ```mermaid
 graph TD
-    A[B.L.A.S.T. Document Platform] --> B[Community Edition - Free Apache 2.0]
+    A[B.L.A.S.T. Document Platform] --> B[Community Edition - Free MIT License]
     A --> C[Pro Developer - $199/mo]
     A --> D[Enterprise Swarm - $1,499/mo]
     A --> E[Air-Gapped Defense / Gov - Custom $25k+]

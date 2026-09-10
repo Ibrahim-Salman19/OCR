@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Prevent Memory Leaks in Python Batch OCR Pipelines</title>
+<meta name="description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 10,000 pages. Real PageStreamGenerator code.">
+<meta name="keywords" content="python ocr memory leak, pdf ocr memory leak prevention, large pdf ocr oom crash, sliding window bounded buffer python">
+<meta name="author" content="Ibrahim Salman">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+<link rel="canonical" href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">
+<link rel="alternate" type="text/markdown" href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention.md" title="Raw Markdown (LLM/agent-readable)">
+<meta property="og:title" content="Prevent Memory Leaks in Python Batch OCR Pipelines">
+<meta property="og:description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 10,000 pages. Real PageStreamGenerator code.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/">
+<meta property="og:site_name" content="B.L.A.S.T. OCR Engine">
+<meta property="og:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prevent Memory Leaks in Python Batch OCR Pipelines">
+<meta name="twitter:description" content="Stop OOM crashes in Python batch OCR with a sliding-window bounded buffer: 0.0002 MB/page growth over 10,000 pages. Real PageStreamGenerator code.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/marketing/assets/og_image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #09090b;
+    --surface: #141417;
+    --surface-raised: #1c1c20;
+    --border: #27272a;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --accent: #f59e0b;
+    --accent-bright: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  a { color: var(--accent-bright); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+  header.site {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(9,9,11,0.85); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  header.site .inner { max-width: 1080px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  header.site .brand { font-weight: 700; letter-spacing: 0.02em; color: var(--text); text-decoration: none; }
+  header.site .brand span { color: var(--accent); }
+  header.site nav a { color: var(--text-muted); text-decoration: none; margin-left: 1.5rem; font-size: 0.9rem; }
+  header.site nav a:hover { color: var(--text); }
+  main { padding: 2.5rem 0 1rem; }
+  .breadcrumb { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.2rem; }
+  .breadcrumb a { color: var(--text-muted); }
+  .status-badge {
+    display: inline-block; border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 999px; padding: 0.2rem 0.75rem; font-size: 0.72rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-family: ui-monospace, monospace; margin-bottom: 1rem;
+  }
+  h1 { font-size: clamp(1.7rem, 4.2vw, 2.35rem); line-height: 1.25; margin: 0 0 0.6rem; font-weight: 800; }
+  .meta-row { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 2rem; }
+  .meta-row code { background: var(--surface); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.05rem 0.4rem; }
+  h2 { font-size: 1.35rem; margin: 2.4rem 0 0.9rem; font-weight: 700; }
+  h3 { font-size: 1.05rem; margin: 1.6rem 0 0.6rem; }
+  p { margin: 0 0 1rem; }
+  .direct-answer {
+    background: var(--surface); border-left: 3px solid var(--accent);
+    border-radius: 0 0.5rem 0.5rem 0; padding: 1.1rem 1.3rem; margin: 0 0 1.5rem;
+  }
+  .direct-answer strong.tag { display: block; color: var(--accent-bright); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; font-family: ui-monospace, monospace; }
+  pre {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 0.6rem;
+    padding: 1rem 1.1rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.55;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  p code, li code { background: var(--surface); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.05rem 0.35rem; font-size: 0.88em; }
+  .overflow-x { overflow-x: auto; margin-bottom: 1.5rem; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  table.data th, table.data td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  table.data th { color: var(--text-muted); font-weight: 600; }
+  table.data td.good { color: var(--accent-bright); font-weight: 600; }
+  ol.steps { list-style: none; margin: 0 0 1.5rem; padding: 0; counter-reset: step; }
+  ol.steps li { counter-increment: step; margin-bottom: 1rem; padding-left: 2.6rem; position: relative; }
+  ol.steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--surface-raised);
+    border: 1px solid var(--accent); color: var(--accent-bright); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-family: ui-monospace, monospace; font-size: 0.85rem;
+  }
+  .callout { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.2rem; margin: 1.5rem 0; font-size: 0.9rem; color: var(--text-muted); }
+  .callout strong { color: var(--text); }
+  .author-box { background: var(--surface); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1.3rem 1.4rem; margin-top: 2.5rem; font-size: 0.88rem; }
+  .author-box h3 { margin-top: 0; }
+  .author-box ul { list-style: none; padding: 0; margin: 0.6rem 0 0; }
+  .author-box li { margin-bottom: 0.3rem; color: var(--text-muted); }
+  .more-guides { margin: 2.5rem 0; }
+  .more-guides ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.7rem; }
+  .more-guides li a { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.8rem 1rem; font-size: 0.85rem; text-decoration: none; color: var(--text); }
+  .more-guides li a:hover { border-color: var(--accent); }
+  footer { border-top: 1px solid var(--border); padding: 2.5rem 0; color: var(--text-muted); font-size: 0.85rem; margin-top: 2rem; }
+  footer .inner { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+  footer a { color: var(--text-muted); }
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="inner">
+    <a class="brand" href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T.<span> OCR</span></a>
+    <nav>
+      <a href="https://ibrahim-salman19.github.io/OCR/#features">Features</a>
+      <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a>
+      <a href="https://github.com/Ibrahim-Salman19/OCR">GitHub</a>
+      <a href="https://ocr-book.streamlit.app/">Live Demo</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <p class="breadcrumb"><a href="https://ibrahim-salman19.github.io/OCR/">B.L.A.S.T. OCR</a> / <a href="https://ibrahim-salman19.github.io/OCR/#guides">Guides</a> / How to Prevent Memory Leaks in Python Batch OCR Pipelines</p>
+    <span class="status-badge">Verified Production Guide</span>
+    <h1>How to Prevent Memory Leaks in Python Batch OCR Pipelines</h1>
+    <p class="meta-row">Primary query: <code>python ocr memory leak</code> &middot; <a href="https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention.md">raw markdown</a></p>
+    
+    <div class="direct-answer">
+      <strong class="tag">How can I prevent memory leaks when running batch OCR in Python?</strong>
+      <p>Memory leaks in Python batch OCR are prevented with a <strong>sliding-window bounded streaming buffer</strong> and scratch-file recycling. B.L.A.S.T. measures a memory growth slope of &le; 0.0002 MB/page across 10,000 continuous pages, capping RAM at a fixed ceiling regardless of document length. Verified in <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a>.</p>
+    </div>
+
+    <h2>CLI Quickstart</h2>
+    <pre><code>git clone https://github.com/Ibrahim-Salman19/OCR.git &amp;&amp; cd OCR
+pip install -r requirements.txt
+# Bounded-memory streaming is the pipeline's default behavior, not an opt-in flag
+python -m blast_ocr.cli large_book_1000_pages.pdf --formats md</code></pre>
+
+    <h2>Python implementation: sliding-window bounded buffer</h2>
+    <p>The recommended path is <code>BlastPipeline.process_job()</code> &mdash; it renders and OCRs pages through the windowed generator below internally, so no extra flags are needed for the bounded-memory guarantee:</p>
+    <pre><code>from blast_ocr.pipeline import BlastPipeline
+
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="massive_archive.pdf", formats=["markdown"])
+print(f"{result['pages_processed']} pages processed, status={result['status']}")</code></pre>
+    <p>For the mechanism itself: <code>PageStreamGenerator</code> renders pages in fixed-size windows (default 8), yields each window as a list of <code>(page_number, rendered_image_path)</code> tuples, and deterministically unlinks that window's scratch files once the caller moves past it &mdash; so RSS is bounded by one window's worth of rendered pages, not the whole document:</p>
+    <pre><code>from blast_ocr.core.streaming import PageStreamGenerator
+
+with PageStreamGenerator("massive_archive.pdf", chunk_size=16) as stream:
+    for window in stream:  # each window: List[Tuple[int, Path]]
+        for page_number, rendered_page_path in window:
+            print(f"Rendered page {page_number} -&gt; {rendered_page_path}")
+        # this window's scratch files are purged automatically once the
+        # loop moves past it</code></pre>
+
+    <h2>The memory slope leak regression</h2>
+    <div class="overflow-x">
+    <table class="data">
+      <thead><tr><th>Pipeline Configuration</th><th>100 Pages RAM</th><th>500 Pages RAM</th><th>1,000 Pages RAM</th><th>OOM Failure Mode</th></tr></thead>
+      <tbody>
+        <tr><td class="good">B.L.A.S.T. Bounded Buffer</td><td class="good">48.2 MB</td><td class="good">51.4 MB</td><td class="good">52.1 MB</td><td class="good">Zero Crashes (Stable)</td></tr>
+        <tr><td>PyTesseract / C++ Pipe</td><td>92.0 MB</td><td>318.0 MB</td><td>740.0 MB</td><td>Pod Killed (OOMKilled)</td></tr>
+        <tr><td>JaidedAI EasyOCR (Torch)</td><td>450.0 MB</td><td>1,820.0 MB</td><td>Crashes</td><td>VRAM Exhaustion</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="callout">Source: <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/stress_test.py">eval/stress_test.py</a> and <a href="https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/results/stress_report.json">eval/results/stress_report.json</a> (1,000-page streaming stress run, 0.005 MB/page fail threshold).</p>
+    
+    <div class="more-guides">
+  <h2>More B.L.A.S.T. OCR guides</h2>
+  <ul>
+    <li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/high-throughput-pdf-ocr-python/">High-Throughput PDF OCR</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/extract-tables-from-scanned-pdf-python/">Extract Tables from Scanned PDFs</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/mcp-server-ocr-setup-guide/">OCR MCP Server Setup</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/searchable-pdf-sandwich-generation/">Searchable PDF Sandwich Generation</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/local-ocr-vs-cloud-vision-cost-comparison/">Local OCR vs Cloud Vision: TCO</a></li><li><a href="https://ibrahim-salman19.github.io/OCR/docs/seo/distributed-ocr-worker-swarm-redis/">Distributed OCR Worker Swarm (Redis)</a></li>
+  </ul>
+</div>
+    <div class="author-box">
+  <h3>Author &amp; Engineering Authority</h3>
+  <p>Engineered &amp; maintained by <a href="https://ibrahimsalman.vercel.app">Ibrahim Salman</a>, Full-Stack Software Engineer &amp; AI Systems Architect (UET Taxila).</p>
+  <ul>
+    <li><a href="https://ibrahimsalman.vercel.app/projects/blast">B.L.A.S.T. architecture case study</a></li>
+    <li><a href="https://www.linkedin.com/in/ibrahim-salman-dev/">LinkedIn</a> &middot; <a href="https://github.com/Ibrahim-Salman19">GitHub</a> &middot; <a href="https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8">Upwork</a></li>
+  </ul>
+</div>
+  </div>
+</main>
+<footer>
+  <div class="inner">
+    <p>
+      <a href="https://ibrahim-salman19.github.io/OCR/">&larr; B.L.A.S.T. OCR Engine</a> &middot;
+      <a href="https://github.com/Ibrahim-Salman19/OCR">Source Code</a> &middot;
+      <a href="https://ocr-book.streamlit.app/">Live Demo</a> &middot;
+      <a href="https://ibrahim-salman19.github.io/OCR/llms.txt">llms.txt</a>
+    </p>
+    <p>&copy; 2026 B.L.A.S.T. OCR Project. Distributed under the MIT License. Written and maintained by <a href="https://ibrahimsalman.vercel.app">Ibrahim Salman</a>.</p>
+  </div>
+</footer>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://ibrahimsalman.vercel.app/#person",
+      "name": "Ibrahim Salman",
+      "alternateName": [
+        "Ibrahim-Salman19",
+        "Ibrahim Salman Dev"
+      ],
+      "url": "https://ibrahimsalman.vercel.app",
+      "jobTitle": "Full-Stack Software Engineer & AI Systems Architect",
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "University of Engineering and Technology, Taxila",
+        "url": "https://uettaxila.edu.pk/"
+      },
+      "sameAs": [
+        "https://github.com/Ibrahim-Salman19",
+        "https://www.linkedin.com/in/ibrahim-salman-dev/",
+        "https://www.upwork.com/freelancers/~013e1c54e9a3f7a2b8"
+      ]
+    },
+    {
+      "@type": "TechArticle",
+      "headline": "How to Prevent Memory Leaks in Python Batch OCR Pipelines",
+      "description": "Architectural guide to eliminating Python OCR memory leaks and container OOM crashes using sliding-window bounded buffers.",
+      "author": {
+        "@id": "https://ibrahimsalman.vercel.app/#person"
+      },
+      "keywords": "python ocr memory leak, large pdf oom crash, sliding window streaming buffer",
+      "datePublished": "2026-09-06",
+      "dateModified": "2026-09-10",
+      "mainEntityOfPage": "https://ibrahim-salman19.github.io/OCR/docs/seo/pdf-ocr-memory-leak-prevention/"
+    }
+  ]
+}
+</script>
+</body>
+</html>

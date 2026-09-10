@@ -66,7 +66,7 @@ and fluff (-35%)        action (1-line CLI)    and formatting perfection
   - *Friction*: No copy-pasteable command; zero urgency; passive suggestion.
 - **Revised Production Copy (Certified)**:
   > *"**Run Your First Document in 45 Seconds**:  
-  > `pip install blast-ocr && blast-ocr --sample --formats markdown docx pdf`"*
+  > `pip install -r requirements.txt && blast-ocr --sample --formats markdown docx pdf`"*
 
 ---
 

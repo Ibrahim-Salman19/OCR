@@ -9,14 +9,15 @@
 
 ## How do you extract tables from scanned PDFs into Markdown in Python?
 > **Direct Answer (50 Words)**:  
-> In Python, B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its TEDS-certified Table Evaluator. The engine identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-flavored Markdown tables or Microsoft Word (.docx) tables without LLM hallucinations. Verified in [`tests/test_table_evaluator.py`](file:///mnt/d/code/Projects/Python/OCR_Book/tests/test_table_evaluator.py).
+> In Python, B.L.A.S.T. extracts tables from scanned PDFs by combining deep neural layout detection with its TEDS-certified Table Evaluator. The engine identifies borderless table geometry, aligns cell coordinates, and outputs clean GitHub-flavored Markdown tables or Microsoft Word (.docx) tables without LLM hallucinations. Verified in [`eval/teds_evaluator.py`](https://github.com/Ibrahim-Salman19/OCR/blob/main/eval/teds_evaluator.py).
 
 ---
 
-## ⚡ 1-Line CLI Quickstart
+## ⚡ CLI Quickstart
 ```bash
-# Extract tables and text into clean GitHub Markdown
-blast-ocr balance_sheet.pdf --formats markdown
+git clone https://github.com/Ibrahim-Salman19/OCR.git && cd OCR
+pip install -r requirements.txt
+python -m blast_ocr.cli balance_sheet.pdf --formats md
 ```
 
 ---
@@ -24,25 +25,25 @@ blast-ocr balance_sheet.pdf --formats markdown
 ## 🐍 Python Implementation: Table Extraction with Layout Geometry
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
-from blast_ocr.eval.teds_evaluator import TEDSEvaluator
+from blast_ocr.pipeline import BlastPipeline
+from eval.teds_evaluator import TEDSEvaluator
 
-# 1. Initialize Pipeline with Markdown Table Output
-pipeline = BLASTPipeline(formats=["markdown", "json"])
-result = pipeline.process_document("samples/quarterly_earnings.pdf")
+# 1. Initialize Pipeline with Markdown Output
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="samples/quarterly_earnings.pdf", formats=["markdown"])
 
 # 2. Inspect Extracted Markdown Tables
-with open(result.generated_files["markdown"], "r") as f:
+with open(result["generated_files"]["markdown"], "r") as f:
     markdown_content = f.read()
 
 print("Extracted Table Output:")
 print(markdown_content)
 
-# 3. Optional: Validate Tree Edit Distance Based Similarity (TEDS)
-evaluator = TEDSEvaluator()
-score = evaluator.evaluate(
-    pred_html=result.metadata.get("table_html", ""),
-    true_html="<table><tr><th>Metric</th><th>Q3</th></tr>...</table>"
+# 3. Optional: Validate Tree Edit Distance Based Similarity (TEDS) against
+# a known-good reference table, e.g. when regression-testing a fixture
+score = TEDSEvaluator.evaluate(
+    gold_html="<table><tr><th>Metric</th><th>Q3</th></tr>...</table>",
+    hyp_html="<table><tr><th>Metric</th><th>Q3</th></tr>...</table>",
 )
 print(f"Table TEDS Structural Accuracy: {score:.4f}")
 ```
@@ -98,12 +99,12 @@ Where:
     {
       "@type": "HowToStep",
       "name": "Install B.L.A.S.T.",
-      "text": "pip install blast-ocr"
+      "text": "pip install -r requirements.txt"
     },
     {
       "@type": "HowToStep",
       "name": "Run Table Extraction",
-      "text": "blast-ocr invoice.pdf --formats markdown"
+      "text": "python -m blast_ocr.cli invoice.pdf --formats md"
     }
   ]
 }

@@ -45,11 +45,11 @@ Add to your `claude_desktop_config.json`, `cursor_settings.json`, or Antigravity
 ## 3. Python SDK One-Liners for Agentic Tool Execution
 
 ```python
-from blast_ocr.pipeline import OCRPipeline
+from blast_ocr.pipeline import BlastPipeline
 
 # Initialize and process
-pipeline = OCRPipeline(engine="rapidocr", secure_mode=True)
-result = pipeline.process(source_path="/path/to/file.pdf", formats=["markdown"])
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr", "secure_mode": True})
+result = pipeline.process_job(source_path="/path/to/file.pdf", formats=["markdown"])
 markdown_content = result["text"]
 ```
 

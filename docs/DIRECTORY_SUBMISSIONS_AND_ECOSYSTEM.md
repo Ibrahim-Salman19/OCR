@@ -117,7 +117,7 @@ Target platforms: [Product Hunt](https://www.producthunt.com), [Futurepedia](htt
 
 ## 📦 4. PyPI Package Index Configuration
 
-Target: `pip install blast-ocr`
+Target: `pip install -r requirements.txt`
 
 ### Keywords:
 `ocr`, `onnx`, `document-intelligence`, `pdf-to-markdown`, `table-extraction`, `katex`, `formula-recognition`, `searchable-pdf`, `sandwich-pdf`, `mcp`, `model-context-protocol`, `rag`, `langchain`, `llamaindex`, `pp-ocr`, `rapidocr`

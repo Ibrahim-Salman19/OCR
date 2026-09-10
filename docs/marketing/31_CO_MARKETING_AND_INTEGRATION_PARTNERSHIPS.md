@@ -24,13 +24,13 @@
 
 ### The Technical Integration:
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance
 
 # 1. Initialize B.L.A.S.T. High-Throughput Engine (29.1 pps on CPU)
-pipeline = BLASTPipeline(formats=["markdown", "json"])
-result = pipeline.process_document("contracts/master_agreement.pdf")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="contracts/master_agreement.pdf", formats=["markdown", "json"])
 
 # 2. Connect to Qdrant Vector Engine
 client = QdrantClient(url="http://localhost:6333")

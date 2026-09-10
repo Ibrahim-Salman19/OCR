@@ -69,17 +69,19 @@ B.L.A.S.T. is an enterprise, self-hosted, deterministic document intelligence an
 
 ### 4.1 In-Process Synchronous Pipeline
 ```python
-from blast_ocr.pipeline import OCRPipeline
+from blast_ocr.pipeline import BlastPipeline
 
 # Initialize deterministic pipeline
-pipeline = OCRPipeline(
-    engine="rapidocr",       # Options: "rapidocr" (default), "easyocr", "tesseract", "ensemble"
-    secure_mode=True,        # Enables automated 8-class forensic PII redaction
-    batch_size=16            # Vectorized SIMD batch slice
+pipeline = BlastPipeline(
+    config_overrides={
+        "ocr_engine": "rapidocr",   # Options: "rapidocr" (default), "easyocr", "tesseract", "ensemble"
+        "secure_mode": True,        # Enables automated 8-class forensic PII redaction
+        "ocr_batch_size": 16,       # Vectorized SIMD batch slice
+    }
 )
 
 # Process PDF document to multiple formats simultaneously
-result = pipeline.process(
+result = pipeline.process_job(
     source_path="document.pdf",
     output_dir="outputs/",
     formats=["markdown", "docx", "pdf", "epub", "json"]

@@ -45,8 +45,8 @@ T-14 Days              T-7 Days               T-3 Days          T-0 (Launch Day)
 > 🤖 **Native MCP Server**: gives Claude Desktop and Cursor full document vision.  
 > 🔒 **100% Air-Gapped & Local**: zero data leaves your machine.  
 > 
-> It's 100% free and open-source under Apache 2.0.  
-> Run it in 30 seconds: `pip install blast-ocr && blast-ocr --sample`  
+> It's 100% free and open-source under the MIT License.  
+> Run it in 30 seconds: `pip install -r requirements.txt && blast-ocr --sample`  
 > 
 > Would love your feedback, bug reports, and benchmark comparisons on your toughest documents!"*
 

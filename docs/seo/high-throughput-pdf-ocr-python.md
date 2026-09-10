@@ -13,11 +13,13 @@
 
 ---
 
-## ⚡ 1-Line CLI Quickstart
+## ⚡ CLI Quickstart
 ```bash
-# Install and benchmark in under 30 seconds
-pip install blast-ocr
-blast-ocr large_document.pdf --formats markdown docx pdf
+# Clone, install, and process a PDF (no PyPI package published yet -- this
+# is a source install, not `pip install blast-ocr`)
+git clone https://github.com/Ibrahim-Salman19/OCR.git && cd OCR
+pip install -r requirements.txt
+python -m blast_ocr.cli large_document.pdf --formats md,docx,pdf
 ```
 
 ---
@@ -25,24 +27,23 @@ blast-ocr large_document.pdf --formats markdown docx pdf
 ## 🐍 Production Python Implementation
 
 ```python
-from blast_ocr.core.pipeline import BLASTPipeline
-from pathlib import Path
+from blast_ocr.pipeline import BlastPipeline
 
-# Initialize high-throughput SIMD batch pipeline
-pipeline = BLASTPipeline(
+# Initialize the pipeline (config_overrides takes any JobConfig field)
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr", "max_workers": 4})
+
+# Process a multi-page PDF -- process_job() returns a plain dict, not an object
+result = pipeline.process_job(
+    source_path="samples/financial_report.pdf",
     formats=["markdown", "docx", "pdf"],
-    priority="high",
-    batch_size=16
 )
 
-# Process a multi-page PDF with sub-second execution
-result = pipeline.process_document("samples/financial_report.pdf")
-
-print(f"Status: {result.status}")
-print(f"Pages Processed: {result.metadata['page_count']}")
-print(f"Execution Time: {result.metadata['execution_time_seconds']:.2f}s")
-print(f"Throughput: {result.metadata['pages_per_second']:.1f} Pages/Second")
-print(f"Generated Markdown: {result.generated_files['markdown']}")
+print(f"Status: {result['status']}")
+print(f"Pages Processed: {result['pages_processed']}")
+print(f"Generated Markdown: {result['generated_files'].get('markdown')}")
+# Per-page throughput (pages/sec) is measured by the reproducible benchmark
+# harness below, not returned inline by process_job() -- see the table above
+# for the committed 29.1 pps figure and its source file.
 ```
 
 ---

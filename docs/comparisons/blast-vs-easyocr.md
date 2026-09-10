@@ -63,14 +63,14 @@ results = reader.readtext('scanned_page.png')
 # ==============================================================================
 # AFTER: B.L.A.S.T. Engine (Fast, Lightweight ONNX, Native Structure)
 # ==============================================================================
-from blast_ocr.core.pipeline import BLASTPipeline
+from blast_ocr.pipeline import BlastPipeline
 
 # Fast startup, ONNX multi-provider acceleration
-pipeline = BLASTPipeline(formats=["markdown", "docx"], priority="high")
-result = pipeline.process_document("scanned_page.png")
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
+result = pipeline.process_job(source_path="scanned_page.png", formats=["markdown", "docx"])
 
 # Native structured output ready for LLMs and RAG
-markdown_text = Path(result.generated_files["markdown"]).read_text()
+markdown_text = Path(result["generated_files"]["markdown"]).read_text()
 ```
 
 ---

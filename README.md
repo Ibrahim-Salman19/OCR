@@ -88,13 +88,13 @@ pip install -r requirements-production.txt
 ### 2. Python SDK (1-Liner)
 
 ```python
-from blast_ocr.pipeline import OCRPipeline
+from blast_ocr.pipeline import BlastPipeline
 
-# Initialize deterministic pipeline
-pipeline = OCRPipeline(engine="rapidocr", secure_mode=True)
+# Initialize pipeline (config_overrides accepts any JobConfig field)
+pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr", "secure_mode": True})
 
 # Process PDF document to Markdown and Searchable PDF
-result = pipeline.process(
+result = pipeline.process_job(
     source_path="document.pdf",
     formats=["markdown", "docx", "pdf"]
 )
@@ -437,12 +437,12 @@ Distributed under the **MIT License**. Free for commercial and private use.
         {
           "@type": "HowToStep",
           "name": "Initialize Pipeline",
-          "text": "Instantiate OCRPipeline(engine='rapidocr', secure_mode=True)"
+          "text": "Instantiate BlastPipeline(config_overrides={'ocr_engine': 'rapidocr', 'secure_mode': True})"
         },
         {
           "@type": "HowToStep",
           "name": "Execute Document Processing",
-          "text": "Call pipeline.process(source_path='doc.pdf', formats=['markdown', 'pdf'])"
+          "text": "Call pipeline.process_job(source_path='doc.pdf', formats=['markdown', 'pdf'])"
         }
       ]
     },

@@ -2,7 +2,7 @@
 
 **Document Version**: 3.0.0  
 **Target Ad Networks**: Google Search (High-Intent B2B), LinkedIn Ads (Account-Based Marketing), Twitter/X Developer Ads  
-**Primary Conversion Goal**: Developer SDK Installs (`pip install blast-ocr`), GitHub Stars, Enterprise Pilot Bookings, Streamlit Live Demo Runs  
+**Primary Conversion Goal**: Developer SDK Installs (`pip install -r requirements.txt`), GitHub Stars, Enterprise Pilot Bookings, Streamlit Live Demo Runs  
 
 ---
 

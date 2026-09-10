@@ -43,7 +43,7 @@ $$n = \frac{\left(Z_{\alpha/2}\sqrt{2\bar{p}(1-\bar{p})} + Z_{\beta}\sqrt{p_1(1-
 - **Surface**: GitHub README & Homepage Above-the-Fold.
 - **Hypothesis**: Presenting the Model Context Protocol (MCP) snippet as the primary quickstart above the Python SDK will double AI coding assistant installations (Cursor/Claude Desktop).
 - **Variants**:
-  - `Variant A (Control)`: Python SDK 1-Liner (`from blast_ocr import OCRPipeline`) first, MCP second.
+  - `Variant A (Control)`: Python SDK 1-Liner (`from blast_ocr.pipeline import BlastPipeline`) first, MCP second.
   - `Variant B (MCP First)`: Cursor / Claude Desktop `mcp.json` JSON block first, Python SDK second.
 - **Primary Metric**: MCP Server Invocations within 24 hours of visit.
 - **Guardrail Metric**: `pip install` command copies must not decrease by > 5%.
