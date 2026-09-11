@@ -30,10 +30,10 @@
     "docx": "/path/to/output.docx"
   },
   "metadata": {
-    "page_count": 120,
+    "page_count": 5,
     "processed_at": "ISO-8601 Timestamp",
-    "execution_time_seconds": 4.12,
-    "pages_per_second": 29.1,
+    "execution_time_seconds": 76.5,
+    "pages_per_second": 0.065,
     "provider": "CUDAExecutionProvider"
   }
 }

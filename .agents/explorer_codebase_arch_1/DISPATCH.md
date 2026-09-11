@@ -12,7 +12,7 @@ Audit all core subsystems across the 153+ python files, explicitly covering:
    - `engines/` (`base.py`, `batched_rapidocr.py`, `easyocr_engine.py`, `tesseract_engine.py`, `consensus.py`, etc.)
    - `batch_preprocessor.py` (aspect ratio bucketing, normalization, SIMD ops)
    - `tensor_decoder.py` (CTC decoding, DBNet post-processing, box unclip)
-   - `streaming.py` (SlidingWindowBuffer, page streaming)
+   - `streaming.py` (PageStreamGenerator, page streaming)
    - `searchable_pdf.py` (PyMuPDF / ReportLab generation, text layer injection)
    - `formula_extractor.py` (LaTeX detection, formula bounding boxes)
    - `semantic_chunker.py` (hierarchy-aware chunking, token bounding)

@@ -16,7 +16,7 @@
 | **Community (OSS)** | **$0 / month** | **$0 / year** | Unlimited local CPU/GPU | SIMD-batched ONNX engine (7.7x faster than the project's EasyOCR baseline on CPU), CLI, Web UI, MCP server, Markdown tables, LaTeX | Community Discord & GitHub |
 | **Pro Developer** | **$199 / month** | **$1,990 / year** | Up to 4 Worker Nodes | All Community + Searchable Sandwich PDF, Priority queue client, 4-worker concurrency | 24-hour Email Support |
 | **Enterprise Swarm**| **$1,499 / month**| **$14,990 / year**| Unlimited Worker Nodes | All Pro + Redis Priority Queue (`high`/`default`/`low`), Automated Zombie Reaper, S3/MinIO Streaming, Dual-tier cache | 1-hour Critical SLA + Dedicated Slack |
-| **Air-Gapped Defense**| Custom ($25k+) | Custom ($25k+) | Air-Gapped On-Premise | Custom ONNX fine-tuning, HIPAA/SOC2 compliance audit pack, Source escrow | Dedicated Systems Architect |
+| **Air-Gapped Defense**| Custom ($25k+) | Custom ($25k+) | Air-Gapped On-Premise | Custom ONNX fine-tuning, compliance-audit assistance (no pre-existing SOC2/HIPAA/FedRAMP certification held), Source escrow | Dedicated Systems Architect |
 
 ---
 
@@ -71,7 +71,8 @@
 - **Features Included**:
   - 100% air-gapped installation packages with zero external package manager requirements
   - Custom ONNX weights fine-tuning for domain-specific typography (e.g. historical, non-Latin, medical)
-  - Comprehensive SOC2 Type II, HIPAA, and FedRAMP compliance documentation
+  - Architecture built around the real, in-repo security controls documented in [`docs/SECURITY_HARDENING.md`](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/SECURITY_HARDENING.md): sandboxed file access, path-traversal prevention, and 8-class forensic PII redaction, plus 100% air-gapped, zero-network-egress execution
+  - No SOC2 Type II report, HIPAA attestation, or FedRAMP authorization has been issued for this project as of this writing -- assisting a customer's own compliance audit process is a custom engagement, not a pre-existing certification
   - Software escrow agreements
 
 ---

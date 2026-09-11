@@ -44,38 +44,15 @@ parentheses.
 - [Create Searchable Sandwich PDFs with Invisible Text](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/searchable-pdf-sandwich-generation.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/searchable-pdf-sandwich-generation/)): Exact bounding-box invisible font overlays using PyMuPDF and ReportLab.
 - [Scaling Batch OCR with Distributed Redis Worker Swarms](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/seo/distributed-ocr-worker-swarm-redis.md) ([HTML](https://ibrahim-salman19.github.io/OCR/docs/seo/distributed-ocr-worker-swarm-redis/)): 3-tier priority queue scheduling, worker heartbeats, and automated zombie reaper failover.
 
-## Marketing Strategy & Commercial Playbooks
-- [AARRR Marketing Plan](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/01_MARKETING_PLAN_AARRR.md): 13-section fractional CMO go-to-market plan and scaling roadmap.
-- [Marketing Council Review](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/02_MARKETING_COUNCIL_REVIEW.md): Advisory board evaluation from Ogilvy, Godin, Schwartz, Hormozi, Dunford, Sutherland, Sharp.
-- [Tactical Idea Bank](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/03_TACTICAL_IDEA_BANK.md): 139 growth ideas scored by ICE across all funnel stages.
-- [Marketing Psychology & Mental Models](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/04_MARKETING_PSYCHOLOGY_AND_MENTAL_MODELS.md): Behavioral science, cognitive biases, and persuasion architecture.
-- [Marketing Loops & Automation](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/05_MARKETING_LOOPS_AND_AUTOMATION.md): 6 autonomous recurring marketing workflows and agent cadences.
-- [Competitor Dossiers](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/06_COMPETITOR_PROFILES.md): Deep-dive intelligence dossiers on Tesseract, EasyOCR, AWS Textract, and Marker.
-- [Competitor Battle Cards](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/07_COMPETITOR_COMPARISONS_AND_BATTLECARDS.md): Head-to-head architectural comparisons vs Tesseract, EasyOCR, and AWS Textract.
-- [Grand Slam Offer Design](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/08_GRAND_SLAM_OFFER_DESIGN.md): $15,000 value-stacked enterprise offer with zero-crash throughput guarantees.
-- [Pricing & Packaging Strategy](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/09_PRICING_AND_PACKAGING_STRATEGY.md): Value metric selection, 4-tier monetization, and AI-readable pricing.
-- [Sales Enablement Playbook](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/10_SALES_ENABLEMENT_PLAYBOOK.md): Enterprise pitch deck script, technical 1-pager, and air-gapped RFP questionnaire answers.
-- [RevOps & Pipeline Management](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/11_REVOPS_AND_PIPELINE_MANAGEMENT.md): Lead lifecycle stages, MQL-to-SQL SLA routing, and CRM pipeline configuration.
-- [Advanced GEO & AEO Playbook](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/12_GEO_AEO_ADVANCED_PLAYBOOK.md): Direct answer block engineering, query fan-out clusters, and AI citation protocols.
-- [Technical SEO Audit](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/13_TECHNICAL_SEO_AUDIT.md): Crawlability, Core Web Vitals, indexation health, and internal link structure.
-- [Site Architecture & Taxonomy](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/14_SITE_ARCHITECTURE_AND_TAXONOMY.md): Visual sitemap, URL design, and hub-and-spoke content clusters.
-- [Programmatic SEO Spec](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/15_PROGRAMMATIC_SEO_SPEC.md): Database schema and template specs for 300+ programmatic landing pages.
-- [Schema Markup Validation](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/16_SCHEMA_MARKUP_VALIDATION.md): Complete Schema.org JSON-LD multi-entity graph documentation.
-- [Landing Page Copywriting](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/17_HOMEPAGE_AND_LANDING_PAGE_COPY.md): High-converting developer homepage copy, hero headlines, and value propositions.
-- [Developer Signup & Activation Flow](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/20_DEVELOPER_SIGNUP_AND_ACTIVATION_FLOW.md): 45-second friction-free onboarding and time-to-value specification.
-- [A/B Testing Program](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/24_AB_TESTING_PROGRAM.md): 8 ICE-scored experimentation hypotheses and statistical significance calculator.
-- [Cold Outreach Playbook](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/25_COLD_OUTREACH_PLAYBOOK.md): Targeted multi-touch cold email sequences for AI platform leads.
-- [Launch Execution Playbook](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/29_LAUNCH_EXECUTION_PLAYBOOK.md): Day-by-day launch plans for Product Hunt, Hacker News Show HN, and Reddit.
-- [Community Marketing Strategy](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/30_COMMUNITY_MARKETING_STRATEGY.md): Developer Discord architecture, office hours, and ambassador program.
-- [Referral & Advocacy Program](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/33_REFERRAL_AND_ADVOCACY_PROGRAM.md): Viral coefficient loop, double-sided incentives, and partner tiers.
-- [Content Strategy & Editorial Calendar](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/36_CONTENT_STRATEGY_AND_EDITORIAL_CALENDAR.md): 4 content pillars and 24-week engineering editorial roadmap.
-- [Free Tools & Calculators Spec](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/38_FREE_TOOLS_AND_CALCULATORS_SPEC.md): Interactive OCR Cost Calculator and Memory Leak Simulator tools.
-- [Social Media Content Calendar](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/39_SOCIAL_MEDIA_CONTENT_CALENDAR.md): Ready-to-post technical Twitter/X threads and LinkedIn carousels.
-- [Video Scripts & Storyboards](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/40_VIDEO_SCRIPTS_AND_STORYBOARDS.md): 90s product launch video and 3-minute MCP walkthrough scripts.
-- [Paid Advertising Blueprints](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/42_PAID_ADVERTISING_BLUEPRINTS.md): Google Search campaigns, negative keywords, and LinkedIn Thought Leader ads.
-- [Churn Prevention & Retention Playbook](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/45_CHURN_PREVENTION_AND_RETENTION_PLAYBOOK.md): Cancellation flow, save offers, and churn detection signals.
-- [Analytics Tracking Plan](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/46_ANALYTICS_TRACKING_PLAN.md): PostHog / GA4 event taxonomy, custom properties, and conversion funnels.
-- [Attribution Modeling & ROI](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/marketing/47_ATTRIBUTION_MODELING_AND_ROI.md): Multi-touch attribution, CAC calculation, and LTV:CAC modeling.
+## Internal Marketing & GTM Strategy (Not Linked Here)
+This project also maintains an internal 47-document marketing/GTM strategy portfolio in
+`docs/marketing/` (go-to-market plans, competitor battlecards, pricing strategy, SEO/GEO
+playbooks, launch and lifecycle-email specs). Per the llms.txt convention of a short,
+curated link set (10-50 links), those internal strategy documents are intentionally not
+enumerated here one-by-one -- see the condensed index in
+[llms-full.txt, Section 8](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt)
+or browse [`docs/marketing/`](https://github.com/Ibrahim-Salman19/OCR/tree/main/docs/marketing)
+directly.
 
 ## Machine-Readable Endpoints & Manifests
 - [Unified Specification (llms-full.txt)](https://raw.githubusercontent.com/Ibrahim-Salman19/OCR/main/llms-full.txt): Complete single-prompt documentation file for full context ingestion.

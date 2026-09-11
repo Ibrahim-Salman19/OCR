@@ -33,9 +33,12 @@ CLOUD_PRICING: Dict[str, Dict[str, Any]] = {
     },
 }
 
-# B.L.A.S.T. performance: 29.1 pages/second on CPU = ~104,760 pages/hour per core
-# AWS EC2 c6i.large ($0.085/hr, 2 vCPUs) can process ~200,000 pages/hour
-PAGES_PER_HOUR_PER_INSTANCE = 200_000
+# B.L.A.S.T. measured performance: ~15.3s/page CPU latency on this project's own
+# 14-page gold corpus (docs/BENCHMARKS_2026.md, ADR 0005) = ~235 pages/hour per
+# instance. This does not assume any multi-core/multi-worker speedup beyond what
+# that benchmark already reflects -- it is deliberately the conservative,
+# directly-measured figure rather than an extrapolated one.
+PAGES_PER_HOUR_PER_INSTANCE = 235
 INSTANCE_HOURLY_COST_USD = 0.085  # AWS c6i.large spot/reserved average
 
 
