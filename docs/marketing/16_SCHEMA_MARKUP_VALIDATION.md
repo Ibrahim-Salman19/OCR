@@ -114,7 +114,7 @@ The structured data is embedded directly into the live DOM via Streamlit (`blast
           "name": "What is B.L.A.S.T. OCR Engine and how fast is it?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "B.L.A.S.T. OCR Engine is a deterministic, air-gapped document intelligence system that processes scanned PDFs and images at 29.1 pages per second on CPU and 85+ pages per second on GPU with zero memory leaks."
+            "text": "B.L.A.S.T. OCR Engine is a deterministic, air-gapped document intelligence system that processes scanned PDFs and images at ~15.3s/page (7.7x faster than EasyOCR) on CPU with zero memory leaks measured over a 1,000-page stress test; no GPU throughput number has been measured for this project."
           }
         },
         {

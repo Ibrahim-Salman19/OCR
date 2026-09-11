@@ -11,7 +11,7 @@
 
 In document infrastructure, developer skepticism dissolves the exact millisecond three events occur simultaneously:
 1. The developer drops in their most notorious, broken-border multi-column PDF.
-2. The terminal or UI outputs **29.1 Pages/Second** throughput with 0 errors.
+2. The terminal or UI outputs **~15.3s/page (7.7x faster than EasyOCR)** throughput with 0 errors.
 3. The extracted Markdown table renders with 100% structural fidelity in under 1 second.
 
 Every onboarding surface is engineered to collapse time and eliminate friction on the path to this specific moment.

@@ -28,7 +28,7 @@ from blast_ocr.pipeline import BlastPipeline
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance
 
-# 1. Initialize B.L.A.S.T. High-Throughput Engine (29.1 pps on CPU)
+# 1. Initialize B.L.A.S.T. High-Throughput Engine (~15.3s/page (7.7x faster than EasyOCR) on CPU)
 pipeline = BlastPipeline(config_overrides={"ocr_engine": "rapidocr"})
 result = pipeline.process_job(source_path="contracts/master_agreement.pdf", formats=["markdown", "json"])
 

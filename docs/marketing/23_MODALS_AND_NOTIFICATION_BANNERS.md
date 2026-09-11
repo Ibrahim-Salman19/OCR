@@ -53,7 +53,7 @@ Following the `popups` skill:
 - **Copy Structure**:
   - **Header Tag**: `WAIT: PROCESSING LARGE PDF ARCHIVES?`
   - **Headline**: `Don't Let Python OOM Killers Crash Your 800-Page Document Batches.`
-  - **Value Prop**: `Download our free 12-page Zero-Leak Python PDF Streaming Blueprint. Learn how sliding-window memory buffers keep RAM flatlined at 142 MB across 10,000+ pages.`
+  - **Value Prop**: `Download our free 12-page Zero-Leak Python PDF Streaming Blueprint. Learn how sliding-window memory buffers keep peak RAM near 36 MB across this project's 1,000-page stress test.`
   - **Form**: Single work-email input field + `[Send Me the Blueprint]` button.
   - **Decline Link**: `No thanks, I will manage memory manually.`
 - **localStorage Key**: `blast_exit_modal_dismissed = true` (Suppressed for 14 days).

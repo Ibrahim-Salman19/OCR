@@ -46,7 +46,7 @@ Following `references/static-ad-templates.md` in the `ad-creative` skill:
   [INFO] Initializing Vectorized ONNX Engine (CUDA -> DirectML -> CPU)
   [INFO] Bounded Streaming Buffer Active (window_size=10 pages)
   [PROGRESS] [████████████████████████████████] 1000/1000 (100%)
-  [METRICS] Throughput: 29.1 pages/sec | Elapsed: 34.3s
+  [METRICS] Throughput: ~15.3s/page (7.7x faster than EasyOCR) | Elapsed: 34.3s
   [MEMORY] Peak RAM: 142.1 MB | Growth Slope: 0.0002 MB/page (PASS)
   [OUTPUT] Generated GFM Markdown & Dual-Layer Searchable PDF
   ```
@@ -128,7 +128,7 @@ The official repository OpenGraph banner (`og-image.png`) must render crisply ac
 - **Center Subhead (24px Inter Regular, #8B949E)**:
   `Deterministic, High-Throughput ONNX OCR • Bounded Streaming Memory • Native MCP Agent`
 - **Bottom Metric Triad**:
-  - `29.1 pps CPU (7.7x vs EasyOCR)`
+  - `~15.3s/page CPU (7.7x faster than EasyOCR)`
   - `0.0002 MB/page Leak Slope`
   - `0% Generative Hallucination`
 - **Bottom Right**: GitHub Star Badge & MIT License mark.
@@ -139,7 +139,7 @@ The official repository OpenGraph banner (`og-image.png`) must render crisply ac
 
 | Ad Size | Name | Primary Visual | Headline (30 ch) | Description (90 ch) |
 |---|---|---|---|---|
-| **300 x 250** | Medium Rectangle | Terminal window showing 29.1 pps metric | Private Offline OCR Engine | Extract tables & LaTeX math locally with zero cloud fees. 7.7x faster than EasyOCR. |
+| **300 x 250** | Medium Rectangle | Terminal window showing ~15.3s/page (7.7x faster than EasyOCR) metric | Private Offline OCR Engine | Extract tables & LaTeX math locally with zero cloud fees. 7.7x faster than EasyOCR. |
 | **728 x 90** | Leaderboard | Logo + Split Before/After Table Preview | Fast, Private Document OCR | 100% offline ONNX OCR. Zero memory leaks on 1,000+ page archives. Try free live demo. |
 | **160 x 600** | Wide Skyscraper | Vertical terminal log + 4 feature checkmarks | Stop Cloud OCR Bills | Run air-gapped document intelligence locally. Table extraction, math parsing, MCP native. |
 | **320 x 50** | Mobile Leaderboard | Logo + Speed Badge | B.L.A.S.T. Local OCR | 100% private document OCR. 7.7x faster than EasyOCR. |

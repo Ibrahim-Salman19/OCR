@@ -66,7 +66,7 @@ Every programmatic page is dynamically instantiated from a structured JSON recor
     "source_format": { "type": "string" },
     "target_format": { "type": "string" },
     "industry_vertical": { "type": "string" },
-    "throughput_metric": { "type": "string", "default": "29.1 Pages/Second" },
+    "throughput_metric": { "type": "string", "default": "~15.3s/page (7.7x faster than EasyOCR)" },
     "memory_slope_metric": { "type": "string", "default": "0.0002 MB/Page" },
     "cer_metric": { "type": "string", "default": "0.1916" },
     "sample_cli_command": { "type": "string" },
@@ -91,7 +91,7 @@ from pathlib import Path
 
 PSEO_TEMPLATE = '''# {h1_title}
 
-**Status**: 🟢 Certified Production-Grade  
+**Status**: 🟡 Figures Checked Against Source, 2026-09-11  
 **Target Intent**: `{primary_keyword}`  
 **Primary Throughput**: {throughput_metric} on CPU • **Memory Safety**: {memory_slope_metric}
 
@@ -140,7 +140,7 @@ def generate_pages(records_file: str, output_dir: str):
         content = PSEO_TEMPLATE.format(
             h1_title=f"{record['source_format'].upper()} to {record['target_format'].upper()} OCR in Python",
             primary_keyword=record['primary_keyword'],
-            throughput_metric=record.get('throughput_metric', '29.1 Pages/Second'),
+            throughput_metric=record.get('throughput_metric', '~15.3s/page (7.7x faster than EasyOCR)'),
             memory_slope_metric=record.get('memory_slope_metric', '0.0002 MB/Page'),
             quick_answer_action=f"convert {record['source_format']} to {record['target_format']} using OCR",
             direct_answer_block=record['direct_answer_block'],

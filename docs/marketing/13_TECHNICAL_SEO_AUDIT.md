@@ -1,6 +1,6 @@
 # 🔍 Comprehensive SEO & AI-SEO Technical Audit Report
 
-**Status**: 🟢 Certified Production-Grade Masterclass  
+**Status**: 🟡 Figures Checked Against Source, 2026-09-11  
 **Frameworks**: `seo-audit` (v2.0.1) & `ai-seo` (v2.5.0)  
 **Target Surfaces**: GitHub Repository, OpenAPI REST Docs (`/docs`), Sovereign Streamlit Web App (`/`), Developer SEO Hub (`docs/seo/`)  
 **Evaluation Date**: 2026-09-06  
@@ -103,14 +103,14 @@ machine-readable agent files (`llms.txt`, `llms-full.txt`, `pricing.md`) are ope
 - **Issue**: Page titles exceeding 60 characters or meta descriptions exceeding 160 characters get truncated in SERPs.
 - **Impact**: **Medium** (Reduces click-through rates and snippet appeal).
 - **Evidence**: Audit of `docs/marketing/14_SITE_ARCHITECTURE_AND_TAXONOMY.md` metadata matrix.
-- **Fix**: Calibrated all primary page titles to 50–58 characters (e.g., `High-Throughput PDF OCR in Python (29.1 Pages/Second)`) and meta descriptions to 145–155 characters with clear primary keywords, empirical proof points, and CTAs.
+- **Fix**: Calibrated all primary page titles to 50–58 characters (e.g., `High-Throughput PDF OCR in Python (~15.3s/page (7.7x faster than EasyOCR))`) and meta descriptions to 145–155 characters with clear primary keywords, empirical proof points, and CTAs.
 - **Priority**: Medium (Completed 🟢)
 
 ### Finding ONPAGE-03: Image & Asset Optimization
 - **Issue**: Heavy uncompressed PNGs and missing alt text drag down LCP and accessibility.
 - **Impact**: **Medium** (Image search ranking and accessibility compliance).
 - **Evidence**: Audit of `docs/marketing/41_CREATIVE_AND_VISUAL_ASSET_SPECS.md`.
-- **Fix**: Specified standard 1200x630 OpenGraph WebP/PNG formats, descriptive semantic filenames (`blast_throughput_benchmark_cpu.png`), and mandatory descriptive alt text (`alt="B.L.A.S.T. OCR CPU throughput benchmark chart comparing 29.1 pps vs Tesseract"`).
+- **Fix**: Specified standard 1200x630 OpenGraph WebP/PNG formats, descriptive semantic filenames (`blast_throughput_benchmark_cpu.png`), and mandatory descriptive alt text (`alt="B.L.A.S.T. OCR CPU throughput benchmark chart comparing ~15.3s/page (7.7x faster than EasyOCR) vs Tesseract"`).
 - **Priority**: Medium (Completed 🟢)
 
 ---
@@ -121,8 +121,8 @@ machine-readable agent files (`llms.txt`, `llms-full.txt`, `pricing.md`) are ope
 - **Issue**: Content with generic qualitative claims ("fastest tool", "highly scalable") experiences -10% AI visibility penalty and low human trust.
 - **Impact**: **High** (Empirical stats yield +37% citation boost; cited sources yield +40% boost).
 - **Evidence**: Every technical guide and marketing playbook now strictly grounds claims in reproducible numbers from `docs/BENCHMARKS_2026.md`:
-  - **Throughput**: 29.1 Pages/Second on commodity CPU.
-  - **Memory Stability**: 0.0002 MB/page memory growth slope over 10,000 continuous pages.
+  - **Throughput**: ~15.3s/page (7.7x faster than EasyOCR) on commodity CPU.
+  - **Memory Stability**: 0.0002 MB/page memory growth slope over 1,000 continuous pages.
   - **Accuracy**: 0.1916 Character Error Rate (CER) on gold-standard stress corpus.
   - **Test Suite**: 914 tests, 912 passed, 2 skipped, 0 failed, with 0 Bandit security issues (both figures re-verified 2026-09-06 by actually executing the suite; see Finding TECH-06 below -- the previous "737" figure and a live Bandit failure had both gone stale/unnoticed since at least 2026-09-01).
 - **Fix**: Integrated benchmark citations and exact script paths (`python -m blast_ocr.core.benchmark --quick`) into all public content.

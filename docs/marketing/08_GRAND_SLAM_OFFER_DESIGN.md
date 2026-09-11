@@ -14,7 +14,7 @@ To create an offer so good prospects feel stupid saying no, B.L.A.S.T. optimizes
 $$\text{Value} = \frac{\text{Dream Outcome} \times \text{Perceived Likelihood of Achievement}}{\text{Time Delay} \times \text{Effort \& Sacrifice}}$$
 
 ```
-                      (1) Dream Outcome: 29.1 Pages/Sec Offline OCR Pipeline
+                      (1) Dream Outcome: ~15.3s/page (7.7x faster than EasyOCR) Offline OCR Pipeline
                                      ×
                       (2) Likelihood: 100% Deterministic, 914 Tests (912 Passed, 2 Skipped, 0 Failed)
 Value Score = -------------------------------------------------------------------------
@@ -24,7 +24,7 @@ Value Score = ------------------------------------------------------------------
 ```
 
 ### Deconstructed Drivers:
-1. **Dream Outcome (Maximize)**: Complete document parsing sovereignty. High-throughput (29.1 pages/sec), multi-format extraction (tables, formulas, layouts) directly on commodity CPU or GPU without sending data to third-party cloud APIs.
+1. **Dream Outcome (Maximize)**: Complete document parsing sovereignty. High-throughput (~15.3s/page (7.7x faster than EasyOCR)), multi-format extraction (tables, formulas, layouts) directly on commodity CPU or GPU without sending data to third-party cloud APIs.
 2. **Perceived Likelihood of Achievement (Maximize)**: Backed by 914 automated tests (912 passed, 2 skipped, 0 failed), $0.0002\text{ MB/page}$ zero-leak slope verification, and reproducible gold-standard benchmarks (`docs/BENCHMARKS_2026.md`).
 3. **Time Delay (Minimize to Zero)**: Single `pip install -r requirements.txt` command. Pre-packaged ONNX runtime sessions eliminate CUDA version mismatches. Instant local execution in $\le 45$ seconds.
 4. **Effort & Sacrifice (Minimize to Zero)**: No complex Kubernetes clusters required for small jobs; auto-scaling Redis swarm supervisor included for enterprise scale. Zero cloud vendor API keys, zero egress costs, zero privacy review friction.
@@ -107,7 +107,7 @@ graph TD
     A --> D[Enterprise Swarm - $1,499/mo]
     A --> E[Air-Gapped Defense / Gov - Custom $25k+]
     
-    B --> B1[29.1 pps Core Engine]
+    B --> B1[~15.3s/page (7.7x faster than EasyOCR) Core Engine]
     B --> B2[CLI + Web UI]
     B --> B3[Native MCP Server]
     

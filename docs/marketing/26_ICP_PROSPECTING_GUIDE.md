@@ -145,4 +145,4 @@ When an SDR or AE conducts an initial discovery call, verify:
    - Have they experienced unhandled OOM crashes or memory leaks on long PDFs?
    - Are cloud API latency spikes degrading user experience in their RAG application?
 6. **Champion**:
-   - Has a lead engineer run the `pip install -r requirements.txt` CLI locally and confirmed the 29.1 pps speedup?
+   - Has a lead engineer run the `pip install -r requirements.txt` CLI locally and confirmed the ~15.3s/page (7.7x faster than EasyOCR) speedup?

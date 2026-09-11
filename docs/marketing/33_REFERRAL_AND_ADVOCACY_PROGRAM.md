@@ -34,14 +34,14 @@ Every document processed by the Community Edition carries an elegant, non-intrus
 
 ### In Generated Markdown Files:
 ```markdown
-<!-- Processed by B.L.A.S.T. Document Intelligence Engine (29.1 pps) • https://github.com/Ibrahim-Salman19/OCR -->
+<!-- Processed by B.L.A.S.T. Document Intelligence Engine (~15.3s/page (7.7x faster than EasyOCR)) • https://github.com/Ibrahim-Salman19/OCR -->
 ```
 
 ### In Searchable Sandwich PDFs:
 - **PDF Info Dictionary Metadata**:
   - `Creator`: `B.L.A.S.T. OCR Engine v2.0 (High-Throughput SIMD)`
   - `Producer`: `ReportLab + PyMuPDF Vector Engine`
-  - `Keywords`: `Searchable PDF, Deterministic OCR, 29.1 pps`
+  - `Keywords`: `Searchable PDF, Deterministic OCR, ~15.3s/page (7.7x faster than EasyOCR)`
 
 ### In Microsoft Word (.docx) Files:
 - Document Properties -> Comments: `Generated via B.L.A.S.T. Deterministic High-Throughput Engine`

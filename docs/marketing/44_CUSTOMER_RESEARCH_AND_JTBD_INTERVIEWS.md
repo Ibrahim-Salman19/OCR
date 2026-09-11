@@ -23,7 +23,7 @@ The Four Forces govern every switching decision away from incumbent solutions (T
                       PROMOTING CHANGE
       PUSH of Current Frustrations       PULL of B.L.A.S.T. OCR
      ┌────────────────────────────┐     ┌────────────────────────────┐
-     │• PyTorch OOM crashes at 3am│     │• 29.1 pps CPU (7.7x faster)│
+     │• PyTorch OOM crashes at 3am│     │• ~15.3s/page CPU (7.7x faster)      │
      │• $15k/mo cloud Textract bill│───► │• 0.0002 MB/pg leak slope   │
      │• VLM hallucinating numbers │     │• Tables to clean Markdown  │
      │• Client data leaves our VPC│     │• 100% Air-gapped privacy   │

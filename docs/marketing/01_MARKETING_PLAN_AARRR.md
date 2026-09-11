@@ -134,7 +134,7 @@ Scored against the 17-section fCMO marketing maturity rubric (0–5 scale):
 1. **Terminal CLI Path:**
    ```bash
    pip install -r requirements.txt
-   blast-ocr scan sample.pdf --formats markdown,docx
+   python -m blast_ocr.cli sample.pdf --formats md,docx
    ```
    Outputs formatted Markdown and DOCX with table structures intact in under 2 seconds.
 2. **Zero-Setup Web UI Path:**

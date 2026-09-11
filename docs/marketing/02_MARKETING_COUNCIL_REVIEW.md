@@ -22,7 +22,7 @@
 
 **Application of Framework:**
 Ogilvy’s fundamental tenet is that long copy full of specific, verifiable facts always outsells clever, vague slogans. In *Ogilvy on Advertising*, he demonstrated that specific numbers increase believability exponentially.
-- **On B.L.A.S.T. OCR:** The claim "Fast OCR" is completely worthless. But the claim *"29.1 pages per second with a verified 0.0002 MB per page memory leak slope over 1,000 consecutive pages"* is advertising gold. 
+- **On B.L.A.S.T. OCR:** The claim "Fast OCR" is completely worthless. But the claim *"~15.3s/page (7.7x faster than EasyOCR) with a verified 0.0002 MB per page memory leak slope over 1,000 consecutive pages"* is advertising gold. 
 - **The Big Idea:** Frame B.L.A.S.T. OCR as the *Swiss Chronometer of Document Ingestion*. Use side-by-side charts showing memory usage flatlining against Tesseract’s jagged, climbing mountain of memory consumption. Put the test scorecard front and center.
 - **Ogilvy's Verdict:** Strip every instance of "revolutionary" and "seamless." Replace them with test certificates, benchmarks, and exact hardware specs (e.g., "Tested on Intel Xeon E5-2686 v4 with ONNX Runtime 1.17").
 
@@ -142,6 +142,6 @@ In *How Brands Grow*, Sharp shows that long-term brand equity requires broad cat
 ## 3. Council Chair Synthesis & Immediate Directives
 
 1. **Adopt the "Anti-Magic / Deterministic" Frame (Sutherland & Dunford):** Position B.L.A.S.T. OCR as the robust, non-hallucinatory, air-gapped industrial backbone for modern AI and document pipelines.
-2. **Double Down on Factual Auditing (Ogilvy & Schwartz):** Embed the 0.0002 MB/page memory leak slope, 29.1 pages/sec throughput, and 0.1915 Urdu CER into every single headline, badge, and documentation hero.
+2. **Double Down on Factual Auditing (Ogilvy & Schwartz):** Embed the 0.0002 MB/page memory leak slope, ~15.3s/page (7.7x faster than EasyOCR) throughput, and 0.1915 Urdu CER into every single headline, badge, and documentation hero.
 3. **Execute the Dual-Funnel Distribution (Sharp & Godin):** Maintain zero-friction mass distribution on PyPI/Docker while actively courting the high-volume RAG engineering community on Reddit and Hacker News.
 4. **Deploy the Enterprise Grand Slam Pilot (Hormozi):** Offer a 30-day proof-of-concept cluster license with guaranteed migration support and cost-reduction benchmarking against cloud OCR providers.

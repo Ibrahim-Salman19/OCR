@@ -44,11 +44,11 @@ We never sponsor generic lifestyle or non-technical tech influencers. Every pros
 
 ### Core Deliverable Options:
 1. **Dedicated 8–12 Minute Deep-Dive Video**: Complete architecture review, live terminal benchmark, and building a local RAG pipeline with Qdrant and Claude Desktop MCP.
-2. **Integrated 60–90 Second Mid-Roll Segment**: Seamless technical sponsorship demonstrating the 29.1 pps speedup and sliding-window memory safety.
+2. **Integrated 60–90 Second Mid-Roll Segment**: Seamless technical sponsorship demonstrating the ~15.3s/page (7.7x faster than EasyOCR) speedup and sliding-window memory safety.
 
 ### Must-Mention Key Claims (Strictly Enforced):
-- **Empirical Throughput**: Runs at **29.1 Pages/Second on standard CPU** via vectorized SIMD batch preprocessing.
-- **Zero Memory Leaks**: Verified **0.0002 MB/page memory slope** eliminating Kubernetes OOM crashes on 10,000+ page archives.
+- **Empirical Throughput**: Runs at **~15.3s/page (7.7x faster than EasyOCR) on standard CPU** via vectorized SIMD batch preprocessing.
+- **Zero Memory Leaks**: Verified **0.0002 MB/page memory slope**, measured over a 1,000-page continuous stress test, eliminating Kubernetes OOM crashes.
 - **Air-Gapped Privacy**: 100% local in-VPC execution with zero cloud telemetry or external API calls.
 - **Agentic RAG Integration**: Native Model Context Protocol (MCP) server for Claude Desktop and Cursor.
 

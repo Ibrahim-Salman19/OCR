@@ -24,7 +24,7 @@ This guide applies behavioral economics, cognitive biases, and strategic mental 
 
 ### 3. Theory of Constraints (Eliyahu Goldratt)
 - **The Insight:** A RAG or document intelligence pipeline is only as fast as its slowest step. If embedding takes 10ms per chunk and LLM inference takes 800ms, but OCR ingestion takes 4,500ms per page, OCR is the binding constraint that throttles the entire business.
-- **Marketing Framing:** "Your vector database and LLMs are idling waiting for Tesseract. Unblock your ingestion pipeline with 29.1 pages/second SIMD vectorized throughput."
+- **Marketing Framing:** "Your vector database and LLMs are idling waiting for Tesseract. Unblock your ingestion pipeline with ~15.3s/page (7.7x faster than EasyOCR) SIMD vectorized throughput."
 
 ---
 

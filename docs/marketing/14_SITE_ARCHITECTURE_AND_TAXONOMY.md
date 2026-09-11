@@ -56,7 +56,7 @@ Every URL and document path adheres to strict architectural naming conventions:
 ### Flow A: The Skeptical Systems Engineer (Focus: Speed & Memory Proof)
 ```
 Step 1: Arrives on GitHub README via Reddit or Hacker News.
-Step 2: Scans Hero Bar: "29.1 Pages/Second | 0.0002 MB/Page Memory Slope".
+Step 2: Scans Hero Bar: "~15.3s/page (7.7x faster than EasyOCR) | 0.0002 MB/Page Memory Slope".
 Step 3: Clicks [BENCHMARKS_2026.md](docs/BENCHMARKS_2026.md) to inspect raw hardware specifications.
 Step 4: Copies reproducible CLI command: `python -m blast_ocr.core.benchmark --quick`.
 Step 5: Verifies execution on local machine in under 30 seconds.
@@ -130,8 +130,8 @@ To maximize PageRank distribution and Generative Engine citation authority, the 
 
 | Page URI / Slug | Title Tag (< 60 chars) | Meta Description (< 155 chars) | Primary H1 | Target Schema.org Type |
 |---|---|---|---|---|
-| `/` (Root README) | B.L.A.S.T. OCR: Air-Gapped 29.1 pps Python Engine | High-throughput local OCR engine in Python. 29.1 pps on CPU, zero memory leaks, native MCP server, and structured Markdown table export. | B.L.A.S.T. Deterministic OCR Engine | `SoftwareApplication` |
-| `/docs/BENCHMARKS_2026.md` | B.L.A.S.T. Benchmarks: 29.1 pps & Zero Memory Leaks | Verified 2026 empirical benchmarks: 29.1 pages/sec on CPU, 0.0002 MB/page memory slope, and 0.1916 CER on 128-page stress corpus. | Empirical Benchmark Scorecard 2026 | `Dataset`, `TechArticle` |
+| `/` (Root README) | B.L.A.S.T. OCR: Air-Gapped ~15.3s/page (7.7x faster than EasyOCR) Python Engine | High-throughput local OCR engine in Python. ~15.3s/page (7.7x faster than EasyOCR) on CPU, zero memory leaks, native MCP server, and structured Markdown table export. | B.L.A.S.T. Deterministic OCR Engine | `SoftwareApplication` |
+| `/docs/BENCHMARKS_2026.md` | B.L.A.S.T. Benchmarks: ~15.3s/page (7.7x faster than EasyOCR) & Zero Memory Leaks | Verified 2026 empirical benchmarks: ~15.3s/page (7.7x faster than EasyOCR) on CPU, 0.0002 MB/page memory slope, and 0.1916 CER on 14-page stress corpus. | Empirical Benchmark Scorecard 2026 | `Dataset`, `TechArticle` |
 | `/docs/seo/high-throughput...` | High-Throughput PDF OCR in Python (29 Pages/Sec) | Learn how to achieve 29 pages/sec PDF OCR on CPU using vectorized SIMD preprocessing and dynamic aspect-ratio bucketing. | High-Throughput PDF OCR in Python | `HowTo`, `TechArticle` |
 | `/docs/seo/mcp-server-ocr...` | Setup Document OCR MCP Server for Claude & Cursor | Connect B.L.A.S.T. OCR to Claude Desktop and Cursor using Model Context Protocol. Extract tables and formulas deterministically. | Document OCR MCP Server Setup Guide | `HowTo`, `TechArticle` |
 | `/docs/seo/pdf-memory-leak...`| Prevent Memory Leaks in Python Batch OCR Pipelines | Eliminate out-of-memory container crashes in Python OCR. Sliding-window memory streaming and zero-leak engineering. | Preventing Memory Leaks in Batch OCR | `HowTo`, `TechArticle` |

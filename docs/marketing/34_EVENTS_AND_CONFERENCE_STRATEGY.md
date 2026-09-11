@@ -10,17 +10,17 @@
 ## 🎤 1. Certified Conference CFP Submissions (Call for Proposals)
 
 ### CFP Proposal 1: PyData Global
-- **Title**: *Vectorized SIMD Inference and Aspect-Ratio Bucketing: Pushing Python OCR to 29.1 Pages/Second*
+- **Title**: *Vectorized SIMD Inference and Aspect-Ratio Bucketing: Pushing Python OCR to ~15.3s/page (7.7x faster than EasyOCR)*
 - **Track**: High-Performance Python & Machine Learning Systems
 - **Format**: 30-Minute Technical Session + Code Walkthrough
 - **Audience Level**: Intermediate to Advanced Systems Engineers
 - **200-Word Abstract**:
-  > Python is often perceived as a slow language for real-time document computer vision. Most enterprise document pipelines rely on single-threaded subprocess calls to legacy C++ OCR engines, yielding sub-2 pages per second while suffering from severe memory leakage. In this talk, we present the architectural design of B.L.A.S.T., an open-source Python engine that achieves 29.1 pages/second on commodity CPU hardware. We dive deep into: (1) Vectorizing image pre-processing with SIMD-aligned numpy/OpenCV routines, (2) Dynamic aspect-ratio tensor bucketing to eliminate redundant padding computation during batched ONNX execution, and (3) Implementing a sliding-window bounded memory buffer that caps memory growth at 0.0002 MB/page over 10,000 continuous pages. Attendees will leave with practical design patterns for high-throughput batch inference in Python without requiring expensive GPU clusters.
+  > Python is often perceived as a slow language for real-time document computer vision. Most enterprise document pipelines rely on single-threaded subprocess calls to legacy C++ OCR engines, yielding sub-2 pages per second while suffering from severe memory leakage. In this talk, we present the architectural design of B.L.A.S.T., an open-source Python engine that achieves ~15.3s/page (7.7x faster than EasyOCR) on commodity CPU hardware. We dive deep into: (1) Vectorizing image pre-processing with SIMD-aligned numpy/OpenCV routines, (2) Dynamic aspect-ratio tensor bucketing to eliminate redundant padding computation during batched ONNX execution, and (3) Implementing a sliding-window bounded memory buffer that caps memory growth at 0.0002 MB/page over 1,000 continuous pages. Attendees will leave with practical design patterns for high-throughput batch inference in Python without requiring expensive GPU clusters.
 - **Detailed Session Outline**:
   - *Act 1 (0:00 - 0:08)*: Deconstructing the single-threaded CPU bottleneck and profiling Tesseract memory leaks with `tracemalloc`.
   - *Act 2 (0:08 - 0:20)*: The Math of Dynamic Bucketing: clustering page aspect ratios to slash padding matrix FLOPs by 85%.
-  - *Act 3 (0:20 - 0:26)*: The Sliding-Window Bounded Buffer: preventing Python heap fragmentation over 10,000 continuous pages.
-  - *Act 4 (0:26 - 0:30)*: Live terminal benchmark: 128-page PDF parsed in 4.4 seconds on an Intel i7 laptop.
+  - *Act 3 (0:20 - 0:26)*: The Sliding-Window Bounded Buffer: preventing Python heap fragmentation, measured over a 1,000-page continuous stress test.
+  - *Act 4 (0:26 - 0:30)*: Live terminal benchmark: 14-page PDF parsed in 4.4 seconds on an Intel i7 laptop.
 
 ---
 
@@ -29,7 +29,7 @@
 - **Track**: Agentic AI Architectures & Multimodal Infrastructure
 - **Format**: 20-Minute Architecture Briefing
 - **200-Word Abstract**:
-  > Multimodal LLMs like GPT-4o and Claude 3.5 Sonnet are frequently misapplied to raw document ingestion. In production, this approach encounters three crippling failure modes: massive cost ($0.05 - $0.20 per page), slow latency (5-15s per query), and structural hallucination on complex data tables and dense numerical filings. This session demonstrates why deterministic, layout-aware neural OCR remains the foundational first layer of modern agentic RAG. We show how pairing a 29.1 pps local OCR engine with native Model Context Protocol (MCP) tooling provides autonomous agents with ground-truth bounding boxes, inline LaTeX formulas, and pristine Markdown tables at zero marginal API cost.
+  > Multimodal LLMs like GPT-4o and Claude 3.5 Sonnet are frequently misapplied to raw document ingestion. In production, this approach encounters three crippling failure modes: massive cost ($0.05 - $0.20 per page), slow latency (5-15s per query), and structural hallucination on complex data tables and dense numerical filings. This session demonstrates why deterministic, layout-aware neural OCR remains the foundational first layer of modern agentic RAG. We show how pairing a ~15.3s/page (7.7x faster than EasyOCR) local OCR engine with native Model Context Protocol (MCP) tooling provides autonomous agents with ground-truth bounding boxes, inline LaTeX formulas, and pristine Markdown tables at zero marginal API cost.
 
 ---
 
@@ -50,7 +50,7 @@ To attract high-intent engineering leads, the B.L.A.S.T. exhibition booth featur
 | VISITOR ENGAGEMENT WORKFLOW:                                                                |
 | 1. Attendee inserts USB stick or AirDrops their hardest, most complex PDF or scan.          |
 | 2. Presenter launches: `blast-ocr /media/usb/attendee_doc.pdf --formats markdown docx pdf` |
-| 3. In under 2 seconds: Terminal displays "29.1 pps", Markdown tables appear on Screen 2.  |
+| 3. In under 2 seconds: Terminal displays "~15.3s/page (7.7x faster than EasyOCR)", Markdown tables appear on Screen 2.  |
 | 4. Outcome: If B.L.A.S.T. crashes: Visitor wins a custom mechanical keyboard.              |
 |             If B.L.A.S.T. succeeds: Visitor receives an exclusive 30-day VIP Pilot Pass.   |
 +---------------------------------------------------------------------------------------------+
@@ -77,7 +77,7 @@ Booth staff categorize scanned attendees using an immediate 3-tier rubric:
   > 
   > Great meeting you at the B.L.A.S.T. booth at {{conferenceName}}!
   > 
-  > You saw our engine parse {{sampleDoc}} at 29.1 pages/second right on our booth mini-PC.
+  > You saw our engine parse {{sampleDoc}} at ~15.3s/page (7.7x faster than EasyOCR) right on our booth mini-PC.
   > 
   > Here is everything you need to reproduce those exact benchmarks on your own machine:
   > - GitHub Quickstart: `https://github.com/Ibrahim-Salman19/OCR`
@@ -96,7 +96,7 @@ Booth staff categorize scanned attendees using an immediate 3-tier rubric:
   > 
   > Following up on our chat at {{conferenceName}} regarding OCR reliability.
   > 
-  > Many teams we met mentioned worker containers crashing during large batch runs. We just published our technical whitepaper on how our **sliding-window bounded streaming buffer** keeps memory slope at 0.0002 MB/page over 10,000 pages.
+  > Many teams we met mentioned worker containers crashing during large batch runs. We just published our technical whitepaper on how our **sliding-window bounded streaming buffer** keeps memory slope at 0.0002 MB/page over 1,000 pages.
   > 
   > [Read the full technical report →](https://github.com/Ibrahim-Salman19/OCR/blob/main/docs/STRATEGIC_ENHANCEMENT_PLAN.md)
   > 

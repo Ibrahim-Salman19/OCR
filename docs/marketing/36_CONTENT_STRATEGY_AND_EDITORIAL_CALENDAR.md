@@ -29,7 +29,7 @@
 
 ## 📅 2. Exhaustive 24-Week Editorial Calendar & Technical Briefs
 
-### Week 01: Pushing Python OCR to 29.1 Pages/Second: A SIMD Vectorization Deep Dive
+### Week 01: Pushing Python OCR to ~15.3s/page (7.7x faster than EasyOCR): A SIMD Vectorization Deep Dive
 - **Primary Keyword**: `high throughput python ocr`
 - **Secondary Keywords**: `python simd ocr`, `fastest pdf ocr python`, `vectorized document preprocessing`
 - **Search Intent**: In-depth technical architecture / systems engineering
@@ -37,7 +37,7 @@
   - H2: The Single-Threaded Bottleneck in Document Ingestion
   - H2: Vectorizing Image Normalization with AVX2/NEON SIMD
   - H2: Dynamic Aspect-Ratio Tensor Bucketing
-  - H2: Benchmarking 29.1 Pages/Second on Commodity CPU
+  - H2: Benchmarking ~15.3s/page (7.7x faster than EasyOCR) on Commodity CPU
 - **Code Asset**: SIMD preprocessing comparison script with `numpy` and `cv2`
 - **Target Channels**: Hacker News, r/Python, PyData Newsletter
 

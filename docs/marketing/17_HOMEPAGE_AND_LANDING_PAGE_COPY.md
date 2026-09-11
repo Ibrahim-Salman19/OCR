@@ -13,7 +13,7 @@ This document provides complete, production-ready conversion copy for the primar
 # The Deterministic, Air-Gapped OCR Engine That Never Leaks Memory.
 
 ### Subheadline
-Stop debugging container crashes at 3:00 AM. Process millions of scanned PDFs, complex tables, and non-Latin scripts locally at **29.1 pages per second**—with zero cloud API fees, zero hallucination, and guaranteed bounded streaming memory.
+Stop debugging container crashes at 3:00 AM. Process millions of scanned PDFs, complex tables, and non-Latin scripts locally at **~15.3s/page (7.7x faster than EasyOCR)**—with zero cloud API fees, zero hallucination, and guaranteed bounded streaming memory.
 
 ### Primary Action Group
 - **Primary Button:** `RUN WITH PIP (FREE)` -> `pip install -r requirements.txt`
@@ -21,7 +21,7 @@ Stop debugging container crashes at 3:00 AM. Process millions of scanned PDFs, c
 - **Microcopy Under Buttons:** *100% Open-Source MIT License • Zero Cloud Telemetry • Python 3.10+ & CUDA Ready*
 
 ### Proof Ticker (Right Below Hero)
-- **29.1 Pages/Sec** (Single-core CPU)
+- **~15.3s/page (7.7x faster than EasyOCR)** (Single-core CPU)
 - **85+ Pages/Sec** (NVIDIA RTX 4090)
 - **0.0002 MB/Page** (Verified 1,000-page memory slope)
 - **0% Hallucination** (Deterministic CTC decoding)

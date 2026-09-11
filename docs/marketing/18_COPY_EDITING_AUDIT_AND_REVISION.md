@@ -14,7 +14,7 @@ Every public-facing copy asset in the B.L.A.S.T. repository is refined through 7
 ```
 Pass 1: CLARITY         Pass 2: VOICE          Pass 3: PRECISION       Pass 4: RHYTHM
 Eliminate ambiguity  -> Authoritative       -> Ground with numbers  -> Balance sentence
-and cognitive drag      systems tone           (29.1 pps, 0.0002 MB)   lengths and cadence
+and cognitive drag      systems tone           (~15.3s/page (7.7x faster than EasyOCR), 0.0002 MB)   lengths and cadence
 
 Pass 5: ECONOMY         Pass 6: FRICTION       Pass 7: POLISH
 Trim filler words    -> Reduce steps to     -> Typographical hygiene
@@ -33,7 +33,7 @@ and fluff (-35%)        action (1-line CLI)    and formatting perfection
   - *Precision*: Lacks specific speed, memory, or cost metrics.
   - *Economy*: Contains 28 words; weak prepositional chains.
 - **Revised Production Copy (Certified)**:
-  > *"B.L.A.S.T. is an air-gapped, high-throughput document intelligence engine delivering **29.1 pages/second on CPU** with verified **0.0002 MB/page zero-leak memory stability**. Extract structured Markdown tables, LaTeX formulas, and searchable sandwich PDFs locally with zero cloud API fees."*
+  > *"B.L.A.S.T. is an air-gapped, high-throughput document intelligence engine delivering **~15.3s/page (7.7x faster than EasyOCR) on CPU** with verified **0.0002 MB/page zero-leak memory stability**. Extract structured Markdown tables, LaTeX formulas, and searchable sandwich PDFs locally with zero cloud API fees."*
 
 ---
 

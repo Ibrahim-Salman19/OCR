@@ -18,7 +18,7 @@
 ### Empirical Benchmarks & Performance:
 - **CPU Throughput**: 1.8 Pages/Second (single-threaded CPU execution).
 - **Memory Growth Slope**: **0.0450 MB/Page** (persistent uncollected C++ heap allocations).
-- **Character Error Rate (CER)**: 0.2840 on standardized 128-page legal and financial stress corpus.
+- **Character Error Rate (CER)**: 0.2840 on standardized 14-page legal and financial stress corpus.
 - **Table / Layout Recognition**: Primitive; relies on external HOCR parsing or bounding box heuristics; zero native Markdown table reconstruction.
 
 ### Critical Vulnerabilities & Fatal Operational Flaws:
@@ -31,7 +31,7 @@
 - Engineering team complains about slow multi-hour backlog processing on multi-thousand-page PDF batches.
 
 ### Head-to-Head Displacement Talk Track:
-> *"Tesseract was architected in 1985 for scanning single book pages on flatbed scanners. B.L.A.S.T. was engineered for the 2026 AI era: vectorized SIMD batch preprocessing running at 29.1 pages/second on CPU, with certified zero-leak memory stability and native Markdown table export."*
+> *"Tesseract was architected in 1985 for scanning single book pages on flatbed scanners. B.L.A.S.T. was engineered for the 2026 AI era: vectorized SIMD batch preprocessing running at ~15.3s/page (7.7x faster than EasyOCR) on CPU, with certified zero-leak memory stability and native Markdown table export."*
 
 ---
 
@@ -91,4 +91,4 @@
 - **Marker (Vik Paruchuri)**: Converts PDFs to Markdown using Surya OCR and heuristics. Excellent Markdown output, but requires 8GB+ GPU VRAM, exhibits high memory retention on long batches, and lacks distributed queue orchestration.
 
 ### Head-to-Head Positioning:
-> *"Docling and Marker are exceptional academic research converters for single documents on GPUs. B.L.A.S.T. is an enterprise document factory: 29.1 pps on CPU, bounded sliding-window memory buffers, and a Redis priority swarm with automated zombie failover."*
+> *"Docling and Marker are exceptional academic research converters for single documents on GPUs. B.L.A.S.T. is an enterprise document factory: ~15.3s/page (7.7x faster than EasyOCR) on CPU, bounded sliding-window memory buffers, and a Redis priority swarm with automated zombie failover."*

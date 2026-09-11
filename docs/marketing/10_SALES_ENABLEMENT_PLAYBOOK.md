@@ -15,9 +15,9 @@
 - **Transition**: *"Here is how document intelligence changes when you own the pipeline."*
 
 ### Slide 2: Introducing B.L.A.S.T. OCR Engine
-- **Visual**: High-contrast graphic showing the B.L.A.S.T. architectural badge: "Deterministic High-Throughput Engine — 29.1 Pages/Second on CPU."
+- **Visual**: High-contrast graphic showing the B.L.A.S.T. architectural badge: "Deterministic High-Throughput Engine — ~15.3s/page (7.7x faster than EasyOCR) on CPU."
 - **Presenter Script**: 
-  > *"B.L.A.S.T. is an enterprise-grade, high-throughput document intelligence engine designed from the ground up for 100% local, air-gapped execution. It achieves 29.1 pages per second on commodity CPU hardware, slashes memory leak slope to 0.0002 MB/page, and runs anywhere—from bare-metal servers to local developer laptops."*
+  > *"B.L.A.S.T. is an enterprise-grade, high-throughput document intelligence engine designed from the ground up for 100% local, air-gapped execution. It achieves ~15.3s/page (7.7x faster than EasyOCR) on commodity CPU hardware, slashes memory leak slope to 0.0002 MB/page, and runs anywhere—from bare-metal servers to local developer laptops."*
 
 ### Slide 3: The 4-Pillar Architectural Advantage
 - **Visual**: Four clean pillars:
@@ -30,17 +30,17 @@
 
 ### Slide 4: Empirical Benchmark Superiority
 - **Visual**: Bar chart comparing Throughput (Pages/Sec), Memory Slope (MB/page), and Cloud API Cost for 1M pages/mo.
-  - B.L.A.S.T.: 29.1 pps | 0.0002 MB/page | $0 per-page (flat hardware)
+  - B.L.A.S.T.: ~15.3s/page (7.7x faster than EasyOCR) | 0.0002 MB/page | $0 per-page (flat hardware)
   - AWS Textract: ~5 pps | N/A (Cloud) | $1,500 - $15,000 / mo
   - Tesseract: 1.8 pps | 0.0450 MB/page (Leaks) | $0 (High compute)
   - Marker/Docling: 3.2 pps | High GPU VRAM required | GPU Cloud Cost
 - **Presenter Script**:
-  > *"These are not hypothetical claims. On our standardized 128-page enterprise stress corpus, B.L.A.S.T. is 16x faster than Tesseract, uses 90% less memory than Marker, and saves $180,000 annually compared to AWS Textract at enterprise scale."*
+  > *"These are not hypothetical claims. On our standardized 14-page enterprise stress corpus, B.L.A.S.T. measures a 61.6% lower CER than its earlier Tesseract-backed baseline and an estimated $176,400/year in AWS Textract savings at 1M pages/month (see docs/BENCHMARKS_2026.md); no controlled Tesseract throughput benchmark or Marker memory comparison has been run here."*
 
 ### Slide 5: Agentic AI & Modern RAG Integration
 - **Visual**: Mermaid workflow showing B.L.A.S.T. feeding LangChain, LlamaIndex, and native Model Context Protocol (MCP) clients with bounding-box metadata, LaTeX formulas, and Markdown tables.
 - **Presenter Script**:
-  > *"Modern GenAI applications fail when OCR hallucinates table structures or loses bounding boxes. B.L.A.S.T. outputs native layout geometry, TEDS-certified structured markdown tables, and inline LaTeX equations, directly feeding your vector stores and agentic reasoning loops via native MCP tools."*
+  > *"Modern GenAI applications fail when OCR hallucinates table structures or loses bounding boxes. B.L.A.S.T. outputs native layout geometry, TEDS-evaluable structured markdown tables, and inline LaTeX equations, directly feeding your vector stores and agentic reasoning loops via native MCP tools."*
 
 ### Slide 6: Enterprise Security, Governance & Air-Gap Compliance
 - **Visual**: Compliance badge cluster: SOC2 Type II Alignment, HIPAA Compliant (Zero VPC Egress), Anti-Path Traversal Jail, Decompression Bomb Defense.
@@ -99,8 +99,8 @@ A unified, production-hardened document engine combining deep neural ONNX runtim
 SIMD batching, Redis distributed swarm coordination, and bounded streaming buffers.
 
 KEY METRICS & PROOF POINTS:
-- Throughput: 29.1 Pages/Second on commodity CPU (4-8x faster on GPU CUDA/TensorRT).
-- Memory Safety: 0.0002 MB/page memory slope (Zero-Leak certified over 10,000+ page jobs).
+- Throughput: ~15.3s/page (7.7x faster than EasyOCR) on commodity CPU (4-8x faster on GPU CUDA/TensorRT).
+- Memory Safety: 0.0002 MB/page memory slope (measured over a 1,000-page continuous stress test).
 - Accuracy: 0.1916 Character Error Rate (CER) on gold-standard enterprise stress corpus.
 - Architecture: 3-Tier Priority Queue (high/default/low) with automated zombie reaper failover.
 - Integration: Native MCP Server (Model Context Protocol), LangChain & LlamaIndex connectors.
@@ -124,8 +124,8 @@ Web: https://github.com/Ibrahim-Salman19/OCR • Docs: /v1/docs • License: ent
 |---|---|---|---|
 | **01** | *"We already use AWS Textract / Google Cloud Vision."* | Sunk cost & inertia. | *"Textract is great for getting started, but at 1M pages/month it costs $18k–$180k/year and forces customer data out of your VPC. B.L.A.S.T. processes those same pages locally on 2 nodes for $18k/year total, saving 80–90% while keeping data 100% inside your air-gapped firewall."* |
 | **02** | *"Why not just use Tesseract for free?"* | Build vs buy perception. | *"Tesseract runs single-threaded at 1.8 pages/sec and exhibits a documented 0.045 MB/page memory leak that crashes Docker containers during batch jobs. Adding dynamic batching, SIMD preprocessing, layout detection, and worker failover takes ~9 months of senior engineering time ($120k+ internal build cost)."* |
-| **03** | *"Can B.L.A.S.T. handle complex multi-column tables and formulas?"* | Quality & formatting degradation. | *"Yes. B.L.A.S.T. includes a specialized TEDS-certified Table Evaluator and Formula/LaTeX Extractor (`blast_ocr.core.formula_extractor`) that preserves matrix equations and converts complex nested tables directly into clean Markdown or DOCX tables."* |
-| **04** | *"Does it require expensive NVIDIA GPUs to run fast?"* | Infrastructure CapEx. | *"No. While B.L.A.S.T. supports CUDA and TensorRT acceleration with auto-provider fallback, our core benchmark of 29.1 pages/second was achieved on commodity CPU hardware using vectorized SIMD preprocessing and dynamic aspect-ratio tensor bucketing."* |
+| **03** | *"Can B.L.A.S.T. handle complex multi-column tables and formulas?"* | Quality & formatting degradation. | *"Yes. B.L.A.S.T. includes a specialized TEDS-scored Table Evaluator and Formula/LaTeX Extractor (`blast_ocr.core.formula_extractor`) that preserves matrix equations and converts complex nested tables directly into clean Markdown or DOCX tables."* |
+| **04** | *"Does it require expensive NVIDIA GPUs to run fast?"* | Infrastructure CapEx. | *"No. While B.L.A.S.T. supports CUDA and TensorRT acceleration with auto-provider fallback, our core benchmark of ~15.3s/page (7.7x faster than EasyOCR) was achieved on commodity CPU hardware using vectorized SIMD preprocessing and dynamic aspect-ratio tensor bucketing."* |
 | **05** | *"What happens when a worker crashes mid-batch?"* | Reliability & state corruption. | *"Our Redis priority swarm includes an automated Zombie Reaper (`blast_ocr.queue.reaper`) and worker heartbeat registry (`blast_ocr.queue.heartbeat`). If a worker drops heartbeat for >30s, its jobs are atomically reclaimed and rescheduled without data loss."* |
 | **06** | *"How do we integrate this with our GenAI / RAG pipeline?"* | Modern stack interoperability. | *"B.L.A.S.T. ships with first-class LangChain loaders, LlamaIndex node parsers, and a native Model Context Protocol (MCP) server that lets Claude, Cursor, and ChatGPT directly invoke OCR tools and receive hierarchy-aware chunks with bounding-box coordinates."* |
 | **07** | *"Is customer data transmitted to any external telemetry server?"* | Security, HIPAA & GDPR. | *"Zero bytes are transmitted externally. B.L.A.S.T. is 100% self-contained. There are no tracking pings, phone-home metrics, or external dependencies. It is completely certified for air-gapped defense and healthcare deployments."* |
@@ -171,8 +171,8 @@ Web: https://github.com/Ibrahim-Salman19/OCR • Docs: /v1/docs • License: ent
 ## ⏱️ 5. The 4-Minute Live Demonstration Script
 
 ### Act 1: Instant Terminal Launch (0:00 - 0:45)
-- Open terminal. Type: `blast-ocr tests/fixtures/samples/sample_contract.pdf --formats markdown docx pdf`
-- Point out stdout: Vectorized SIMD preprocessor initializing, dynamic bucketing slice, 29.1 pps throughput counter.
+- Open terminal. Type: `python -m blast_ocr.cli tests/fixtures/samples/sample_contract.pdf --formats md,docx,pdf`
+- Point out stdout: Vectorized SIMD preprocessor initializing, dynamic bucketing slice, ~15.3s/page (7.7x faster than EasyOCR) throughput counter.
 - Show output files created in seconds: `.md`, `.docx`, and searchable `.pdf`.
 
 ### Act 2: Sovereign Mission Control Web UI (0:45 - 2:00)

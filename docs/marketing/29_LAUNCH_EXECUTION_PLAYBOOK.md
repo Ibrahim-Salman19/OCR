@@ -26,7 +26,7 @@ T-14 Days              T-7 Days               T-3 Days          T-0 (Launch Day)
 ## 🐱 2. Product Hunt Launch Kit
 
 - **Product Name**: B.L.A.S.T. OCR Engine
-- **Tagline**: Air-gapped, 29.1 pages/sec document OCR with 0% memory leaks
+- **Tagline**: Air-gapped, ~15.3s/page (7.7x faster than EasyOCR) document OCR with 0% memory leaks
 - **Topics**: Developer Tools, Open Source, Artificial Intelligence, Productivity, Tech
 - **Primary CTA**: Try Free on GitHub (`github.com/Ibrahim-Salman19/OCR`)
 
@@ -39,8 +39,8 @@ T-14 Days              T-7 Days               T-3 Days          T-0 (Launch Day)
 > 2. Open-source scripts built on 30-year-old C++ engines that crawl at 1.5 pages/second and crash your servers with memory leaks at page 400.
 > 
 > We engineered B.L.A.S.T. to fix document ingestion once and for all:
-> ⚡ **29.1 Pages/Second** CPU throughput via vectorized SIMD batching.  
-> 🛡️ **0.0002 MB/page Memory Slope**: verified zero-leak stability over 10,000 pages.  
+> ⚡ **~15.3s/page (7.7x faster than EasyOCR)** CPU throughput via vectorized SIMD batching.  
+> 🛡️ **0.0002 MB/page Memory Slope**: verified zero-leak stability over a 1,000-page continuous stress test.  
 > 📊 **Layout-Aware Markdown & Tables**: extracts nested tables directly into clean Markdown or DOCX.  
 > 🤖 **Native MCP Server**: gives Claude Desktop and Cursor full document vision.  
 > 🔒 **100% Air-Gapped & Local**: zero data leaves your machine.  
@@ -67,8 +67,8 @@ Over the past year building high-volume document ingestion for RAG, we hit two p
 2. Tesseract and EasyOCR are single-threaded on CPU (~1.8 pps) and exhibit a persistent 0.045 MB/page memory leak slope that regularly triggers Kubernetes OOM kills during batch runs.
 
 We built B.L.A.S.T. (Batch Layout-Aware Structural Text):
-- Vectorized SIMD pre-processing and dynamic aspect-ratio tensor bucketing yielding 29.1 pages/sec on commodity CPU.
-- Sliding-window bounded streaming buffer capping memory usage at a constant baseline (0.0002 MB/page slope verified across 10,000-page continuous runs).
+- Vectorized SIMD pre-processing and dynamic aspect-ratio tensor bucketing yielding ~15.3s/page (7.7x faster than EasyOCR) on commodity CPU.
+- Sliding-window bounded streaming buffer capping memory usage at a constant baseline (0.0002 MB/page slope verified across a 1,000-page continuous stress test).
 - Built-in Redis priority swarm with automated zombie reaper failover.
 - Native Model Context Protocol (MCP) server for Claude / Cursor agent integration.
 - Outputs clean Markdown tables, LaTeX equations, and searchable sandwich PDFs.

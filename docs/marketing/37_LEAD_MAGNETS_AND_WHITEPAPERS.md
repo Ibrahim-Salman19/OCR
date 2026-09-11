@@ -35,7 +35,7 @@ Following the `lead-magnets` skill:
 - **Subheadline**: `A 32-page engineering blueprint for building high-throughput, zero-memory-leak OCR pipelines with ONNX Runtime, table extraction, and native AI Agent MCP integration.`
 - **Bullet Points**:
   - ✔ Complete benchmark bake-off: RapidOCR vs EasyOCR vs Tesseract vs Docling.
-  - ✔ The sliding-window streaming architecture that guarantees zero memory leaks across 10,000+ pages.
+  - ✔ The sliding-window streaming architecture that measured at zero memory leaks across a 1,000-page continuous stress test.
   - ✔ Step-by-step morphological table reconstruction code for GitHub Flavored Markdown.
   - ✔ Reference Docker Compose and Kubernetes swarm architecture for distributed execution.
 - **CTA Button**: `[Send Me the Free 32-Page Handbook]`
@@ -74,7 +74,7 @@ Following the `lead-magnets` skill:
 
 ### Landing Page Copy
 - **Headline**: `The Zero-Leak Python PDF Streaming Blueprint`
-- **Subheadline**: `Stop restarting your Celery workers. Process 10,000+ page document archives in a flatline 150 MB memory buffer.`
+- **Subheadline**: `Stop restarting your Celery workers. Process large document archives with the same bounded streaming architecture measured at a near-flatline ~36 MB peak RSS over a 1,000-page continuous stress test.`
 - **CTA Button**: `[Download the Code Blueprint]`
 
 ---

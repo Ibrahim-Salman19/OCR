@@ -16,7 +16,7 @@ $$C = 4m + 3v + 2(i - f) - 2a$$
 Where:
 - **$C$ (Probability of Conversion)**: Target is $> 15\%$ developer activation rate.
 - **$m$ (Motivation of the User - Weight 4)**: High-intent engineers looking to eliminate cloud OCR bills or container OOM crashes.
-- **$v$ (Clarity of Value Proposition - Weight 3)**: 29.1 pages/second on CPU + 0.0002 MB/page memory slope.
+- **$v$ (Clarity of Value Proposition - Weight 3)**: ~15.3s/page (7.7x faster than EasyOCR) on CPU + 0.0002 MB/page memory slope.
 - **$i$ (Incentive - Weight 2)**: Free MIT-licensed open-source core, instant local execution.
 - **$f$ (Friction - Weight 2)**: Reduced to a single `pip install -r requirements.txt` command.
 - **$a$ (Anxiety - Weight 2)**: Neutralized by 912/914 passing tests (2 skipped, 0 failed) and air-gapped zero-egress privacy.

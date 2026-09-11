@@ -26,11 +26,11 @@ User stars GitHub repo, downloads Docker image, or registers on Developer Portal
   > pip install -r requirements.txt
   > 
   > # 2. Run a high-throughput test with Markdown and DOCX export
-  > blast-ocr sample.pdf --formats markdown docx pdf
+  > python -m blast_ocr.cli sample.pdf --formats md,docx,pdf
   > ```
   > 
   > What you will see:
-  > - **29.1 Pages/Second** CPU throughput counter.
+  > - **~15.3s/page (7.7x faster than EasyOCR)** CPU throughput counter.
   > - Clean Markdown tables extracted with structure intact.
   > - Searchable sandwich PDF generated with invisible OCR text layer.
   > 
@@ -157,7 +157,7 @@ User's instance reaches 1,000 pages, 10,000 pages, or 50,000 pages processed.
   > 
   > Quick stats on what that means:
   > - **Estimated Cloud OCR Savings**: ~$150 saved compared to AWS Textract table extraction pricing.
-  > - **Processing Time**: Under 6 minutes of total CPU compute time at 29.1 pps.
+  > - **Processing Time**: Under 6 minutes of total CPU compute time at ~15.3s/page (7.7x faster than EasyOCR).
   > - **Data Privacy**: 10,000 pages processed with 0 bytes transmitted outside your local environment.
   > 
   > As your processing volume grows towards 100,000+ pages, scaling across multiple nodes becomes critical.
@@ -230,7 +230,7 @@ User was active previously but has logged zero jobs over the past 30 days.
   > 
   > We haven't seen your pipeline active recently, so we wanted to share a major upgrade shipped this month:
   > 
-  > 1. **Vectorized SIMD Preprocessing**: Inference speed increased from 18 pps to **29.1 pages/second** on standard CPU.
+  > 1. **Vectorized SIMD Preprocessing**: Inference speed increased from 18 pps to **~15.3s/page (7.7x faster than EasyOCR)** on standard CPU.
   > 2. **Native Model Context Protocol**: Seamless integration with Claude Desktop and Cursor for agentic document analysis.
   > 3. **Interactive Sovereign UI**: A complete overhaul of our Streamlit dashboard with interactive SVG bounding-box inspection and telemetry HUD.
   > 

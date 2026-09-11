@@ -154,7 +154,7 @@ LinkedIn Ads target decision-makers at companies suffering from high cloud OCR b
   >  
   > Plus, full LaTeX math parsing and morphological table reconstruction to GFM Markdown for high-precision RAG vector search.
 - **Headline (70 ch)**: `Zero-Leak Python OCR: Stream 1,000+ Pages with Flatline RAM.`
-- **Visual**: Creative Format 1 (Terminal Proof Card with 29.1 pps metric).
+- **Visual**: Creative Format 1 (Terminal Proof Card with ~15.3s/page (7.7x faster than EasyOCR) metric).
 - **CTA**: `Download` → Links to PyPI / GitHub.
 
 ---
