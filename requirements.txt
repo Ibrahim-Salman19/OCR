@@ -51,24 +51,24 @@ numpy<2.0.0
 # CI still get easyocr via `-r requirements.txt -r requirements-easyocr.txt`
 # (see that file). The UI hides the "easyocr" engine option automatically
 # when the package isn't importable (blast_ocr/ui/web_app.py).
-rapidocr_onnxruntime>=1.3.0
-pypdfium2>=4.30.0
+rapidocr_onnxruntime>=1.4.4
+pypdfium2>=5.13.0
 pillow<11
-opencv-python-headless>=4.8.0
+opencv-python-headless>=5.0.0.93
 pdf2image>=1.17.0
 langdetect>=1.0.9
-lxml>=5.0.0
+lxml>=6.1.3
 
 # --- UTILITIES ---
-pydantic-settings>=2.0.0
-python-dotenv>=1.0.0
-psutil>=5.9.0
-python-pptx>=0.6.21
-python-docx>=1.1.0
-tqdm>=4.66.0
-sqlalchemy>=2.0.0
-alembic>=1.13.0
-reportlab>=4.0.0
+pydantic-settings>=2.15.0
+python-dotenv>=1.2.3
+psutil>=7.2.2
+python-pptx>=1.0.2
+python-docx>=1.2.0
+tqdm>=4.70.0
+sqlalchemy>=2.0.52
+alembic>=1.19.2
+reportlab>=5.0.1
 
 # Production-optional (durable queue / object storage / observability) live
 # in requirements-production.txt, the optional PyTorch/EasyOCR backend lives

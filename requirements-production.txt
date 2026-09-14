@@ -24,7 +24,7 @@ prometheus-client>=0.20.0
 
 # Enterprise REST API (FastAPI)
 # fastapi<0.113.0 preserves compatibility with pinned pydantic==2.6.3
-fastapi>=0.109.0,<0.113.0
+fastapi>=0.109.0,<0.142.0
 uvicorn>=0.27.0
 python-multipart>=0.0.9
 

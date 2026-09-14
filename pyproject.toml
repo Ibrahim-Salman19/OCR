@@ -104,7 +104,7 @@ queue = ["rq>=2.0.0", "redis>=5.0.0"]
 storage = ["boto3>=1.34.0"]
 observability = ["opentelemetry-sdk>=1.24.0", "prometheus-client>=0.20.0"]
 api = [
-    "fastapi>=0.109.0,<0.113.0",
+    "fastapi>=0.109.0,<0.142.0",
     "uvicorn>=0.27.0",
     "python-multipart>=0.0.9",
 ]
