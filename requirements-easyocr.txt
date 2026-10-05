@@ -21,5 +21,5 @@
 # to before torch moved out of it, makes this file self-contained and correct
 # regardless of what any consumer did before processing it.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.14.0+cpu
-easyocr>=1.7.0
+torch==2.14.1+cpu
+easyocr>=1.7.2
